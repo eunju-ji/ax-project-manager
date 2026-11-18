@@ -1,0 +1,1743 @@
+{
+  "projects": [
+    {
+      "id": "ax",
+      "emoji": "◈",
+      "name": "AX 프로젝트 관리장",
+      "desc": "9월부터 개발과 운영을 이어 온 프로젝트 · 업무 기록과 자료를 한곳에서 확인",
+      "owner": "AX팀",
+      "updated": "11월 16일",
+      "priority": "높음",
+      "cover": "linear-gradient(125deg,#dce3ff,#eff2ff 50%,#dce6f6)",
+      "tags": [
+        "플랫폼",
+        "UI/UX"
+      ],
+      "tasks": [
+        {
+          "id": "AX-01",
+          "topic": "기획·설계",
+          "title": "프로젝트 홈 구성",
+          "summary": "프로젝트별 핵심 상태와 검토 필요 항목 배치",
+          "owner": "김지현",
+          "detail": "사이드바 대신 홈에서 프로젝트를 바로 탐색하도록 구성했다. 목록에서 현재 진행 단계, 담당자, 검토 건수와 다음 작업을 확인한다.",
+          "decision": "프로젝트 정보는 별도 탭을 두지 않고 상단 요약에 표시한다.",
+          "createdAt": "2026-11-16T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "AX-01-S1",
+              "title": "프로젝트 홈 와이어프레임",
+              "artifact": "프로젝트 홈 와이어프레임.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-16T10:00:00+09:00",
+              "summary": "프로젝트 카드·표·보드 시안 비교",
+              "sourceId": "AX-01-S1-file"
+            },
+            {
+              "id": "AX-01-S2",
+              "title": "테마별 목록 비교안",
+              "artifact": "테마별 목록 비교안.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-16T12:00:00+09:00",
+              "summary": "검토 필요 표시 기준 정리",
+              "sourceId": "AX-01-S2-file"
+            }
+          ],
+          "weeklySummary": "프로젝트를 홈에서 찾고 확인할 일을 살펴볼 수 있도록 화면 구성을 정리했습니다."
+        },
+        {
+          "id": "AX-02",
+          "topic": "기획·설계",
+          "title": "작업 구조 재편",
+          "summary": "주제별 보기와 날짜순 에피소드 보기로 이원화",
+          "owner": "박성진",
+          "detail": "작업을 주제로 묶은 보기와 요청부터 검토까지 흐름이 이어지는 시간순 보기를 제공한다. 같은 작업을 다른 관점으로 확인하도록 설계한다.",
+          "decision": "탭 전환으로 작업 파일 목록의 표시 상태가 바뀌지 않도록 한다.",
+          "createdAt": "2026-11-12T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "AX-02-S1",
+              "title": "3단계 업무 구조 정의서",
+              "artifact": "3단계 업무 구조 정의서.md",
+              "owner": "박성진",
+              "performedAt": "2026-11-12T10:00:00+09:00",
+              "summary": "주제·에피소드 분류 기준 확정",
+              "sourceId": "AX-02-S1-file"
+            },
+            {
+              "id": "AX-02-S2",
+              "title": "태스크·에피소드 연결표",
+              "artifact": "태스크·에피소드 연결표.md",
+              "owner": "박성진",
+              "performedAt": "2026-11-12T12:00:00+09:00",
+              "summary": "작업 ID와 사건 기록 연결",
+              "sourceId": "AX-02-S2-file"
+            }
+          ],
+          "weeklySummary": "큰 작업과 세부 작업의 관계를 정하고, 시간순으로 내역을 볼 수 있게 분류 기준을 정리했습니다."
+        },
+        {
+          "id": "AX-03",
+          "topic": "제작·구현",
+          "title": "작업 내역 펼쳐 보기",
+          "summary": "작업 목록 안에서 상세와 회의 결정사항 확인",
+          "owner": "박성진",
+          "detail": "작업명 아래 세부 이력과 결정 내용을 필요할 때 펼쳐서 본다. 별도 작업 상세 페이지로 이동하지 않는다.",
+          "decision": "회의 결정사항을 별도 탭으로 분리하지 않는다.",
+          "createdAt": "2026-11-16T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "AX-03-S1",
+              "title": "인라인 펼침 UI",
+              "artifact": "인라인 펼침 UI.html",
+              "owner": "박성진",
+              "performedAt": "2026-11-16T10:00:00+09:00",
+              "summary": "아코디언 상태·키보드 조작 지원",
+              "sourceId": "AX-03-S1-file"
+            },
+            {
+              "id": "AX-03-S2",
+              "title": "키보드 탐색 구현본",
+              "artifact": "키보드 탐색 구현본.html",
+              "owner": "박성진",
+              "performedAt": "2026-11-16T12:00:00+09:00",
+              "summary": "결정사항을 작업 본문에 포함",
+              "sourceId": "AX-03-S2-file"
+            }
+          ],
+          "weeklySummary": "작업을 누르면 내용을 바로 펼쳐 볼 수 있게 만들고 키보드로도 이동할 수 있도록 구현했습니다."
+        },
+        {
+          "id": "AX-04",
+          "topic": "제작·구현",
+          "title": "원본 자료 식별 및 연결",
+          "summary": "Drive·GitHub·Chat 자료의 동일 작업 연결",
+          "owner": "이수민",
+          "detail": "서로 다른 서비스의 자료가 같은 업무 결과에 해당하는지 판별한다. 원본 ID, 제공 서비스, 접근 상태, 해당 작업의 연결을 보존한다.",
+          "decision": "파일 경로가 바뀌어도 자료의 안정적인 원본 ID를 유지한다.",
+          "createdAt": "2026-11-09T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "AX-04-S1",
+              "title": "원본 자료 연결 모듈",
+              "artifact": "원본 자료 연결 모듈.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-09T10:00:00+09:00",
+              "summary": "자료 ID 기준 중복 등록 방지",
+              "sourceId": "AX-04-S1-file"
+            },
+            {
+              "id": "AX-04-S2",
+              "title": "자료 식별자 매핑표",
+              "artifact": "자료 식별자 매핑표.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-09T12:00:00+09:00",
+              "summary": "접근 불가·삭제 여부 구분",
+              "sourceId": "AX-04-S2-file"
+            }
+          ],
+          "weeklySummary": "원본 자료를 작업에 연결하고 같은 자료가 중복 등록되지 않도록 식별 기준을 정리했습니다."
+        },
+        {
+          "id": "AX-05",
+          "topic": "기획·설계",
+          "title": "중요 변경 사용자 확인",
+          "summary": "AI가 판단하기 어려운 변경만 검토 대기 노출",
+          "owner": "김지현",
+          "detail": "작업 병합, 완료 확정, 근거가 충돌하는 변경은 검토 항목으로 보낸다. 일상적인 정보 연결과 안전한 상태 갱신은 AI가 처리한다.",
+          "decision": "별도의 AI 현황 확인 버튼은 두지 않는다.",
+          "createdAt": "2026-11-10T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "AX-05-S1",
+              "title": "검토함 화면 설계서",
+              "artifact": "검토함 화면 설계서.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-10T10:00:00+09:00",
+              "summary": "상단 검토 대기 목록 표시",
+              "sourceId": "AX-05-S1-file"
+            },
+            {
+              "id": "AX-05-S2",
+              "title": "변경 판단 기준표",
+              "artifact": "변경 판단 기준표.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-10T12:00:00+09:00",
+              "summary": "판단 근거와 관련 자료 함께 표시",
+              "sourceId": "AX-05-S2-file"
+            }
+          ],
+          "weeklySummary": "중요한 변경을 근거와 함께 확인할 수 있도록 검토 화면과 판단 기준을 정리했습니다."
+        },
+        {
+          "id": "AX-06",
+          "topic": "기획·설계",
+          "title": "변경 이력 저장",
+          "summary": "변경 전후 값과 원본 근거·검토 결과 기록",
+          "owner": "이수민",
+          "detail": "작업 상태와 설명의 변경 이력을 남긴다. 사용자가 승인한 사항과 AI가 자동 변경한 사항을 구별할 수 있게 한다.",
+          "decision": "근거가 접근 불가 상태여도 변경 내역은 보존한다.",
+          "createdAt": "2026-09-21T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "AX-06-S1",
+              "title": "변경 이력 데이터 명세",
+              "artifact": "변경 이력 데이터 명세.md",
+              "owner": "이수민",
+              "performedAt": "2026-09-21T10:00:00+09:00",
+              "summary": "History 데이터 구조 정리",
+              "sourceId": "AX-06-S1-file"
+            },
+            {
+              "id": "AX-06-S2",
+              "title": "자료 참조 관계도",
+              "artifact": "자료 참조 관계도.md",
+              "owner": "이수민",
+              "performedAt": "2026-09-21T12:00:00+09:00",
+              "summary": "변경 사유·참조 자료 식별자 연결",
+              "sourceId": "AX-06-S2-file"
+            }
+          ],
+          "weeklySummary": "개발 후 운영에서도 변경 이유를 추적할 수 있도록 이력과 자료의 연결 구조를 정리했습니다."
+        },
+        {
+          "id": "AX-07",
+          "topic": "기획·설계",
+          "title": "아키텍처 기획",
+          "summary": "Projects·Tasks·Sources·Reviews·History 연결 구조 확정",
+          "owner": "박성진",
+          "detail": "프로젝트와 작업, 원본 자료, 승인 검토, 변경 이력의 연결 관계를 설계한다. 자료가 이동하거나 접근이 불가능해져도 작업과 출처 추적이 유지되도록 한다.",
+          "decision": "파일 경로 대신 안정적인 원본 ID를 중심으로 출처를 연결한다.",
+          "createdAt": "2026-11-17T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "AX-07-S1",
+              "title": "시스템 아키텍처 구조도",
+              "artifact": "시스템 아키텍처 구조도.md",
+              "owner": "박성진",
+              "performedAt": "2026-11-17T10:00:00+09:00",
+              "summary": "원본 자료의 식별자와 연결 대상 관리",
+              "sourceId": "AX-07-S1-file"
+            },
+            {
+              "id": "AX-07-S2",
+              "title": "데이터 참조 관계도",
+              "artifact": "데이터 참조 관계도.md",
+              "owner": "박성진",
+              "performedAt": "2026-11-17T12:00:00+09:00",
+              "summary": "작업-자료-검토-이력 참조 관계 검증",
+              "sourceId": "AX-07-S2-file"
+            },
+            {
+              "id": "AX-07-S3",
+              "title": "원본 접근 정보 명세",
+              "artifact": "원본 접근 정보 명세.md",
+              "owner": "박성진",
+              "performedAt": "2026-11-17T14:00:00+09:00",
+              "summary": "원본 접근 상태와 마지막 확인 시점 관리",
+              "sourceId": "AX-07-S3-file"
+            }
+          ],
+          "weeklySummary": "프로젝트·작업·자료의 연결 구조도를 만들고 원본 자료의 접근 정보를 정리했습니다."
+        }
+      ],
+      "files": [
+        {
+          "id": "f5",
+          "name": "시스템 아키텍처 구조도.png",
+          "type": "PNG",
+          "source": "Google Drive",
+          "summary": "Projects·Tasks·Sources·Reviews·History 관계도",
+          "state": "연결됨",
+          "topic": "기획·설계",
+          "createdAt": "2026-11-16T09:00:00+09:00",
+          "taskId": "AX-01"
+        },
+        {
+          "id": "f1",
+          "name": "관리장 화면 시안.html",
+          "type": "HTML",
+          "source": "Google Drive",
+          "summary": "프로젝트 홈·상세 화면 변경안",
+          "state": "연결됨",
+          "topic": "기획·설계",
+          "createdAt": "2026-11-12T09:00:00+09:00",
+          "taskId": "AX-02"
+        },
+        {
+          "id": "f2",
+          "name": "프로젝트 데이터 구조.xlsx",
+          "type": "XLSX",
+          "source": "Google Drive",
+          "summary": "Projects·Tasks·Sources·Reviews·History",
+          "state": "연결됨",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-16T09:00:00+09:00",
+          "taskId": "AX-03"
+        },
+        {
+          "id": "f3",
+          "name": "목업 UI 변경 커밋",
+          "type": "GIT",
+          "source": "GitHub",
+          "summary": "작업 토글과 보기 전환 구현 기록",
+          "state": "연결됨",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-09T09:00:00+09:00",
+          "taskId": "AX-04"
+        },
+        {
+          "id": "f4",
+          "name": "화면 구성 피드백",
+          "type": "CHAT",
+          "source": "Google Chat",
+          "summary": "정보량 축소 및 검토 위치 변경 요청",
+          "state": "검토 중",
+          "topic": "기획·설계",
+          "createdAt": "2026-11-10T09:00:00+09:00",
+          "taskId": "AX-05"
+        },
+        {
+          "id": "ax-f6",
+          "name": "태스크·에피소드 연결표.md",
+          "type": "MD",
+          "source": "Drive",
+          "summary": "업무 기록과 태스크 ID 대응표",
+          "state": "예시 자료",
+          "topic": "기획·설계",
+          "createdAt": "2026-11-12T15:00:00+09:00",
+          "taskId": "AX-02"
+        },
+        {
+          "id": "ax-f7",
+          "name": "인라인 탐색 구현본.html",
+          "type": "HTML",
+          "source": "GitHub",
+          "summary": "프로젝트와 태스크 펼침 구현 예시",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-16T16:00:00+09:00",
+          "taskId": "AX-03"
+        },
+        {
+          "id": "AX-01-S1-file",
+          "name": "프로젝트 홈 와이어프레임.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "프로젝트 카드·표·보드 시안 비교",
+          "state": "예시 자료",
+          "topic": "기획·설계",
+          "createdAt": "2026-11-16T10:00:00+09:00",
+          "taskId": "AX-01",
+          "subtaskId": "AX-01-S1",
+          "owner": "김지현"
+        },
+        {
+          "id": "AX-01-S2-file",
+          "name": "테마별 목록 비교안.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "검토 필요 표시 기준 정리",
+          "state": "예시 자료",
+          "topic": "기획·설계",
+          "createdAt": "2026-11-16T12:00:00+09:00",
+          "taskId": "AX-01",
+          "subtaskId": "AX-01-S2",
+          "owner": "김지현"
+        },
+        {
+          "id": "AX-02-S1-file",
+          "name": "3단계 업무 구조 정의서.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "주제·에피소드 분류 기준 확정",
+          "state": "예시 자료",
+          "topic": "기획·설계",
+          "createdAt": "2026-11-12T10:00:00+09:00",
+          "taskId": "AX-02",
+          "subtaskId": "AX-02-S1",
+          "owner": "박성진"
+        },
+        {
+          "id": "AX-02-S2-file",
+          "name": "태스크·에피소드 연결표.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "작업 ID와 사건 기록 연결",
+          "state": "예시 자료",
+          "topic": "기획·설계",
+          "createdAt": "2026-11-12T12:00:00+09:00",
+          "taskId": "AX-02",
+          "subtaskId": "AX-02-S2",
+          "owner": "박성진"
+        },
+        {
+          "id": "AX-03-S1-file",
+          "name": "인라인 펼침 UI.html",
+          "type": "HTML",
+          "source": "GitHub",
+          "summary": "아코디언 상태·키보드 조작 지원",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-16T10:00:00+09:00",
+          "taskId": "AX-03",
+          "subtaskId": "AX-03-S1",
+          "owner": "박성진"
+        },
+        {
+          "id": "AX-03-S2-file",
+          "name": "키보드 탐색 구현본.html",
+          "type": "HTML",
+          "source": "GitHub",
+          "summary": "결정사항을 작업 본문에 포함",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-16T12:00:00+09:00",
+          "taskId": "AX-03",
+          "subtaskId": "AX-03-S2",
+          "owner": "박성진"
+        },
+        {
+          "id": "AX-04-S1-file",
+          "name": "원본 자료 연결 모듈.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "자료 ID 기준 중복 등록 방지",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-09T10:00:00+09:00",
+          "taskId": "AX-04",
+          "subtaskId": "AX-04-S1",
+          "owner": "이수민"
+        },
+        {
+          "id": "AX-04-S2-file",
+          "name": "자료 식별자 매핑표.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "접근 불가·삭제 여부 구분",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-09T12:00:00+09:00",
+          "taskId": "AX-04",
+          "subtaskId": "AX-04-S2",
+          "owner": "이수민"
+        },
+        {
+          "id": "AX-05-S1-file",
+          "name": "검토함 화면 설계서.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "상단 검토 대기 목록 표시",
+          "state": "예시 자료",
+          "topic": "기획·설계",
+          "createdAt": "2026-11-10T10:00:00+09:00",
+          "taskId": "AX-05",
+          "subtaskId": "AX-05-S1",
+          "owner": "김지현"
+        },
+        {
+          "id": "AX-05-S2-file",
+          "name": "변경 판단 기준표.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "판단 근거와 관련 자료 함께 표시",
+          "state": "예시 자료",
+          "topic": "기획·설계",
+          "createdAt": "2026-11-10T12:00:00+09:00",
+          "taskId": "AX-05",
+          "subtaskId": "AX-05-S2",
+          "owner": "김지현"
+        },
+        {
+          "id": "AX-06-S1-file",
+          "name": "변경 이력 데이터 명세.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "History 데이터 구조 정리",
+          "state": "예시 자료",
+          "topic": "기획·설계",
+          "createdAt": "2026-09-21T12:00:00+09:00",
+          "taskId": "AX-06",
+          "subtaskId": "AX-06-S1",
+          "owner": "이수민"
+        },
+        {
+          "id": "AX-06-S2-file",
+          "name": "자료 참조 관계도.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "변경 사유·참조 자료 식별자 연결",
+          "state": "예시 자료",
+          "topic": "기획·설계",
+          "createdAt": "2026-09-21T12:00:00+09:00",
+          "taskId": "AX-06",
+          "subtaskId": "AX-06-S2",
+          "owner": "이수민"
+        },
+        {
+          "id": "AX-07-S1-file",
+          "name": "시스템 아키텍처 구조도.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "원본 자료의 식별자와 연결 대상 관리",
+          "state": "예시 자료",
+          "topic": "기획·설계",
+          "createdAt": "2026-11-17T10:00:00+09:00",
+          "taskId": "AX-07",
+          "subtaskId": "AX-07-S1",
+          "owner": "박성진"
+        },
+        {
+          "id": "AX-07-S2-file",
+          "name": "데이터 참조 관계도.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "작업-자료-검토-이력 참조 관계 검증",
+          "state": "예시 자료",
+          "topic": "기획·설계",
+          "createdAt": "2026-11-17T12:00:00+09:00",
+          "taskId": "AX-07",
+          "subtaskId": "AX-07-S2",
+          "owner": "박성진"
+        },
+        {
+          "id": "AX-07-S3-file",
+          "name": "원본 접근 정보 명세.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "원본 접근 상태와 마지막 확인 시점 관리",
+          "state": "예시 자료",
+          "topic": "기획·설계",
+          "createdAt": "2026-11-17T14:00:00+09:00",
+          "taskId": "AX-07",
+          "subtaskId": "AX-07-S3",
+          "owner": "박성진"
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "emoji": "◉",
+      "name": "광고매체 정보 확인",
+      "desc": "Google·Meta·TikTok 최신 정책 및 변경사항 정리",
+      "owner": "김지현",
+      "updated": "11월 13일",
+      "priority": "보통",
+      "cover": "linear-gradient(125deg,#d7efe8,#eaf9f4 55%,#eaf2ff)",
+      "tags": [
+        "매체 조사",
+        "보고"
+      ],
+      "tasks": [
+        {
+          "id": "ME-01",
+          "topic": "조사·분석",
+          "title": "Google Ads 최신 안내 정리",
+          "summary": "정책 변경과 적용 시점 확인",
+          "owner": "김지현",
+          "detail": "공식 매체 공지와 내부 사용 기준을 대조해 변경 항목을 분류한다.",
+          "decision": "적용 여부가 불명확한 정보는 자동 반영하지 않는다.",
+          "createdAt": "2026-11-16T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "ME-01-S1",
+              "title": "Google Ads 변경사항 정리",
+              "artifact": "Google Ads 변경사항 정리.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-16T10:00:00+09:00",
+              "summary": "공지 출처·일자 기재",
+              "sourceId": "ME-01-S1-file"
+            },
+            {
+              "id": "ME-01-S2",
+              "title": "캠페인 영향 분석표",
+              "artifact": "캠페인 영향 분석표.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-16T12:00:00+09:00",
+              "summary": "영향받는 캠페인 유형 구분",
+              "sourceId": "ME-01-S2-file"
+            }
+          ],
+          "weeklySummary": "Google Ads의 변경 안내를 정리하고 어떤 캠페인에 영향을 주는지 비교했습니다."
+        },
+        {
+          "id": "ME-02",
+          "topic": "조사·분석",
+          "title": "Meta 광고 정책 점검",
+          "summary": "정책 변경 내용 수집 및 영향 정리",
+          "owner": "김지현",
+          "detail": "광고 운영에 영향을 줄 수 있는 정책 변화만 기록한다.",
+          "decision": "출처가 있는 공지만 최종 보고에 포함한다.",
+          "createdAt": "2026-11-12T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "ME-02-S1",
+              "title": "Meta 광고 정책 비교표",
+              "artifact": "Meta 광고 정책 비교표.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-12T10:00:00+09:00",
+              "summary": "중복 공지 제거",
+              "sourceId": "ME-02-S1-file"
+            },
+            {
+              "id": "ME-02-S2",
+              "title": "정책 원문 목록",
+              "artifact": "정책 원문 목록.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-12T12:00:00+09:00",
+              "summary": "매체별 원문 링크 보존",
+              "sourceId": "ME-02-S2-file"
+            }
+          ],
+          "weeklySummary": "Meta 광고 정책을 비교하고 중복 공지를 걷어 내 원문을 찾기 쉽게 정리했습니다."
+        },
+        {
+          "id": "ME-03",
+          "topic": "제작·구현",
+          "title": "주간 매체 변경 리포트",
+          "summary": "변경 요약·관련 캠페인·확인 필요 항목 작성",
+          "owner": "박성진",
+          "detail": "매체별 변경 내용을 고객 보고에 맞는 길이로 정리한다.",
+          "decision": "고객 전달 전에는 담당자 확인이 필요하다.",
+          "createdAt": "2026-11-17T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "ME-03-S1",
+              "title": "주간 매체 변경 리포트",
+              "artifact": "주간 매체 변경 리포트.md",
+              "owner": "박성진",
+              "performedAt": "2026-11-17T10:00:00+09:00",
+              "summary": "확정 정보와 추정 구분",
+              "sourceId": "ME-03-S1-file"
+            },
+            {
+              "id": "ME-03-S2",
+              "title": "담당자 공유용 요약",
+              "artifact": "담당자 공유용 요약.md",
+              "owner": "박성진",
+              "performedAt": "2026-11-17T12:00:00+09:00",
+              "summary": "담당자 검토 후 배포",
+              "sourceId": "ME-03-S2-file"
+            }
+          ],
+          "weeklySummary": "매체별 변경 내용을 주간 보고서로 묶고 담당자가 확인할 요약을 작성했습니다."
+        }
+      ],
+      "files": [
+        {
+          "id": "me-f1",
+          "name": "매체 변경사항 정리.xlsx",
+          "type": "XLSX",
+          "source": "Drive",
+          "summary": "매체·게시일·영향 범위별 비교",
+          "state": "연결됨",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-16T09:00:00+09:00",
+          "taskId": "ME-01"
+        },
+        {
+          "id": "me-f2",
+          "name": "Google Ads 공지 목록",
+          "type": "WEB",
+          "source": "공식 웹",
+          "summary": "정책 변경 출처",
+          "state": "출처 확인",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-12T09:00:00+09:00",
+          "taskId": "ME-02"
+        },
+        {
+          "id": "me-f3",
+          "name": "주간 보고 초안.docx",
+          "type": "DOC",
+          "source": "Drive",
+          "summary": "고객 보고용 요약 자료",
+          "state": "검토 중",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-17T09:00:00+09:00",
+          "taskId": "ME-03"
+        },
+        {
+          "id": "ME-01-S1-file",
+          "name": "Google Ads 변경사항 정리.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "공지 출처·일자 기재",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-16T10:00:00+09:00",
+          "taskId": "ME-01",
+          "subtaskId": "ME-01-S1",
+          "owner": "김지현"
+        },
+        {
+          "id": "ME-01-S2-file",
+          "name": "캠페인 영향 분석표.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "영향받는 캠페인 유형 구분",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-16T12:00:00+09:00",
+          "taskId": "ME-01",
+          "subtaskId": "ME-01-S2",
+          "owner": "김지현"
+        },
+        {
+          "id": "ME-02-S1-file",
+          "name": "Meta 광고 정책 비교표.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "중복 공지 제거",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-12T10:00:00+09:00",
+          "taskId": "ME-02",
+          "subtaskId": "ME-02-S1",
+          "owner": "김지현"
+        },
+        {
+          "id": "ME-02-S2-file",
+          "name": "정책 원문 목록.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "매체별 원문 링크 보존",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-12T12:00:00+09:00",
+          "taskId": "ME-02",
+          "subtaskId": "ME-02-S2",
+          "owner": "김지현"
+        },
+        {
+          "id": "ME-03-S1-file",
+          "name": "주간 매체 변경 리포트.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "확정 정보와 추정 구분",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-17T10:00:00+09:00",
+          "taskId": "ME-03",
+          "subtaskId": "ME-03-S1",
+          "owner": "박성진"
+        },
+        {
+          "id": "ME-03-S2-file",
+          "name": "담당자 공유용 요약.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "담당자 검토 후 배포",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-17T12:00:00+09:00",
+          "taskId": "ME-03",
+          "subtaskId": "ME-03-S2",
+          "owner": "박성진"
+        }
+      ]
+    },
+    {
+      "id": "dashboard",
+      "emoji": "▣",
+      "name": "고객 대시보드 기획·수정",
+      "desc": "화면 기획부터 고객 컨펌, 개발 전달 및 검수까지 관리",
+      "owner": "이수민",
+      "updated": "11월 15일",
+      "priority": "높음",
+      "cover": "linear-gradient(125deg,#ffe5e0,#fff4e7 55%,#fffaf4)",
+      "tags": [
+        "대시보드",
+        "검수"
+      ],
+      "tasks": [
+        {
+          "id": "DB-01",
+          "topic": "조사·분석",
+          "title": "고객 요청사항 분류",
+          "summary": "필요 화면과 데이터 기준 정리",
+          "owner": "이수민",
+          "detail": "요청을 화면·지표·필터 단위로 나누어 기록한다.",
+          "decision": "지표 산식은 구현 전에 확정한다.",
+          "createdAt": "2026-11-05T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "DB-01-S1",
+              "title": "고객 요청사항 분류표",
+              "artifact": "고객 요청사항 분류표.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-05T10:00:00+09:00",
+              "summary": "고객 요청 원문 연결",
+              "sourceId": "DB-01-S1-file"
+            },
+            {
+              "id": "DB-01-S2",
+              "title": "추가 확인 질문 목록",
+              "artifact": "추가 확인 질문 목록.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-05T12:00:00+09:00",
+              "summary": "추가 확인 사항 구분",
+              "sourceId": "DB-01-S2-file"
+            }
+          ],
+          "weeklySummary": "고객 요청을 분류하고 추가로 확인해야 할 질문을 정리했습니다."
+        },
+        {
+          "id": "DB-02",
+          "topic": "제작·구현",
+          "title": "대시보드 시안 작성",
+          "summary": "Excel 화면 시안 및 고객 검토용 구성안 제작",
+          "owner": "박성진",
+          "detail": "대시보드 배치와 설명을 Excel 시안으로 작성한다.",
+          "decision": "확정된 화면 구성을 개발 전달 기준으로 사용한다.",
+          "createdAt": "2026-11-10T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "DB-02-S1",
+              "title": "대시보드 화면 시안",
+              "artifact": "대시보드 화면 시안.html",
+              "owner": "박성진",
+              "performedAt": "2026-11-10T10:00:00+09:00",
+              "summary": "시안 파일 연결",
+              "sourceId": "DB-02-S1-file"
+            },
+            {
+              "id": "DB-02-S2",
+              "title": "지표 구성 명세",
+              "artifact": "지표 구성 명세.md",
+              "owner": "박성진",
+              "performedAt": "2026-11-10T12:00:00+09:00",
+              "summary": "고객 피드백 항목별 분리",
+              "sourceId": "DB-02-S2-file"
+            }
+          ],
+          "weeklySummary": "고객 요청에 맞춰 대시보드 화면 시안과 지표 구성안을 만들었습니다."
+        },
+        {
+          "id": "DB-03",
+          "topic": "제작·구현",
+          "title": "고객 피드백 반영",
+          "summary": "화면 구성과 지표 수정사항 정리",
+          "owner": "박성진",
+          "detail": "피드백의 반영 여부와 후속 확인 항목을 관리한다.",
+          "decision": "승인 전 개발사 최종 전달 자료로 확정하지 않는다.",
+          "createdAt": "2026-11-16T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "DB-03-S1",
+              "title": "고객 피드백 반영 시안",
+              "artifact": "고객 피드백 반영 시안.html",
+              "owner": "박성진",
+              "performedAt": "2026-11-16T10:00:00+09:00",
+              "summary": "피드백 관련 메일 기록",
+              "sourceId": "DB-03-S1-file"
+            },
+            {
+              "id": "DB-03-S2",
+              "title": "화면 수정 내역서",
+              "artifact": "화면 수정 내역서.md",
+              "owner": "박성진",
+              "performedAt": "2026-11-16T12:00:00+09:00",
+              "summary": "수정 전후 화면 비교",
+              "sourceId": "DB-03-S2-file"
+            }
+          ],
+          "weeklySummary": "고객 의견을 반영한 대시보드 수정 시안을 만들고 바뀐 내용을 정리했습니다."
+        },
+        {
+          "id": "DB-04",
+          "topic": "검증",
+          "title": "개발사 구현본 검수",
+          "summary": "필터 동작과 지표값·화면 구조 확인",
+          "owner": "이수민",
+          "detail": "시안과 구현본의 차이를 확인하고 데이터 결과를 검증한다.",
+          "decision": "수치 오류가 해결된 경우에만 최종 확인으로 진행한다.",
+          "createdAt": "2026-11-13T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "DB-04-S1",
+              "title": "지표 검증 결과표",
+              "artifact": "지표 검증 결과표.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-13T10:00:00+09:00",
+              "summary": "검증 쿼리 결과 기록",
+              "sourceId": "DB-04-S1-file"
+            },
+            {
+              "id": "DB-04-S2",
+              "title": "개발사 수정 요청서",
+              "artifact": "개발사 수정 요청서.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-13T12:00:00+09:00",
+              "summary": "수정 요청 및 재검수 이력 연결",
+              "sourceId": "DB-04-S2-file"
+            }
+          ],
+          "weeklySummary": "대시보드 지표를 검증하고 개발사에 전달할 수정 요청을 정리했습니다."
+        }
+      ],
+      "files": [
+        {
+          "id": "db-f1",
+          "name": "고객 화면 시안.xlsx",
+          "type": "XLSX",
+          "source": "Drive",
+          "summary": "화면 구조 및 지표 목록",
+          "state": "연결됨",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-05T09:00:00+09:00",
+          "taskId": "DB-01"
+        },
+        {
+          "id": "db-f2",
+          "name": "고객 수정 요청 메일",
+          "type": "MAIL",
+          "source": "Gmail",
+          "summary": "필터·지표 변경 요청 기록",
+          "state": "연결됨",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-10T09:00:00+09:00",
+          "taskId": "DB-02"
+        },
+        {
+          "id": "db-f3",
+          "name": "데이터 검증 쿼리.sql",
+          "type": "SQL",
+          "source": "Drive",
+          "summary": "법인·매체별 검증 쿼리",
+          "state": "확인 필요",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-16T09:00:00+09:00",
+          "taskId": "DB-03"
+        },
+        {
+          "id": "DB-01-S1-file",
+          "name": "고객 요청사항 분류표.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "고객 요청 원문 연결",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-05T10:00:00+09:00",
+          "taskId": "DB-01",
+          "subtaskId": "DB-01-S1",
+          "owner": "이수민"
+        },
+        {
+          "id": "DB-01-S2-file",
+          "name": "추가 확인 질문 목록.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "추가 확인 사항 구분",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-05T12:00:00+09:00",
+          "taskId": "DB-01",
+          "subtaskId": "DB-01-S2",
+          "owner": "이수민"
+        },
+        {
+          "id": "DB-02-S1-file",
+          "name": "대시보드 화면 시안.html",
+          "type": "HTML",
+          "source": "GitHub",
+          "summary": "시안 파일 연결",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-10T10:00:00+09:00",
+          "taskId": "DB-02",
+          "subtaskId": "DB-02-S1",
+          "owner": "박성진"
+        },
+        {
+          "id": "DB-02-S2-file",
+          "name": "지표 구성 명세.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "고객 피드백 항목별 분리",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-10T12:00:00+09:00",
+          "taskId": "DB-02",
+          "subtaskId": "DB-02-S2",
+          "owner": "박성진"
+        },
+        {
+          "id": "DB-03-S1-file",
+          "name": "고객 피드백 반영 시안.html",
+          "type": "HTML",
+          "source": "GitHub",
+          "summary": "피드백 관련 메일 기록",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-16T10:00:00+09:00",
+          "taskId": "DB-03",
+          "subtaskId": "DB-03-S1",
+          "owner": "박성진"
+        },
+        {
+          "id": "DB-03-S2-file",
+          "name": "화면 수정 내역서.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "수정 전후 화면 비교",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-16T12:00:00+09:00",
+          "taskId": "DB-03",
+          "subtaskId": "DB-03-S2",
+          "owner": "박성진"
+        },
+        {
+          "id": "DB-04-S1-file",
+          "name": "지표 검증 결과표.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "검증 쿼리 결과 기록",
+          "state": "예시 자료",
+          "topic": "검증",
+          "createdAt": "2026-11-13T10:00:00+09:00",
+          "taskId": "DB-04",
+          "subtaskId": "DB-04-S1",
+          "owner": "이수민"
+        },
+        {
+          "id": "DB-04-S2-file",
+          "name": "개발사 수정 요청서.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "수정 요청 및 재검수 이력 연결",
+          "state": "예시 자료",
+          "topic": "검증",
+          "createdAt": "2026-11-13T12:00:00+09:00",
+          "taskId": "DB-04",
+          "subtaskId": "DB-04-S2",
+          "owner": "이수민"
+        }
+      ]
+    },
+    {
+      "id": "interview",
+      "emoji": "✦",
+      "name": "AD본부 업무 인터뷰 정리",
+      "desc": "김지현·박성진·이수민 업무 프로세스와 자동화 후보 정리",
+      "owner": "AX팀",
+      "updated": "11월 12일",
+      "priority": "보통",
+      "cover": "linear-gradient(125deg,#efe7fa,#fcf7ff 55%,#f4f4ff)",
+      "tags": [
+        "업무 인터뷰",
+        "기획"
+      ],
+      "tasks": [
+        {
+          "id": "IN-01",
+          "topic": "조사·분석",
+          "title": "김지현 업무 프로세스 정리",
+          "summary": "반복 업무·입출력·승인 단계 기록",
+          "owner": "김지현",
+          "detail": "업무 수행 순서와 기존 도구 사용 내용을 정리한다.",
+          "decision": "자동화 적용 가능성 평가 대신 업무별 입출력을 우선 명시한다.",
+          "createdAt": "2026-11-03T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "IN-01-S1",
+              "title": "김지현 인터뷰 기록",
+              "artifact": "김지현 인터뷰 기록.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-03T10:00:00+09:00",
+              "summary": "자동화 후보 분류",
+              "sourceId": "IN-01-S1-file"
+            },
+            {
+              "id": "IN-01-S2",
+              "title": "업무 흐름도",
+              "artifact": "업무 흐름도.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-03T12:00:00+09:00",
+              "summary": "근거 출처 정리",
+              "sourceId": "IN-01-S2-file"
+            }
+          ],
+          "weeklySummary": "김지현의 업무 과정을 인터뷰로 파악하고 자동화할 수 있는 일을 정리했습니다."
+        },
+        {
+          "id": "IN-02",
+          "topic": "조사·분석",
+          "title": "박성진 업무 프로세스 정리",
+          "summary": "D2C 보고 및 운영 관련 업무 구분",
+          "owner": "박성진",
+          "detail": "반복 보고에서 소요되는 시간과 작업 단계를 구분한다.",
+          "decision": "기존 자동화가 있는 단계는 별도 표시한다.",
+          "createdAt": "2026-11-05T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "IN-02-S1",
+              "title": "박성진 인터뷰 기록",
+              "artifact": "박성진 인터뷰 기록.md",
+              "owner": "박성진",
+              "performedAt": "2026-11-05T10:00:00+09:00",
+              "summary": "보고서 입력 자료 정리",
+              "sourceId": "IN-02-S1-file"
+            },
+            {
+              "id": "IN-02-S2",
+              "title": "보고서 입력 자료 목록",
+              "artifact": "보고서 입력 자료 목록.md",
+              "owner": "박성진",
+              "performedAt": "2026-11-05T12:00:00+09:00",
+              "summary": "담당자 확인 단계 표시",
+              "sourceId": "IN-02-S2-file"
+            }
+          ],
+          "weeklySummary": "박성진의 보고 업무를 정리하고 보고서에 들어가는 자료와 확인 절차를 파악했습니다."
+        },
+        {
+          "id": "IN-03",
+          "topic": "조사·분석",
+          "title": "이수민 자동화 후보 정리",
+          "summary": "데이터 조회·문의 응답·회의 기록 업무 분류",
+          "owner": "이수민",
+          "detail": "실제 프로세스와 자동화 대상 단위를 구분해 결과서를 작성한다.",
+          "decision": "근거 없는 데이터 검증 단계는 임의로 추가하지 않는다.",
+          "createdAt": "2026-11-12T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "IN-03-S1",
+              "title": "자동화 후보 비교표",
+              "artifact": "자동화 후보 비교표.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-12T10:00:00+09:00",
+              "summary": "GCP 조회 권한 전제 정리",
+              "sourceId": "IN-03-S1-file"
+            },
+            {
+              "id": "IN-03-S2",
+              "title": "인터뷰 결과 요약",
+              "artifact": "인터뷰 결과 요약.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-12T12:00:00+09:00",
+              "summary": "회의 기록과 후속 업무 연결",
+              "sourceId": "IN-03-S2-file"
+            }
+          ],
+          "weeklySummary": "인터뷰 결과를 바탕으로 이수민의 자동화 후보를 비교하고 필요한 접근 권한을 정리했습니다."
+        }
+      ],
+      "files": [
+        {
+          "id": "in-f1",
+          "name": "김지현 인터뷰 결과서.xlsx",
+          "type": "XLSX",
+          "source": "Drive",
+          "summary": "업무별 현 프로세스",
+          "state": "연결됨",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-03T09:00:00+09:00",
+          "taskId": "IN-01"
+        },
+        {
+          "id": "in-f2",
+          "name": "박성진 인터뷰 결과서.xlsx",
+          "type": "XLSX",
+          "source": "Drive",
+          "summary": "D2C 업무 자동화 후보",
+          "state": "연결됨",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-05T09:00:00+09:00",
+          "taskId": "IN-02"
+        },
+        {
+          "id": "in-f3",
+          "name": "이수민 인터뷰 결과서.xlsx",
+          "type": "XLSX",
+          "source": "Drive",
+          "summary": "데이터 및 보고 업무 정리",
+          "state": "연결됨",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-12T09:00:00+09:00",
+          "taskId": "IN-03"
+        },
+        {
+          "id": "IN-01-S1-file",
+          "name": "김지현 인터뷰 기록.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "자동화 후보 분류",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-03T10:00:00+09:00",
+          "taskId": "IN-01",
+          "subtaskId": "IN-01-S1",
+          "owner": "김지현"
+        },
+        {
+          "id": "IN-01-S2-file",
+          "name": "업무 흐름도.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "근거 출처 정리",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-03T12:00:00+09:00",
+          "taskId": "IN-01",
+          "subtaskId": "IN-01-S2",
+          "owner": "김지현"
+        },
+        {
+          "id": "IN-02-S1-file",
+          "name": "박성진 인터뷰 기록.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "보고서 입력 자료 정리",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-05T10:00:00+09:00",
+          "taskId": "IN-02",
+          "subtaskId": "IN-02-S1",
+          "owner": "박성진"
+        },
+        {
+          "id": "IN-02-S2-file",
+          "name": "보고서 입력 자료 목록.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "담당자 확인 단계 표시",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-05T12:00:00+09:00",
+          "taskId": "IN-02",
+          "subtaskId": "IN-02-S2",
+          "owner": "박성진"
+        },
+        {
+          "id": "IN-03-S1-file",
+          "name": "자동화 후보 비교표.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "GCP 조회 권한 전제 정리",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-12T10:00:00+09:00",
+          "taskId": "IN-03",
+          "subtaskId": "IN-03-S1",
+          "owner": "이수민"
+        },
+        {
+          "id": "IN-03-S2-file",
+          "name": "인터뷰 결과 요약.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "회의 기록과 후속 업무 연결",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-12T12:00:00+09:00",
+          "taskId": "IN-03",
+          "subtaskId": "IN-03-S2",
+          "owner": "이수민"
+        }
+      ]
+    },
+    {
+      "id": "pipeline",
+      "emoji": "◇",
+      "name": "데이터 적재·검증 프로세스",
+      "desc": "데이터 적재부터 분류 로직 변경과 결과 검증까지 연결",
+      "owner": "이수민",
+      "updated": "11월 11일",
+      "priority": "보통",
+      "cover": "linear-gradient(125deg,#dff1ff,#edf8ff 48%,#eef5f5)",
+      "tags": [
+        "데이터",
+        "검증"
+      ],
+      "tasks": [
+        {
+          "id": "DP-01",
+          "topic": "운영·지원",
+          "title": "데이터 조회 권한 확인",
+          "summary": "GCP·DBeaver 조회 범위와 접근 방식 정리",
+          "owner": "이수민",
+          "detail": "허용된 데이터 소스와 조회 절차를 확인한다.",
+          "decision": "접근 방식이 확인되지 않은 연결은 구현 완료로 표시하지 않는다.",
+          "createdAt": "2026-11-09T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "DP-01-S1",
+              "title": "승인된 조회 범위 기록",
+              "artifact": "승인된 조회 범위 기록.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-09T10:00:00+09:00",
+              "summary": "접속 경로 확인",
+              "sourceId": "DP-01-S1-file"
+            },
+            {
+              "id": "DP-01-S2",
+              "title": "접속 경로 안내서",
+              "artifact": "접속 경로 안내서.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-09T12:00:00+09:00",
+              "summary": "승인된 접근 범위 기록",
+              "sourceId": "DP-01-S2-file"
+            }
+          ],
+          "weeklySummary": "데이터 조회에 필요한 권한과 접속 경로를 확인하고 안내를 정리했습니다."
+        },
+        {
+          "id": "DP-02",
+          "topic": "제작·구현",
+          "title": "분류 로직 변경 관리",
+          "summary": "법인·매체별 매핑 기준 수정",
+          "owner": "이수민",
+          "detail": "가공 로직을 변경할 때 기존 규칙과 영향 범위를 기록한다.",
+          "decision": "검증 결과를 확인한 뒤 로직 변경을 확정한다.",
+          "createdAt": "2026-11-11T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "DP-02-S1",
+              "title": "분류 매핑 수정본",
+              "artifact": "분류 매핑 수정본.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-11T10:00:00+09:00",
+              "summary": "변경 전후 매핑 비교",
+              "sourceId": "DP-02-S1-file"
+            },
+            {
+              "id": "DP-02-S2",
+              "title": "고객 확인 항목표",
+              "artifact": "고객 확인 항목표.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-11T12:00:00+09:00",
+              "summary": "고객 확인 항목 식별",
+              "sourceId": "DP-02-S2-file"
+            }
+          ],
+          "weeklySummary": "분류 매핑을 수정하고 고객에게 확인받아야 할 항목을 정리했습니다."
+        },
+        {
+          "id": "DP-03",
+          "topic": "검증",
+          "title": "검증 쿼리 결과 확인",
+          "summary": "변경 후 결과값이 기준에 맞는지 비교",
+          "owner": "이수민",
+          "detail": "법인·매체별 검증 쿼리로 변경 전후 차이를 확인한다.",
+          "decision": "권한 없는 데이터의 자동 조회를 전제로 하지 않는다.",
+          "createdAt": "2026-11-16T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "DP-03-S1",
+              "title": "데이터 검증 결과서",
+              "artifact": "데이터 검증 결과서.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-16T10:00:00+09:00",
+              "summary": "검증 쿼리와 실행 결과 연결",
+              "sourceId": "DP-03-S1-file"
+            },
+            {
+              "id": "DP-03-S2",
+              "title": "불일치 원인 분석",
+              "artifact": "불일치 원인 분석.md",
+              "owner": "이수민",
+              "performedAt": "2026-11-16T12:00:00+09:00",
+              "summary": "불일치 원인 기록",
+              "sourceId": "DP-03-S2-file"
+            }
+          ],
+          "weeklySummary": "검증 쿼리로 데이터 값을 확인하고 일치하지 않는 원인을 정리했습니다."
+        }
+      ],
+      "files": [
+        {
+          "id": "dp-f1",
+          "name": "데이터 흐름 정리.md",
+          "type": "MD",
+          "source": "Drive",
+          "summary": "적재·가공·검증 프로세스",
+          "state": "연결됨",
+          "topic": "운영·지원",
+          "createdAt": "2026-11-09T09:00:00+09:00",
+          "taskId": "DP-01"
+        },
+        {
+          "id": "dp-f2",
+          "name": "매핑 기준표.xlsx",
+          "type": "XLSX",
+          "source": "Drive",
+          "summary": "법인·매체별 분류 기준",
+          "state": "확인 필요",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-11T09:00:00+09:00",
+          "taskId": "DP-02"
+        },
+        {
+          "id": "DP-01-S1-file",
+          "name": "승인된 조회 범위 기록.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "접속 경로 확인",
+          "state": "예시 자료",
+          "topic": "운영·지원",
+          "createdAt": "2026-11-09T10:00:00+09:00",
+          "taskId": "DP-01",
+          "subtaskId": "DP-01-S1",
+          "owner": "이수민"
+        },
+        {
+          "id": "DP-01-S2-file",
+          "name": "접속 경로 안내서.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "승인된 접근 범위 기록",
+          "state": "예시 자료",
+          "topic": "운영·지원",
+          "createdAt": "2026-11-09T12:00:00+09:00",
+          "taskId": "DP-01",
+          "subtaskId": "DP-01-S2",
+          "owner": "이수민"
+        },
+        {
+          "id": "DP-02-S1-file",
+          "name": "분류 매핑 수정본.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "변경 전후 매핑 비교",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-11T10:00:00+09:00",
+          "taskId": "DP-02",
+          "subtaskId": "DP-02-S1",
+          "owner": "이수민"
+        },
+        {
+          "id": "DP-02-S2-file",
+          "name": "고객 확인 항목표.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "고객 확인 항목 식별",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-11T12:00:00+09:00",
+          "taskId": "DP-02",
+          "subtaskId": "DP-02-S2",
+          "owner": "이수민"
+        },
+        {
+          "id": "DP-03-S1-file",
+          "name": "데이터 검증 결과서.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "검증 쿼리와 실행 결과 연결",
+          "state": "예시 자료",
+          "topic": "검증",
+          "createdAt": "2026-11-16T10:00:00+09:00",
+          "taskId": "DP-03",
+          "subtaskId": "DP-03-S1",
+          "owner": "이수민"
+        },
+        {
+          "id": "DP-03-S2-file",
+          "name": "불일치 원인 분석.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "불일치 원인 기록",
+          "state": "예시 자료",
+          "topic": "검증",
+          "createdAt": "2026-11-16T12:00:00+09:00",
+          "taskId": "DP-03",
+          "subtaskId": "DP-03-S2",
+          "owner": "이수민"
+        }
+      ]
+    },
+    {
+      "id": "taskmail",
+      "emoji": "✉",
+      "name": "태스크 관리 자동화",
+      "desc": "Gmail·Chat·Drive 근거를 연결해 태스크 메일 초안을 생성",
+      "owner": "AX팀",
+      "updated": "11월 16일",
+      "priority": "높음",
+      "cover": "linear-gradient(120deg,#e7f1ff,#eef3ff)",
+      "tags": [
+        "업무 자동화",
+        "GWS"
+      ],
+      "tasks": [
+        {
+          "id": "TM-01",
+          "topic": "제작·구현",
+          "title": "최신 요청과 태스크 연결",
+          "summary": "신규 메일·채팅·자료 변경을 기존 작업과 매칭",
+          "owner": "박성진",
+          "detail": "최근 태스크 메일에 적힌 업무와 각 서비스에서 발견한 변경을 대조한다.",
+          "decision": "동일 업무가 확실한 경우 기존 작업으로 연결한다.",
+          "createdAt": "2026-11-16T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "TM-01-S1",
+              "title": "요청·태스크 연결 모듈",
+              "artifact": "요청·태스크 연결 모듈.md",
+              "owner": "박성진",
+              "performedAt": "2026-11-16T10:00:00+09:00",
+              "summary": "신규 자료 검출",
+              "sourceId": "TM-01-S1-file"
+            },
+            {
+              "id": "TM-01-S2",
+              "title": "중복 후보 비교 결과",
+              "artifact": "중복 후보 비교 결과.md",
+              "owner": "박성진",
+              "performedAt": "2026-11-16T12:00:00+09:00",
+              "summary": "기존 작업 후보 비교",
+              "sourceId": "TM-01-S2-file"
+            }
+          ],
+          "weeklySummary": "새 요청을 기존 작업과 연결하는 기능을 만들고 중복 후보를 비교했습니다."
+        },
+        {
+          "id": "TM-02",
+          "topic": "제작·구현",
+          "title": "태스크 메일 초안 구성",
+          "summary": "완료 근거 확인 후 현황 코멘트 생성",
+          "owner": "김지현",
+          "detail": "정해진 양식으로 태스크 상태를 정리한다.",
+          "decision": "메일 발송은 담당자 확인 후 진행한다.",
+          "createdAt": "2026-11-17T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "TM-02-S1",
+              "title": "주간 태스크 메일 초안",
+              "artifact": "주간 태스크 메일 초안.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-17T10:00:00+09:00",
+              "summary": "완료 근거 확인",
+              "sourceId": "TM-02-S1-file"
+            },
+            {
+              "id": "TM-02-S2",
+              "title": "담당자 확인용 요약",
+              "artifact": "담당자 확인용 요약.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-17T12:00:00+09:00",
+              "summary": "담당자 검토 단계 연결",
+              "sourceId": "TM-02-S2-file"
+            }
+          ],
+          "weeklySummary": "주간 작업 메일 초안과 담당자가 확인할 요약을 작성했습니다."
+        }
+      ],
+      "files": [
+        {
+          "id": "tm-f1",
+          "name": "태스크 메일 양식.pdf",
+          "type": "PDF",
+          "source": "Drive",
+          "summary": "보고 형태 및 현황 코멘트 기준",
+          "state": "연결됨",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-16T09:00:00+09:00",
+          "taskId": "TM-01"
+        },
+        {
+          "id": "tm-f2",
+          "name": "자동화 실행 정의.md",
+          "type": "MD",
+          "source": "Drive",
+          "summary": "메일·채팅 변경 수집 규칙",
+          "state": "연결됨",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-17T09:00:00+09:00",
+          "taskId": "TM-02"
+        },
+        {
+          "id": "TM-01-S1-file",
+          "name": "요청·태스크 연결 모듈.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "신규 자료 검출",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-16T10:00:00+09:00",
+          "taskId": "TM-01",
+          "subtaskId": "TM-01-S1",
+          "owner": "박성진"
+        },
+        {
+          "id": "TM-01-S2-file",
+          "name": "중복 후보 비교 결과.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "기존 작업 후보 비교",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-16T12:00:00+09:00",
+          "taskId": "TM-01",
+          "subtaskId": "TM-01-S2",
+          "owner": "박성진"
+        },
+        {
+          "id": "TM-02-S1-file",
+          "name": "주간 태스크 메일 초안.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "완료 근거 확인",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-17T10:00:00+09:00",
+          "taskId": "TM-02",
+          "subtaskId": "TM-02-S1",
+          "owner": "김지현"
+        },
+        {
+          "id": "TM-02-S2-file",
+          "name": "담당자 확인용 요약.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "담당자 검토 단계 연결",
+          "state": "예시 자료",
+          "topic": "제작·구현",
+          "createdAt": "2026-11-17T12:00:00+09:00",
+          "taskId": "TM-02",
+          "subtaskId": "TM-02-S2",
+          "owner": "김지현"
+        }
+      ]
+    },
+    {
+      "id": "customer",
+      "emoji": "◍",
+      "name": "고객 문의 근거 응답",
+      "desc": "GWS 히스토리에서 문의 근거를 찾아 답변 초안 작성",
+      "owner": "김지현",
+      "updated": "11월 14일",
+      "priority": "보통",
+      "cover": "linear-gradient(120deg,#fff4d7,#fff8ee)",
+      "tags": [
+        "고객 응대",
+        "근거 검색"
+      ],
+      "tasks": [
+        {
+          "id": "CS-01",
+          "topic": "조사·분석",
+          "title": "문의 관련 기록 검색",
+          "summary": "메일·채팅의 과거 결정사항과 근거 식별",
+          "owner": "김지현",
+          "detail": "고객 문의 내용과 관련된 소스만 검색한다.",
+          "decision": "출처가 불충분한 답변은 확정하지 않는다.",
+          "createdAt": "2026-11-13T09:00:00+09:00",
+          "subtasks": [
+            {
+              "id": "CS-01-S1",
+              "title": "고객 문의 근거 목록",
+              "artifact": "고객 문의 근거 목록.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-13T10:00:00+09:00",
+              "summary": "출처 날짜·작성자 확인",
+              "sourceId": "CS-01-S1-file"
+            },
+            {
+              "id": "CS-01-S2",
+              "title": "상품 분류 기준 비교표",
+              "artifact": "상품 분류 기준 비교표.md",
+              "owner": "김지현",
+              "performedAt": "2026-11-13T12:00:00+09:00",
+              "summary": "반대되는 기록 여부 확인",
+              "sourceId": "CS-01-S2-file"
+            }
+          ],
+          "weeklySummary": "고객 문의에 답할 근거를 찾고 과거 상품 분류 기준과 비교했습니다."
+        }
+      ],
+      "files": [
+        {
+          "id": "cs-f1",
+          "name": "고객 문의 예시.md",
+          "type": "MD",
+          "source": "Drive",
+          "summary": "Product classification 매핑 문의",
+          "state": "연결됨",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-13T09:00:00+09:00",
+          "taskId": "CS-01"
+        },
+        {
+          "id": "CS-01-S1-file",
+          "name": "고객 문의 근거 목록.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "출처 날짜·작성자 확인",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-13T10:00:00+09:00",
+          "taskId": "CS-01",
+          "subtaskId": "CS-01-S1",
+          "owner": "김지현"
+        },
+        {
+          "id": "CS-01-S2-file",
+          "name": "상품 분류 기준 비교표.md",
+          "type": "MD",
+          "source": "Google Drive",
+          "summary": "반대되는 기록 여부 확인",
+          "state": "예시 자료",
+          "topic": "조사·분석",
+          "createdAt": "2026-11-13T12:00:00+09:00",
+          "taskId": "CS-01",
+          "subtaskId": "CS-01-S2",
+          "owner": "김지현"
+        }
+      ]
+    }
+  ],
+  "reviews": [
+    {
+      "id": "R-05",
+      "project": "taskmail",
+      "title": "메일 초안 확인",
+      "desc": "현재 상태 코멘트가 원본 요청과 일치하는지 확인합니다.",
+      "source": "관련 자료: 최근 태스크 메일, 채팅 업데이트",
+      "state": "초안 검토",
+      "taskId": "TM-02"
+    },
+    {
+      "id": "R-01",
+      "project": "ax",
+      "title": "작업 완료 판단 기준 변경",
+      "desc": "완료 기록과 외부 공유 기록 중 어느 정보를 완료 근거로 사용할지 확인이 필요합니다.",
+      "source": "관련 자료: 작업 상세 설계, 업무 흐름 정리",
+      "state": "판단 기준 확인",
+      "taskId": "AX-05"
+    },
+    {
+      "id": "R-02",
+      "project": "ax",
+      "title": "기존 작업 병합 후보",
+      "desc": "화면 시안 수정과 구현 커밋이 동일 작업인지 판단 근거를 검토해야 합니다.",
+      "source": "관련 자료: Drive 시안, GitHub 커밋, Chat 요청",
+      "state": "병합 확인",
+      "taskId": "AX-02"
+    },
+    {
+      "id": "R-03",
+      "project": "dashboard",
+      "title": "고객 시안 수정안 확정",
+      "desc": "고객 회신이 최종 승인인지 수정 요청인지 확인이 필요합니다.",
+      "source": "관련 자료: 고객 수정 요청 메일",
+      "state": "승인 확인",
+      "taskId": "DB-03"
+    },
+    {
+      "id": "R-04",
+      "project": "dashboard",
+      "title": "구현본 수치 검증",
+      "desc": "일부 지표 결과와 검증 쿼리 값에 차이가 있습니다.",
+      "source": "관련 자료: 검증 쿼리, 화면 시안",
+      "state": "수치 확인",
+      "taskId": "DB-04"
+    }
+  ],
+  "demoAsOf": "2026-11-17",
+  "demoNotice": "화면 검토용 예시 데이터입니다. 날짜·담당자·산출물은 실제 업무 기록이 아닙니다."
+}

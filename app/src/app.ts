@@ -4,7 +4,8 @@ interface Subtask {
     id: string;
     title: string;
     artifact: string;
-    sourceId: string;
+    sourceId?: string;
+    performedAtPrecision?: 'exact' | 'date' | 'unknown';
     owner: string;
     performedAt: string;
     summary: string;
@@ -22,6 +23,7 @@ interface Task {
     subtasks: Subtask[];
 }
 interface SourceFile {
+    previewable?: boolean;
     subtaskId?: string;
     owner?: string;
     id: string;
@@ -42,6 +44,7 @@ interface Project {
     files: SourceFile[];
 }
 interface Review {
+    kind?: string;
     taskId: string;
     id: string;
     project: string;
@@ -80,13 +83,20 @@ declare const AXModel: {
     sortedSources: (f: SourceFile[]) => SourceFile[];
     projectRange: (p: Project) => DateRange | null;
 };
+const pilotMode = /(?:^|[?&])data=pilot(?:&|$)/.test(location.search || '');
+const localPoc = pilotMode || /(?:^|[?&])data=local(?:&|$)/.test(location.search || '');
+let pilotReviews: {id: string; kind: string; version: number; proposal?: string; candidate_task_ids?: string[]}[] = [];
+let saveStatus = '';
+let saving = false;
+const localVersions = new Map<string, number>();
+const pendingDecisions = new Map<string, string>();
 const M = AXModel, projects = AX_DATA.projects;
 const THEMES: {
     id: Theme;
     name: string;
     hint: string;
 }[] = [{ id: 'linear', name: 'Linear', hint: '이슈 목록 · 속성 레일' }, { id: 'linear-notion', name: 'Linear · Notion 색상', hint: 'Linear 구조 · Notion 팔레트' }, { id: 'notion', name: 'Notion', hint: '문서 · 갤러리 · 타임라인' }, { id: 'attio', name: 'Attio', hint: '레코드 · 관계 속성' }, { id: 'airtable', name: 'Airtable', hint: '베이스 · Views · 그리드' }, { id: 'clickup', name: 'ClickUp', hint: '보드 · 담당자별 업무' }];
-const state = { theme: 'linear' as Theme, query: '', topic: '전체', owner: '전체', week: 0, project: '', tab: 'topic', expanded: new Set<string>(), themeOpen: false, settingsOpen: false, integration: '', weekOwner: '전체', timelineMonth: 0, reviews: false, reviewed: new Set<string>(), reviewAnswers: new Map<string, string>(), taskStates: new Map<string, string>(), modal: null as null | {
+const state = { theme: 'linear-notion' as Theme, query: '', topic: '전체', owner: '전체', week: 0, project: '', tab: 'topic', expanded: new Set<string>(), themeOpen: false, settingsOpen: false, integration: '', weekOwner: '전체', timelineMonth: 0, reviews: false, reviewed: new Set<string>(), reviewAnswers: new Map<string, string>(), taskStates: new Map<string, string>(), modal: null as null | {
         project: string;
         file?: string;
         task?: string;
@@ -100,15 +110,17 @@ const avatar = (n: string) => `<span class="avatar avatar-${n === '김지현' ? 
 const date = (s: string) => s ? M.day(s).slice(5).replace('-', '.') : '—';
 const fullDate = (s: string) => s ? M.day(s).replaceAll('-', '.') : '—';
 const week = () => M.weekRange(AX_DATA.demoAsOf, state.week);
-const reviewCount = (id?: string) => AX_DATA.reviews.filter(r => !state.reviewed.has(r.id) && (!id || r.project === id)).length;
+// Legacy data has no kind; operational data must explicitly be completion.
+const completionReviews = () => AX_DATA.reviews.filter(r => (!r.kind || r.kind === 'completion') && projects.some(p => p.id === r.project && p.tasks.some(t => t.id === r.taskId)));
+const reviewCount = (id?: string) => (id ? 0 : pilotReviews.length) + completionReviews().filter(r => !state.reviewed.has(r.id) && (!id || r.project === id)).length;
 const count = (p: Project) => p.tasks.reduce((n, t) => n + t.subtasks.length, 0);
-const people = (p: Project) => [...new Set(p.tasks.flatMap(t => t.subtasks.map(s => s.owner)))];
+const people = (p: Project) => [...new Set(p.tasks.flatMap(t => t.subtasks.map(s => s.owner).filter(Boolean)))];
 const tag = (s: string, c = '') => `<span class="tag ${c}">${esc(s)}</span>`;
 const empty = (s: string, body: string) => `<div class="empty">${icon('search', 24)}<strong>${s}</strong><p>${body}</p></div>`;
 function filtered() { return M.sortProjects(projects.filter(p => p.tasks.some(t => (state.topic === '전체' || t.topic === state.topic) && (state.owner === '전체' || t.subtasks.some(s => s.owner === state.owner))) && (!state.query || [p.name, p.desc, ...p.tasks.flatMap(t => [t.title, ...t.subtasks.map(s => s.title)])].join(' ').toLowerCase().includes(state.query.toLowerCase())))); }
 function records() { return M.weekRecords(projects, week()).filter(r => state.weekOwner === '전체' || r.subtask.owner === state.weekOwner); }
 function header() {
-    return `<header class="global-header"><button class="brand" data-action="home" aria-label="프로젝트 홈으로 돌아가기"><span class="brand-symbol">AX</span><strong>프로젝트 관리장</strong></button><span class="header-divider"></span><span class="breadcrumb">${icon('layers', 16)} AX팀 <span>/</span><b>프로젝트</b></span><div class="header-right"><span class="demo-mark"><i></i>예시 데이터</span><button class="review-trigger ${reviewCount() ? 'needs-review' : ''}" data-action="reviews" aria-haspopup="dialog">${icon('bell', 17)} 검토 필요 <b>${reviewCount()}</b></button><button class="settings-trigger icon-button" data-action="settings" aria-label="설정 및 서비스 연동" title="설정 및 서비스 연동">${icon('settings', 21)}</button></div></header>`;
+    return `<header class="global-header"><button class="brand" data-action="home" aria-label="프로젝트 홈으로 돌아가기"><span class="brand-symbol">AX</span><strong>프로젝트 관리장</strong></button><span class="header-divider"></span><span class="breadcrumb">${icon('layers', 16)} AX팀 <span>/</span><b>프로젝트</b></span><div class="header-right">${localPoc ? `<span class="demo-mark" role="status">${esc(saveStatus)}</span>` : ''}<span class="demo-mark"><i></i>${pilotMode ? 'AX-TF 공유 드라이브 기록' : '예시 데이터'}</span><button class="review-trigger ${reviewCount() ? 'needs-review' : ''}" data-action="reviews" aria-haspopup="dialog">${icon('bell', 17)} 검토 필요 <b>${reviewCount()}</b></button><button class="settings-trigger icon-button" data-action="settings" aria-label="설정 및 서비스 연동" title="설정 및 서비스 연동">${icon('settings', 21)}</button></div></header>`;
 }
 function weekly() {
     const rows = records(), owners = ['전체', '김지현', '박성진', '이수민'];
@@ -116,7 +128,7 @@ function weekly() {
     const groups = projects.map(project => ({ project, rows: rows.filter(r => r.project.id === project.id) })).filter(g => g.rows.length);
     const distribution = M.categories.map((category, i) => ({ category, index: i, count: rows.filter(r => r.task.topic === category).length }));
     const visibleOwners = state.weekOwner === '전체' ? owners.slice(1) : [state.weekOwner];
-    return `<section class="weekly-section" aria-labelledby="weekly-heading"><div class="section-top weekly-header"><div class="weekly-heading-date"><h2 id="weekly-heading">한 주의 업무</h2><div class="week-control"><button class="icon-button" data-action="week" data-step="-1" aria-label="이전 주">${icon('back', 15)}</button><label class="week-select"><span class="sr-only">요약 주간 선택</span><select id="weekSelect">${offsets.map(offset => { const w = M.weekRange(AX_DATA.demoAsOf, offset); return `<option value="${offset}" ${state.week === offset ? 'selected' : ''}>${weekLabel(w)}</option>`; }).join('')}</select></label><button class="icon-button" data-action="week" data-step="1" aria-label="다음 주" ${state.week === 0 ? 'disabled' : ''}>${icon('arrow', 15)}</button></div></div><div class="weekly-person-tabs" aria-label="주간 요약 담당자 선택">${owners.map(owner => `<button data-action="week-person" data-value="${owner}" class="${state.weekOwner === owner ? 'active' : ''}" aria-pressed="${state.weekOwner === owner}">${owner}</button>`).join('')}</div></div><div class="weekly-layout"><div class="week-summary"><span class="summary-caption">${icon('chart',18)} ${state.weekOwner === '전체' ? '팀 전체' : esc(state.weekOwner)} 업무 요약</span><div class="summary-number"><span class="summary-main-icon">${icon('deliverable',25)}</span><strong>${rows.length}</strong><span class="summary-unit">건의 작업 내역</span></div><div class="summary-meta"><span>${icon('folder',18)}<b>${groups.length}</b>개 프로젝트</span><span>${icon('people',18)}<b>${new Set(rows.map(r => r.subtask.owner)).size}</b>명 참여</span></div><div class="summary-task-count">${icon('layers',18)}<span>태스크 <strong>${new Set(rows.map(r => r.task.id)).size}</strong>개</span></div></div><div class="weekly-content"><div class="weekly-report" tabindex="0" role="region" aria-label="주간 업무 요약 내용">${groups.map(g => `<article class="weekly-project-summary"><header><button data-action="reveal" data-id="${g.project.id}">${esc(g.project.name)}</button><span>${g.rows.length}건</span></header><p class="weekly-prose">${workNarrative(g.rows)}</p><details class="weekly-details"><summary>작업 내역 ${g.rows.length}건 보기</summary><ul>${g.rows.map(r => `<li><button data-action="record" data-id="${g.project.id}" data-task="${r.task.id}"><strong>${esc(r.subtask.title)}</strong><span>${esc(r.subtask.owner)} · ${clockTime(r.subtask.performedAt)}</span></button></li>`).join('')}</ul></details></article>`).join('') || '<p class="no-activity">기록된 업무가 없습니다.</p>'}</div></div><aside class="weekly-visual"><div class="work-distribution"><h3>업무 유형별 작업 내역</h3><div class="distribution-bar" role="img" aria-label="${distribution.map(d => `${d.category} ${d.count}건`).join(', ')}">${distribution.filter(d => d.count).map(d => `<i class="category-${d.index}" style="width:${d.count / Math.max(rows.length, 1) * 100}%" title="${d.category} ${d.count}건"></i>`).join('')}</div><div class="distribution-legend">${distribution.filter(d => d.count).map(d => `<span><i class="record-dot category-${d.index}"></i>${d.category}<b>${d.count}</b></span>`).join('') || '<span>기록 없음</span>'}</div></div><div class="weekly-owner-table"><h3>담당자별 작업</h3><table><thead><tr><th>담당자</th><th>작업 내역</th><th>태스크</th><th>확인 요청</th></tr></thead><tbody>${visibleOwners.map(owner => { const mine = rows.filter(r => r.subtask.owner === owner), tasks = new Set(mine.map(r => r.task.id)), review = AX_DATA.reviews.filter(r => !state.reviewed.has(r.id) && tasks.has(r.taskId)).length; return `<tr><th>${owner}</th><td><span class="owner-count">${mine.length}건<i style="width:${mine.length / Math.max(rows.length, 1) * 100}%"></i></span></td><td>${tasks.size}개</td><td class="${review ? 'has-review' : ''}">${review}건</td></tr>`; }).join('')}</tbody></table></div></aside></div></section>`;
+    return `<section class="weekly-section" aria-labelledby="weekly-heading"><div class="section-top weekly-header"><div class="weekly-heading-date"><h2 id="weekly-heading">한 주의 업무</h2><div class="week-control"><button class="icon-button" data-action="week" data-step="-1" aria-label="이전 주">${icon('back', 15)}</button><label class="week-select"><span class="sr-only">요약 주간 선택</span><select id="weekSelect">${offsets.map(offset => { const w = M.weekRange(AX_DATA.demoAsOf, offset); return `<option value="${offset}" ${state.week === offset ? 'selected' : ''}>${weekLabel(w)}</option>`; }).join('')}</select></label><button class="icon-button" data-action="week" data-step="1" aria-label="다음 주" ${state.week === 0 ? 'disabled' : ''}>${icon('arrow', 15)}</button></div></div><div class="weekly-person-tabs" aria-label="주간 요약 담당자 선택">${owners.map(owner => `<button data-action="week-person" data-value="${owner}" class="${state.weekOwner === owner ? 'active' : ''}" aria-pressed="${state.weekOwner === owner}">${owner}</button>`).join('')}</div></div><div class="weekly-layout"><div class="week-summary"><span class="summary-caption">${icon('chart',18)} ${state.weekOwner === '전체' ? '팀 전체' : esc(state.weekOwner)} 업무 요약</span><div class="summary-number"><span class="summary-main-icon">${icon('deliverable',25)}</span><strong>${rows.length}</strong><span class="summary-unit">건의 작업 내역</span></div><div class="summary-meta"><span>${icon('folder',18)}<b>${groups.length}</b>개 프로젝트</span><span>${icon('people',18)}<b>${new Set(rows.map(r => r.subtask.owner).filter(Boolean)).size}</b>명 참여</span></div><div class="summary-task-count">${icon('layers',18)}<span>태스크 <strong>${new Set(rows.map(r => r.task.id)).size}</strong>개</span></div></div><div class="weekly-content"><div class="weekly-report" tabindex="0" role="region" aria-label="주간 업무 요약 내용">${groups.map(g => `<article class="weekly-project-summary"><header><button data-action="reveal" data-id="${g.project.id}">${esc(g.project.name)}</button><span>${g.rows.length}건</span></header><p class="weekly-prose">${workNarrative(g.rows)}</p><details class="weekly-details"><summary>작업 내역 ${g.rows.length}건 보기</summary><ul>${g.rows.map(r => `<li><button data-action="record" data-id="${g.project.id}" data-task="${r.task.id}"><strong>${esc(r.subtask.title)}</strong><span>${esc(r.subtask.owner)} · ${clockTime(r.subtask.performedAt)}</span></button></li>`).join('')}</ul></details></article>`).join('') || '<p class="no-activity">기록된 업무가 없습니다.</p>'}</div></div><aside class="weekly-visual"><div class="work-distribution"><h3>업무 유형별 작업 내역</h3><div class="distribution-bar" role="img" aria-label="${distribution.map(d => `${d.category} ${d.count}건`).join(', ')}">${distribution.filter(d => d.count).map(d => `<i class="category-${d.index}" style="width:${d.count / Math.max(rows.length, 1) * 100}%" title="${d.category} ${d.count}건"></i>`).join('')}</div><div class="distribution-legend">${distribution.filter(d => d.count).map(d => `<span><i class="record-dot category-${d.index}"></i>${d.category}<b>${d.count}</b></span>`).join('') || '<span>기록 없음</span>'}</div></div><div class="weekly-owner-table"><h3>담당자별 작업</h3><table><thead><tr><th>담당자</th><th>작업 내역</th><th>태스크</th><th>확인 요청</th></tr></thead><tbody>${visibleOwners.map(owner => { const mine = rows.filter(r => r.subtask.owner === owner), tasks = new Set(mine.map(r => r.task.id)), review = completionReviews().filter(r => !state.reviewed.has(r.id) && tasks.has(r.taskId)).length; return `<tr><th>${owner}</th><td><span class="owner-count">${mine.length}건<i style="width:${mine.length / Math.max(rows.length, 1) * 100}%"></i></span></td><td>${tasks.size}개</td><td class="${review ? 'has-review' : ''}">${review}건</td></tr>`; }).join('')}</tbody></table></div></aside></div></section>`;
 }
 function projectToolbar() { return `<div class="project-toolbar"><strong class="project-list-label">모든 프로젝트 <span>${projects.length}</span></strong><div class="toolbar-filters"><label class="searchbox">${icon('search', 16)}<input id="homeSearch" aria-label="프로젝트·태스크 검색" placeholder="프로젝트·태스크 검색" value="${esc(state.query)}"><kbd>/</kbd></label><label class="select-filter"><span class="sr-only">담당자</span><select id="ownerFilter">${['전체', '김지현', '박성진', '이수민'].map(x => `<option ${state.owner === x ? 'selected' : ''} value="${x}">${x === '전체' ? '모든 담당자' : x}</option>`).join('')}</select></label></div></div><div class="project-sort-note">${icon('sort', 14)} 최근 생긴 태스크부터</div>`; }
 function projectButton(p: Project, i: number, variant = 'row') { const open = state.project === p.id; return `<button class="project-toggle ${variant} ${open ? 'selected' : ''}" data-action="project" data-id="${p.id}" aria-expanded="${open}" aria-controls="project-${p.id}"><span class="project-name-cell"><span class="expand-chevron">${icon('chevron', 14)}</span><span class="project-glyph glyph-${i % 5}">${icon('folder', 16)}</span><span><strong>${esc(p.name)}</strong><small>${esc(p.desc)}</small></span></span><span class="people-cell">${people(p).map(avatar).join('')}</span><span class="number-cell">${p.tasks.length}</span><span class="number-cell secondary-field">${count(p)}</span><time>${date(M.latestTask(p))}</time><span class="secondary-field">${reviewCount(p.id) ? tag(`검토 ${reviewCount(p.id)}`, 'review-tag') : '—'}</span></button>`; }
@@ -156,15 +168,15 @@ function taskPanel(p: Project) {
 }
 function sources(p: Project) {
     const files = M.sortedSources(p.files), repos = p.files.filter(f => f.source === 'GitHub').length;
-    return `<aside class="source-rail"><section class="sources"><div class="source-heading"><h3>관련 자료</h3><span>${p.files.length - repos}개 문서${repos ? ` · ${repos}개 저장소` : ''}</span></div><p class="source-caption">작업 내역의 관련 자료 포함 · 주제별 최신순</p><div class="source-scroll" data-project="${p.id}" tabindex="0" role="region" aria-label="관련 자료 목록">${M.categories.map(c => { const fs = files.filter(f => f.topic === c); return fs.length ? `<div class="source-group"><h4>${c}</h4>${fs.map(f => `<button class="source-row" data-action="file" data-id="${p.id}" data-file="${f.id}" aria-label="${esc(f.name)} 미리보기"><span class="source-kind ${f.source === 'GitHub' ? 'repository' : ''}">${f.source === 'GitHub' ? '저장소' : '문서'}</span><span class="source-info"><strong>${esc(f.name)}</strong><small>${esc(f.source)} · ${f.subtaskId ? '작업 내역 자료' : '프로젝트 자료'} · ${date(f.createdAt)}</small></span>${icon('external', 16)}</button>`).join('')}</div>` : ''; }).join('')}</div></section><section class="project-properties"><h3>프로젝트 속성</h3><dl><div><dt>참여자</dt><dd>${people(p).map(avatar).join('')}</dd></div><div><dt>최근 태스크</dt><dd>${fullDate(M.latestTask(p))}</dd></div><div><dt>작업 내역</dt><dd>${count(p)}건</dd></div></dl></section></aside>`;
+    return `<aside class="source-rail"><section class="sources"><div class="source-heading"><h3>관련 자료</h3><span>${p.files.length - repos}개 문서${repos ? ` · ${repos}개 저장소` : ''}</span></div><p class="source-caption">작업 내역의 관련 자료 포함 · 주제별 최신순</p><div class="source-scroll" data-project="${p.id}" tabindex="0" role="region" aria-label="관련 자료 목록">${M.categories.map(c => { const fs = files.filter(f => f.topic === c); return fs.length ? `<div class="source-group"><h4>${c}</h4>${fs.map(f => `<button class="source-row" data-action="file" data-id="${p.id}" data-file="${f.id}"${f.previewable === false ? ' disabled' : ''} aria-label="${esc(f.name)} 미리보기"><span class="source-kind ${f.source === 'GitHub' ? 'repository' : ''}">${f.source === 'GitHub' ? '저장소' : '문서'}</span><span class="source-info"><strong>${esc(f.name)}</strong><small>${esc(f.source)} · ${f.subtaskId ? '작업 내역 자료' : '프로젝트 자료'} · ${date(f.createdAt)}</small></span>${icon('external', 16)}</button>`).join('')}</div>` : ''; }).join('')}</div></section><section class="project-properties"><h3>프로젝트 속성</h3><dl><div><dt>참여자</dt><dd>${people(p).map(avatar).join('')}</dd></div><div><dt>최근 태스크</dt><dd>${fullDate(M.latestTask(p))}</dd></div><div><dt>작업 내역</dt><dd>${count(p)}건</dd></div></dl></section></aside>`;
 }
 function projectDetail(p: Project) {
-    const pending = AX_DATA.reviews.filter(r => r.project === p.id && !state.reviewed.has(r.id));
+    const pending = completionReviews().filter(r => r.project === p.id && !state.reviewed.has(r.id));
     return `<section class="project-detail" aria-label="${esc(p.name)} 내용"><header class="inline-detail-head"><div><span class="eyebrow">${p.id.toUpperCase()} / PROJECT</span><h2>${esc(p.name)}</h2><p>${esc(p.desc)}</p></div><button class="icon-button" data-action="project" data-id="${p.id}" aria-label="프로젝트 접기">${icon('x', 18)}</button></header>${pending.length ? `<div class="project-review-alert"><div>${icon('bell', 19)}<strong>검토가 필요한 사항 ${pending.length}건</strong></div>${pending.map(r => `<button data-action="review-task" data-id="${r.id}"><span>${esc(r.title)}</span>${icon('arrow', 15)}</button>`).join('')}</div>` : ''}<div class="project-local-timeline">${timeline([p], true)}</div><div class="detail-layout">${taskPanel(p)}${sources(p)}</div></section>`;
 }
 function projectArea() { const list = filtered(); return `<div class="section-top project-section-top"><div><span class="eyebrow">PROJECTS</span><h2>전체 프로젝트 <span>${list.length}</span></h2></div><span class="section-note">프로젝트를 눌러 업무 기록을 펼쳐 보세요</span></div>${projectToolbar()}<div id="project-results">${list.length ? ({ linear: linearList, 'linear-notion': linearList, notion: gallery, attio: attioList, airtable: airBase, clickup: clickupBoard }[state.theme])(list) : empty('검색 결과가 없습니다.', '검색어나 필터를 바꿔 보세요.')}<div class="results-count" aria-live="polite">${list.length}개 프로젝트${list.length === 0 ? ' · <button data-action="clear">필터 초기화</button>' : ''}</div></div>${timeline(list)}`; }
-function themePicker() { const mini = (id: string) => `<span class="theme-mini mini-${id}"><i></i><b></b><b></b><b></b></span>`; return `<div class="theme-picker-anchor">${state.themeOpen ? `<div class="theme-menu" role="dialog" aria-label="UI 테마 선택"><header><strong>화면 테마</strong><small>업무에 맞는 화면으로 살펴보세요</small></header>${THEMES.map(t => `<button class="theme-choice ${t.id === state.theme ? 'selected' : ''}" data-action="theme" data-value="${t.id}">${mini(t.id)}<span><strong>${t.name}</strong><small>${t.hint}</small></span>${t.id === state.theme ? icon('check', 15) : ''}</button>`).join('')}</div>` : ''}<button class="theme-launcher" data-action="themes" aria-expanded="${state.themeOpen}">${mini(state.theme)}<span><strong>${THEMES.find(t => t.id === state.theme)!.name}</strong><small>화면 테마</small></span>${icon('chevron', 14)}</button></div>`; }
-function reviewDrawer() { return state.reviews ? `<div class="overlay-backdrop" data-action="close"></div><aside class="review-drawer" role="dialog" aria-modal="true" aria-label="검토함"><header><div><span class="eyebrow">REVIEW INBOX</span><h2>확인할 일 <span>${reviewCount()}</span></h2></div><button class="icon-button" data-action="close" aria-label="검토함 닫기">${icon('x', 18)}</button></header><p class="drawer-caption">각 태스크에서 근거를 보고, 끝난 일이 맞는지 확인해 주세요.</p><div class="drawer-scroll">${AX_DATA.reviews.filter(r => !state.reviewed.has(r.id)).map(r => `<article class="review-record">${tag(projects.find(p => p.id === r.project)?.name || '')}<h3>${esc(r.title)}</h3><p>${esc(r.desc)}</p><small>${esc(r.source)}</small><div><button class="primary" data-action="review-task" data-id="${r.id}">태스크에서 확인 ${icon('arrow', 13)}</button></div></article>`).join('') || empty('모두 확인했습니다.', '현재 남아 있는 확인 요청이 없습니다.')}</div><footer>판단 결과는 이 화면에서만 유지됩니다.<button data-action="reset-reviews">초기화</button></footer></aside>` : ''; }
+function themePicker() { const mini = (id: string) => `<span class="theme-mini mini-${id}"><i></i><b></b><b></b><b></b></span>`; return `<div class="theme-picker-anchor">${state.themeOpen ? `<div class="theme-menu" role="dialog" aria-modal="true" aria-label="UI 테마 선택"><header><strong>화면 테마</strong><small>업무에 맞는 화면으로 살펴보세요</small></header>${THEMES.map(t => `<button class="theme-choice ${t.id === state.theme ? 'selected' : ''}" data-action="theme" data-value="${t.id}">${mini(t.id)}<span><strong>${t.name}</strong><small>${t.hint}</small></span>${t.id === state.theme ? icon('check', 15) : ''}</button>`).join('')}</div>` : ''}<button class="theme-launcher" data-action="themes" aria-expanded="${state.themeOpen}">${mini(state.theme)}<span><strong>${THEMES.find(t => t.id === state.theme)!.name}</strong><small>화면 테마</small></span>${icon('chevron', 14)}</button></div>`; }
+function reviewDrawer() { return state.reviews ? `<div class="overlay-backdrop" data-action="close"></div><aside class="review-drawer" role="dialog" aria-modal="true" aria-label="검토함"><header><div><span class="eyebrow">REVIEW INBOX</span><h2>확인할 일 <span>${reviewCount()}</span></h2></div><button class="icon-button" data-action="close" aria-label="검토함 닫기">${icon('x', 18)}</button></header><p class="drawer-caption">각 태스크에서 근거를 보고, 끝난 일이 맞는지 확인해 주세요.</p><div class="drawer-scroll">${pilotReviewCards()}${completionReviews().filter(r => !state.reviewed.has(r.id)).map(r => `<article class="review-record">${tag(projects.find(p => p.id === r.project)?.name || '')}<h3>${esc(r.title)}</h3><p>${esc(r.desc)}</p><small>${esc(r.source)}</small><div><button class="primary" data-action="review-task" data-id="${r.id}">태스크에서 확인 ${icon('arrow', 13)}</button></div></article>`).join('') || empty('모두 확인했습니다.', '현재 남아 있는 확인 요청이 없습니다.')}</div><footer>${localPoc ? '저장된 판단을 다시 불러옵니다.' : '판단 결과는 이 화면에서만 유지됩니다.'}<button data-action="reset-reviews">초기화</button></footer></aside>` : ''; }
 function modal() {
     if (!state.modal)
         return '';
@@ -173,14 +185,14 @@ function modal() {
     const title = f?.name || s?.artifact || t?.title || p.name;
     return `<div class="modal-wrap"><div class="overlay-backdrop" data-action="close"></div><section class="file-dialog" role="dialog" aria-modal="true" aria-label="${esc(title)} 미리보기"><header><div><strong>${esc(title)}</strong><small>${s ? `${s.owner} · ${fullDate(s.performedAt)}` : f ? `${f.source} · ${f.topic}` : p.name}</small></div><button class="icon-button" data-action="close" aria-label="미리보기 닫기">${icon('x', 18)}</button></header><img src="${asset(f ? fileThumb(f, p) : thumb(p))}" alt="${esc(title)} 관련 예시 이미지"><footer><p>${esc(s?.summary || f?.summary || t?.summary)}</p><small>관련 내용을 보여 주는 예시 이미지입니다. 원본 서비스는 연결되지 않았습니다.</small></footer></section></div>`;
 }
-function clockTime(value: string) { return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value)); }
+function clockTime(value: string) { if (!value || !Number.isFinite(Date.parse(value))) return '시각 미상'; if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return ''; return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value)); }
 function weekLabel(range: DateRange) { const [y, m, d] = range.start.split('-').map(Number); return `${y}년 ${m}월 ${d}일 – ${Number(range.end.slice(5, 7)) !== m ? `${Number(range.end.slice(5, 7))}월 ` : ''}${Number(range.end.slice(8))}일`; }
-function taskReviews(taskId: string) { return AX_DATA.reviews.filter(r => r.taskId === taskId && !state.reviewed.has(r.id)); }
-function artifactButton(p: Project, t: Task, s: Subtask) { return `<button class="artifact-link" data-action="file" data-id="${p.id}" data-file="${s.sourceId}">${icon('file', 14)}${esc(s.artifact)}${icon('external', 13)}</button>`; }
+function taskReviews(taskId: string) { return completionReviews().filter(r => r.taskId === taskId && !state.reviewed.has(r.id)); }
+function artifactButton(p: Project, t: Task, s: Subtask) { if (!s.sourceId) return ''; const disabled = p.files.find(f => f.id === s.sourceId)?.previewable === false; return `<button class="artifact-link" data-action="file" data-id="${p.id}" data-file="${s.sourceId}"${disabled ? ' disabled' : ''}>${icon('file', 14)}${esc(s.artifact)}${icon('external', 13)}</button>`; }
 function executionEpisodes(p: Project, tasks: Task[]) {
     const entries = tasks.flatMap(task => task.subtasks.map(subtask => ({ task, subtask }))).filter(r => state.owner === '전체' || r.subtask.owner === state.owner).sort((a, b) => Date.parse(b.subtask.performedAt) - Date.parse(a.subtask.performedAt));
     const dates = [...new Set(entries.map(r => M.day(r.subtask.performedAt)))];
-    return `<div class="execution-episodes"><p class="episode-description">태스크별 작업 내역을 최신순으로 모았습니다.</p>${dates.map(day => `<section class="execution-day"><h4>${fullDate(day)}</h4>${entries.filter(r => M.day(r.subtask.performedAt) === day).map(({ task, subtask: s }) => `<article class="execution-entry"><div class="execution-time"><time datetime="${s.performedAt}">${clockTime(s.performedAt).split(' ').at(-1)}</time><span>${esc(s.owner)}</span></div><div class="execution-body"><span class="execution-parent">${esc(task.title)} · ${task.id}</span><h4>${esc(s.title)}</h4><p>${esc(s.summary)}</p>${artifactButton(p, task, s)}<button class="execution-task-link" data-action="episode-task" data-task="${task.id}">태스크에서 보기 ${icon('arrow', 13)}</button></div></article>`).join('')}</section>`).join('') || empty('해당하는 작업 내역이 없습니다.', '선택한 담당자의 기록을 확인해 보세요.')}</div>`;
+    return `<div class="execution-episodes"><p class="episode-description">태스크별 작업 내역을 최신순으로 모았습니다.</p>${dates.map(day => `<section class="execution-day"><h4>${day ? fullDate(day) : '실행 시각 미상'}</h4>${entries.filter(r => M.day(r.subtask.performedAt) === day).map(({ task, subtask: s }) => `<article class="execution-entry"><div class="execution-time"><time datetime="${s.performedAt}">${!s.performedAt ? '시각 미상' : clockTime(s.performedAt).split(' ').at(-1) || ''}</time><span>${esc(s.owner)}</span></div><div class="execution-body"><span class="execution-parent">${esc(task.title)} · ${task.id}</span><h4>${esc(s.title)}</h4><p>${esc(s.summary)}</p>${artifactButton(p, task, s)}<button class="execution-task-link" data-action="episode-task" data-task="${task.id}">태스크에서 보기 ${icon('arrow', 13)}</button></div></article>`).join('')}</section>`).join('') || empty('해당하는 작업 내역이 없습니다.', '선택한 담당자의 기록을 확인해 보세요.')}</div>`;
 }
 function settingsDialog() {
     if (!state.settingsOpen)
@@ -190,11 +202,11 @@ function settingsDialog() {
 }
 function workNarrative(rows: RecordItem[]) { const tasks = [...new Map(rows.map(r => [r.task.id, r.task])).values()]; return tasks.map(t => esc(t.weeklySummary || `${t.title}에 필요한 내용을 정리했습니다.`)).join(' '); }
 function workStatus(taskId: string) { const value = state.taskStates.get(taskId); return value ? `<span class="task-status ${value === '완료' ? 'status-complete' : 'status-ongoing'}">${esc(value)}</span>` : ''; }
-function taskReviewForm(t: Task, p: Project) { const reviews = AX_DATA.reviews.filter(r => r.taskId === t.id); return reviews.length ? `<section class="task-review-form" aria-label="태스크 완료 여부 확인">${reviews.map(r => { const answer = state.reviewAnswers.get(r.id); return `<div data-review-id="${r.id}"><h4>${esc(r.title)}</h4><p>${esc(r.desc)}</p><small>${esc(r.source)}</small><strong class="review-question">이 태스크가 끝난 게 맞나요?</strong><div class="review-answer-buttons"><button data-action="review-answer" data-id="${r.id}" data-value="완료" aria-pressed="${answer === '완료'}">맞아요 · 완료</button><button data-action="review-answer" data-id="${r.id}" data-value="진행 중" aria-pressed="${answer === '진행 중'}">아니요 · 진행 중</button></div>${answer ? `<p class="review-result" role="status">${answer === '완료' ? '완료한 작업으로 표시했습니다.' : '아직 진행 중인 작업으로 표시했습니다.'} 판단을 바꾸려면 다시 선택하세요.</p>` : ''}</div>`; }).join('')}</section>` : ''; }
-function openTaskReview(id: string) { const r = AX_DATA.reviews.find(r => r.id === id); if (!r)
+function taskReviewForm(t: Task, p: Project) { const reviews = completionReviews().filter(r => r.taskId === t.id); return reviews.length ? `<section class="task-review-form" aria-label="태스크 완료 여부 확인">${reviews.map(r => { const answer = state.reviewAnswers.get(r.id); return `<div data-review-id="${r.id}"><h4>${esc(r.title)}</h4><p>${esc(r.desc)}</p><small>${esc(r.source)}</small><strong class="review-question">이 태스크가 끝난 게 맞나요?</strong><div class="review-answer-buttons"><button data-action="review-answer" data-id="${r.id}" data-value="완료" aria-pressed="${answer === '완료'}">맞아요 · 완료</button><button data-action="review-answer" data-id="${r.id}" data-value="진행 중" aria-pressed="${answer === '진행 중'}">아니요 · 진행 중</button></div>${answer ? `<p class="review-result" role="status">${answer === '완료' ? '완료한 작업으로 표시했습니다.' : '아직 진행 중인 작업으로 표시했습니다.'} 판단을 바꾸려면 다시 선택하세요.</p>` : ''}</div>`; }).join('')}</section>` : ''; }
+function openTaskReview(id: string) { const r = completionReviews().find(r => r.id === id); if (!r)
     return; reveal(r.project, r.taskId); const panel = document.querySelector<HTMLElement>(`[data-review-id="${id}"]`); panel?.scrollIntoView({ block: 'center', behavior: 'instant' }); panel?.querySelector<HTMLElement>('button')?.focus(); }
-function answerReview(id: string, value: string) { const r = AX_DATA.reviews.find(r => r.id === id); if (!r || !['완료', '진행 중'].includes(value))
-    return; state.reviewAnswers.set(id, value); state.taskStates.set(r.taskId, value); state.reviewed.add(id); render(`[data-action="review-answer"][data-id="${id}"][data-value="${value}"]`); }
+function answerReview(id: string, value: string) { const r = completionReviews().find(r => r.id === id); if (!r || !['완료', '진행 중'].includes(value))
+    return; if (localPoc) { void saveLocalReview(id, value); return; } state.reviewAnswers.set(id, value); state.taskStates.set(r.taskId, value); state.reviewed.add(id); render(`[data-action="review-answer"][data-id="${id}"][data-value="${value}"]`); }
 let returnFocus: HTMLElement | null = null;
 function render(focusKey = '') {
     const oldSources = document.querySelector<HTMLElement>('.source-scroll'), oldSourceProject = oldSources?.dataset.project, oldSourceTop = oldSources?.scrollTop ?? 0;
@@ -205,8 +217,11 @@ function render(focusKey = '') {
     const newSources = document.querySelector<HTMLElement>('.source-scroll');
     if(newSources && newSources.dataset.project === oldSourceProject) newSources.scrollTop = oldSourceTop;
     const overlay = Boolean(state.reviews || state.modal || state.settingsOpen);
-    document.querySelector('.global-header')?.toggleAttribute('inert', overlay);
-    document.querySelector('main')?.toggleAttribute('inert', overlay);
+    const focusBlocked = overlay || state.themeOpen;
+    document.querySelector('.skip-link')?.toggleAttribute('inert', focusBlocked);
+    document.querySelector('.global-header')?.toggleAttribute('inert', focusBlocked);
+    document.querySelector('main')?.toggleAttribute('inert', focusBlocked);
+    document.querySelector('.theme-launcher')?.toggleAttribute('inert', state.themeOpen);
     document.querySelector('.theme-picker-anchor')?.toggleAttribute('inert', overlay);
     document.body.classList.toggle('overlay-open', overlay);
     if (focusKey === 'homeSearch') {
@@ -243,12 +258,13 @@ function close() {
     state.themeOpen = false;
     render();
     if (returnFocus) {
-        const a = returnFocus.dataset.action, id = returnFocus.dataset.id;
-        document.querySelector<HTMLElement>(`[data-action="${a}"]${id ? `[data-id="${id}"]` : ''}`)?.focus();
+        const selector = returnFocus.tagName + Array.from(returnFocus.classList).map(c => `.${CSS.escape(c)}`).join('') + Object.entries(returnFocus.dataset).map(([key, value]) => `[data-${key}="${CSS.escape(value!)}"]`).join('');
+        document.querySelector<HTMLElement>(selector)?.focus();
     }
 }
 function action(el: HTMLElement) {
     const a = el.dataset.action, id = el.dataset.id || '', v = el.dataset.value || '';
+    if (a === 'pilot-answer') { void savePilotReview(id, v); return; }
     if (a === 'home') {
         state.project = '';
 
@@ -325,8 +341,12 @@ function action(el: HTMLElement) {
         state.week = Math.min(0, state.week + Number(el.dataset.step));
     if (a === 'tab')
         state.tab = v;
-    if (a === 'themes')
-        state.themeOpen = !state.themeOpen;
+    if (a === 'themes') {
+        returnFocus = el;
+        state.themeOpen = true;
+        render('.theme-menu .theme-choice');
+        return;
+    }
     if (a === 'theme') {
         state.theme = v as Theme;
         state.themeOpen = false;
@@ -349,6 +369,7 @@ function action(el: HTMLElement) {
         return;
     }
     if (a === 'reset-reviews') {
+        if (localPoc) { void loadLocal().then(() => { saveStatus = '저장됨'; render(); }).catch(() => { saveStatus = '저장 실패 · 다시 시도'; render(); }); return; }
         state.reviewed.clear();
         state.reviewAnswers.clear();
         state.taskStates.clear();
@@ -369,11 +390,11 @@ function action(el: HTMLElement) {
         state.topic = '전체';
         state.owner = '전체';
     }
-    render(a === 'themes' || a === 'theme' ? '.theme-launcher' : a === 'week' ? `[data-action="week"][data-step="${el.dataset.step}"]` : a === 'tab' ? `[data-action="tab"][data-value="${v}"]` : a === 'sources' ? `[data-action="sources"][data-id="${id}"]` : '');
+    render(a === 'themes' || a === 'theme' ? '.theme-launcher' : ['topic', 'owner', 'airview', 'fields', 'group', 'clear', 'home'].includes(a || '') ? `[data-action="${a}"]${el.dataset.value ? `[data-value="${v}"]` : ''}` : a === 'week' ? `[data-action="week"][data-step="${el.dataset.step}"]` : a === 'tab' ? `[data-action="tab"][data-value="${v}"]` : a === 'sources' ? `[data-action="sources"][data-id="${id}"]` : '');
 }
 function init() {
     try {
-        const t = document.body.dataset.initialTheme || localStorage.getItem('ax_theme');
+        const t = localStorage.getItem('ax_theme');
         if (THEMES.some(x => x.id === t))
             state.theme = t as Theme;
     }
@@ -381,6 +402,7 @@ function init() {
     const fromHash = () => { state.project = projects.some(p => `#project/${p.id}` === location.hash) ? location.hash.split('/')[1] : ''; render(); };
     fromHash();
     window.addEventListener('popstate', fromHash);
+    document.addEventListener('pointerdown', () => document.body.removeAttribute('data-keyboard-navigation'));
     document.addEventListener('click', event => {
         const target = event.target as HTMLElement, button = target.closest<HTMLElement>('[data-action]');
         if (button) {
@@ -388,8 +410,7 @@ function init() {
             return;
         }
         if (state.themeOpen && !target.closest('.theme-picker-anchor')) {
-            state.themeOpen = false;
-            render();
+            close();
         }
     });
     document.addEventListener('input', event => {
@@ -413,15 +434,17 @@ function init() {
     });
     document.addEventListener('keydown', event => {
         const target = event.target as HTMLElement;
+        if (event.key === 'Tab' || event.key === '/')
+            document.body.toggleAttribute('data-keyboard-navigation', true);
         if (event.key === 'Escape') {
             close();
             return;
         }
-        if (event.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
+        if (event.key === '/' && !state.themeOpen && !state.settingsOpen && !state.reviews && !state.modal && !['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
             event.preventDefault();
             document.getElementById('homeSearch')?.focus();
         }
-        if (event.key === 'Tab' && (state.modal || state.reviews || state.settingsOpen)) {
+        if (event.key === 'Tab' && (state.modal || state.reviews || state.settingsOpen || state.themeOpen)) {
             const dialog = document.querySelector<HTMLElement>('[aria-modal="true"]'), els = Array.from(dialog?.querySelectorAll<HTMLElement>('button:not([disabled]),a[href],input,select,[tabindex="0"]') || []), first = els[0], last = els.at(-1);
             if (event.shiftKey && document.activeElement === first) {
                 event.preventDefault();
@@ -439,4 +462,49 @@ function init() {
         }
     });
 }
-init();
+async function loadLocal() {
+    const response = await fetch(pilotMode ? '/api/view?data=pilot' : '/api/view');
+    if (!response.ok) throw new Error('load failed');
+    const data = await response.json();
+    projects.splice(0, projects.length, ...data.projects);
+    AX_DATA.reviews = data.reviews;
+    pilotReviews = data.pilotReviews || [];
+    AX_DATA.demoAsOf = data.demoAsOf;
+    state.reviewed.clear(); state.reviewAnswers.clear(); state.taskStates.clear();
+    for (const task of data.taskStates) { localVersions.set(task.id, task.version); if (task.status === 'completed') state.taskStates.set(task.id, '완료'); }
+    for (const r of data.decisions) { state.reviewed.add(r.review_id); state.reviewAnswers.set(r.review_id, r.decision); }
+}
+async function saveLocalReview(id: string, value: string) {
+    if (saving || state.reviewed.has(id)) return;
+    const review = completionReviews().find(r => r.id === id);
+    if (!review) return;
+    saving = true; saveStatus = '판단함 · 저장 중'; render();
+    const key = id + ':' + value;
+    if (!pendingDecisions.has(key)) pendingDecisions.set(key, crypto.randomUUID());
+    try {
+        const response = await fetch('/api/decision', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ review_id: id, answer: value, change_id: pendingDecisions.get(key), expected_version: localVersions.get(review.taskId) }) });
+        if (!response.ok) throw new Error('save failed');
+        await loadLocal(); saveStatus = '저장됨';
+    } catch { saveStatus = '저장 실패 · 다시 시도'; }
+    saving = false; render();
+}
+if (localPoc) {
+    loadLocal().then(() => { saveStatus = state.reviewed.size ? '저장됨' : ''; init(); }).catch(() => { saveStatus = '저장 실패 · 다시 시도'; projects.splice(0); AX_DATA.reviews = []; init(); });
+} else init();
+
+function pilotReviewCards() { return pilotReviews.map(r => '<article class="review-record"><h3>' + esc(r.proposal || r.kind) + '</h3><p>' + esc((r.candidate_task_ids || []).join(', ')) + '</p><div>' + (r.kind === 'link' ? '<button data-action="pilot-answer" data-id="' + esc(r.id) + '" data-value="accepted">제안 확정</button><button data-action="pilot-answer" data-id="' + esc(r.id) + '" data-value="corrected">태스크 변경</button>' : '') + '<button data-action="pilot-answer" data-id="' + esc(r.id) + '" data-value="unable">판단 불가</button></div></article>').join(''); }
+async function savePilotReview(id: string, answer: string) {
+    if (saving) return;
+    const review = pilotReviews.find(r => r.id === id); if (!review) return;
+    const task = answer === 'corrected' ? window.prompt('연결할 태스크 ID') : undefined;
+    if (answer === 'corrected' && !task) return;
+    saving = true;
+    const key = id + ':' + answer + ':' + (task || '');
+    if (!pendingDecisions.has(key)) pendingDecisions.set(key, crypto.randomUUID());
+    try {
+        const response = await fetch('/api/pilot-decision', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({review_id:id,answer,task_id:task,expected_version:review.version,change_id:pendingDecisions.get(key)})});
+        if (!response.ok) throw new Error('save failed');
+        await loadLocal(); saveStatus = '저장됨';
+    } catch { saveStatus = '저장 실패 · 다시 시도'; }
+    saving = false; render();
+}

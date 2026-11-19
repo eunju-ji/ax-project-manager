@@ -1,0 +1,4 @@
+const fs=require('node:fs');const path=require('node:path');const {add,row}=require('../repo/sqlite/records.cjs');
+function enqueue(db,record){if(db.file===':memory:')throw Error('durable audit requires file database');const dir=db.file+'.audit-pending';fs.mkdirSync(dir,{recursive:true});const target=path.join(dir,record.key+'.json');fs.writeFileSync(target,JSON.stringify(record),{encoding:'utf8',mode:0o600,flag:'wx'});}
+function drain(db){const dir=db.file+'.audit-pending';if(!fs.existsSync(dir))return 0;let count=0;for(const name of fs.readdirSync(dir).filter(n=>n.endsWith('.json'))){const file=path.join(dir,name),r=JSON.parse(fs.readFileSync(file,'utf8'));db.tx(tx=>{if(!row(tx,'request_attempts',r.key))add(tx,'request_attempts',r.key,r.values);});fs.unlinkSync(file);count++;}return count;}
+module.exports={enqueue,drain};

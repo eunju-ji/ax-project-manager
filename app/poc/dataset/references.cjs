@@ -1,0 +1,11 @@
+// Validate references that are present; absent optional Run fields are permitted.
+function validateReferences(d){
+ const errors=[],keys={persons:'person_id',projects:'project_id',tasks:'task_id',worklogs:'worklog_id',sources:'source_key',sourceEvents:'event_key',links:'link_id',reviews:'review_id',runs:'run_id',suppressions:'suppression_id',history:'change_id',externalAccounts:'external_id'};
+ const exists=(table,id)=>(d[table]||[]).some(r=>r[keys[table]]===id);
+ const check=(table,id,where)=>{if(id!=null&&id!=='unknown'&&!exists(table,id))errors.push(where+': '+table+'/'+id);};
+ const basis=(ids,where)=>{for(const id of Array.isArray(ids)?ids:[])if(!['sourceEvents','sources','links','reviews','tasks','runs','history'].some(t=>exists(t,id)))errors.push(where+': basis/'+id);};
+ function row(r,where){for(const k of ['run_id','created_run_id'])check('runs',r[k],where+'.'+k);check('projects',r.project_id,where);check('tasks',r.task_id,where);for(const k of ['owner_id','deputy_id','assignee_id','performer_id','person_id','confirmed_by','decided_by','created_by','released_by','actor_id'])if(r[k]!=='system')check('persons',r[k],where+'.'+k);check('sources',r.source_key,where);if(r.subject_id)check(r.subject_type==='task'?'tasks':r.subject_type,r.subject_id,where);if(r.target_id)check(r.target_type==='task'?'tasks':'worklogs',r.target_id,where);if(r.evidence_key)check(r.evidence_type==='source'?'sources':'sourceEvents',r.evidence_key,where);basis(r.basis_links||r.basis,where);if(r.applied_change_id)check('history',r.applied_change_id,where);}
+ for(const [table,records] of Object.entries(d))if(Array.isArray(records)&&keys[table])for(const r of records){row(r,table);if(table==='sourceEvents'){for(const id of [...r.actor_external_ids||[],r.author_external_id,r.committer_external_id,r.pusher_external_id])check('externalAccounts',id,table);}if(table==='history'){check(r.entity_type,r.entity_id,table);if(r.before)row(r.before,table+'.before');if(r.after)row(r.after,table+'.after');}if(table==='runs')for(const c of r.manifest||[]){if(!keys[c.entity])errors.push('manifest entity '+c.entity);if(!c.change_id)errors.push('manifest change_id');if(c.requires&&!(r.manifest||[]).some(p=>p.change_id===c.requires))errors.push('manifest requires');row(c.payload,'manifest payload');}}
+ return errors;
+}
+module.exports={validateReferences};

@@ -6,7 +6,32 @@
     "dev": "python -m http.server 8765 --bind 127.0.0.1",
     "build": "python build.py",
     "typecheck": "tsc src/app.ts --target ES2022 --module none --lib ES2022,DOM --strict --skipLibCheck --noEmit",
-    "test": "node --test tests/*.test.cjs"
+    "test": "node --test tests/*.test.cjs",
+    "test:visual": "node tests/visual/run.mjs",
+    "capture:visual": "node tests/visual/run.mjs --update",
+    "test:navigation": "node tests/visual/run.mjs --navigation",
+    "poc": "node server/api/server.cjs",
+    "test:poc": "node --test poc/poc.test.cjs poc/regression.test.cjs poc/dataset.test.cjs && node poc/browser-test.cjs",
+    "poc:reset": "node server/api/server.cjs --reset",
+    "test:server": "node --test server/tests/*.test.cjs",
+    "drive:import": "node server/connectors/drive/cli.cjs import",
+    "drive:auth": "node server/connectors/drive/cli.cjs auth",
+    "drive:check": "node server/connectors/drive/cli.cjs check",
+    "drive:collect": "node server/connectors/drive/cli.cjs collect",
+    "drive:metrics": "node server/connectors/drive/cli.cjs metrics",
+    "drive:auto-classify": "node server/connectors/drive/cli.cjs auto-classify",
+    "drive:structure-draft": "node server/connectors/drive/cli.cjs structure-draft",
+    "drive:structure-import": "node server/connectors/drive/cli.cjs structure-import",
+    "drive:rematch": "node server/connectors/drive/cli.cjs rematch",
+    "drive:secure-dirs": "node server/connectors/drive/cli.cjs secure-dirs",
+    "drive:check-dirs": "node server/connectors/drive/cli.cjs check-dirs",
+    "judgments:export": "node server/transfer.cjs export",
+    "judgments:import": "node server/transfer.cjs import"
   },
-  "devDependencies": { "typescript": "^5.9.3" }
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "pixelmatch": "8.0.0",
+    "pngjs": "7.0.0",
+    "typescript": "^5.9.3"
+  }
 }

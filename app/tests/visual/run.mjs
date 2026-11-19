@@ -1,0 +1,279 @@
+import { chromium, expect } from '@playwright/test';
+import { PNG } from 'pngjs';
+import pixelmatch from 'pixelmatch';
+import { createServer } from 'node:http';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createHash } from 'node:crypto';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const baseline = path.join(root, 'tests/visual/baseline');
+const results = path.join(root, 'test-results');
+const update = process.argv.includes('--update');
+const navigation = process.argv.includes('--navigation');
+const fixture = JSON.parse(await fs.readFile(path.join(root, 'data.json'), 'utf8'));
+if (fixture.demoAsOf !== '2026-11-17') throw Error('demoAsOf fixture changed: review baseline explicitly');
+await fs.mkdir(results, { recursive: true });
+await fs.mkdir(baseline, { recursive: true });
+// Own a local server; fail on an occupied port rather than accidentally testing another app.
+const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png' };
+const server = createServer(async (req, res) => {
+  try {
+    const pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    const target = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
+    if (!target.startsWith(root + path.sep)) { res.writeHead(403).end(); return; }
+    const data = await fs.readFile(target);
+    res.writeHead(200, { 'Content-Type': mime[path.extname(target)] || 'application/octet-stream' }).end(data);
+  } catch { res.writeHead(404).end(); }
+});
+await new Promise((resolve, reject) => { server.once('error', reject); server.listen(8765, '127.0.0.1', resolve); });
+let browser;
+const report = { mode: navigation ? 'navigation' : update ? 'capture' : 'compare', demoAsOf: fixture.demoAsOf, platform: process.platform, checks: [], errors: [] };
+const urls = { dev: 'http://127.0.0.1:8765/', offline: pathToFileURL(path.join(root, '../preview/AX_Project_Manager.html')).href };
+const click = (p, action) => p.locator(`[data-action="${action}"]`).first().click();
+async function load(p, url, theme = 'linear-notion') {
+  await p.goto(url);
+  await expect(p.locator('#homeSearch')).toBeAttached();
+  await p.evaluate(() => { if (AX_DATA.demoAsOf !== '2026-11-17') throw Error('demoAsOf mismatch'); });
+  if (await p.evaluate(() => state.theme) !== theme) {
+    await click(p, 'themes');
+    await p.locator(`[data-action="theme"][data-value="${theme}"]`).click();
+  }
+  await p.addStyleTag({ content: '*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important;caret-color:transparent!important}' });
+  await p.evaluate(() => document.fonts.ready);
+}
+async function opened(p) {
+  await click(p, 'project');
+  await p.locator('.project-detail').scrollIntoViewIfNeeded();
+}
+async function prepare(p, state) {
+  if (['project', 'episode', 'sources-bottom', 'image'].includes(state)) await opened(p);
+  if (state === 'episode') await p.locator('[data-action="tab"][data-value="episode"]').click();
+  if (state === 'sources-bottom') {
+    await p.locator('.source-scroll').scrollIntoViewIfNeeded();
+    await p.locator('.source-scroll').evaluate(e => { e.scrollTop = e.scrollHeight; });
+    const pos = await p.locator('.source-scroll').evaluate(e => ({ top: e.scrollTop, max: e.scrollHeight - e.clientHeight }));
+    if (pos.top <= 0 || Math.abs(pos.max - pos.top) > 1) throw Error('Source list did not scroll to bottom');
+  }
+  if (state === 'empty') { await p.locator('#homeSearch').fill('no-match-baseline-9x7'); await p.locator('#project-results').scrollIntoViewIfNeeded(); }
+  if (state === 'review') { await click(p, 'reviews'); await click(p, 'review-task'); await p.locator('.task-review-form').first().scrollIntoViewIfNeeded(); }
+  if (state === 'settings') await click(p, 'settings');
+  if (state === 'image') { await click(p, 'file'); await expect(p.locator('.file-dialog img')).toBeVisible(); }
+  await p.evaluate(async () => {
+    await Promise.all([...document.images].map(img => img.decode()));
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  });
+}
+function diff(a, b) {
+  const x = PNG.sync.read(a), y = PNG.sync.read(b);
+  if (x.width !== y.width || x.height !== y.height) throw Error('Screenshot dimensions differ');
+  // Permit sub-perceptual channel rounding; require zero pixels above this color threshold.
+  return pixelmatch(x.data, y.data, null, x.width, x.height, { threshold: 0.01, includeAA: true });
+}
+async function visual() {
+  for (const [width, height] of [[1440,900], [834,1112], [390,844]]) {
+    for (const theme of ['linear-notion', 'linear', 'notion', 'attio', 'airtable', 'clickup']) {
+      const states = theme === 'linear-notion' ? ['home','project','episode','sources-bottom','empty','review','settings','image'] : ['home','project'];
+      for (const state of states) {
+        const name = `${theme}-${width}x${height}-${state}.png`;
+        const shots = [];
+        for (const [kind, url] of Object.entries(urls)) {
+          const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, locale: 'ko-KR', timezoneId: 'Asia/Seoul', reducedMotion: 'reduce' });
+          const p = await context.newPage();
+          p.on('pageerror', e => report.errors.push(`${name}/${kind}: ${e.message}`));
+          await p.route('**/*', route => /^(http:\/\/127\.0\.0\.1:8765\/|file:|data:)/.test(route.request().url()) ? route.continue() : route.abort());
+          await load(p, url, theme);
+          await prepare(p, state);
+          shots.push(await p.screenshot({ animations: 'disabled' }));
+          await context.close();
+        }
+        if (update) await fs.writeFile(path.join(baseline, name), shots[0]);
+        const baselinePixels = diff(await fs.readFile(path.join(baseline, name)), shots[0]);
+        const offlinePixels = diff(shots[0], shots[1]);
+        report.checks.push({ name, baselinePixels, offlinePixels });
+        if (baselinePixels || offlinePixels) {
+          await fs.writeFile(path.join(results, name), shots[0]);
+          report.errors.push(`${name}: baseline=${baselinePixels}, offline=${offlinePixels} pixels`);
+        }
+        console.log(`${name}: baseline=${baselinePixels}, offline=${offlinePixels}`);
+      }
+    }
+  }
+}
+async function nav() {
+  for (const [kind, url] of Object.entries(urls)) {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'ko-KR', timezoneId: 'Asia/Seoul' });
+    const p = await context.newPage();
+    async function check(name, fn) {
+      try { const evidence = await fn(); report.checks.push({ kind, name, status: 'pass', evidence }); }
+      catch (e) { report.checks.push({ kind, name, status: 'fail', evidence: e.message }); console.log(e.message); }
+      console.log(`${kind}: ${name}: ${report.checks.at(-1).status}`);
+    }
+    await check('/ search focus', async () => {
+      await load(p,url); await p.keyboard.press('/'); await expect(p.locator('#homeSearch')).toBeFocused();
+      expect(await p.locator('#homeSearch').evaluate(e => getComputedStyle(e).outlineStyle)).not.toBe('none');
+      await p.locator('.page-heading h1').click();
+      await expect(p.locator('body')).not.toHaveAttribute('data-keyboard-navigation');
+    });
+    await check('Tab / Shift+Tab home order', async () => {
+      await load(p,url); await p.locator('.brand').focus();
+      await p.keyboard.press('Tab'); await expect(p.locator('.review-trigger')).toBeFocused();
+      await p.keyboard.press('Tab'); await expect(p.locator('.settings-trigger')).toBeFocused();
+      await p.keyboard.press('Shift+Tab'); await expect(p.locator('.review-trigger')).toBeFocused();
+      return 'brand → review → settings → review';
+    });
+    await check('Enter / Space activation', async () => {
+      await load(p,url); await p.locator('.settings-trigger').focus(); await p.keyboard.press('Enter'); await expect(p.locator('.settings-dialog')).toBeVisible();
+      await p.keyboard.press('Escape'); await p.keyboard.press('Space'); await expect(p.locator('.settings-dialog')).toBeVisible();
+    });
+    for (const type of ['settings','reviews','file','themes']) {
+      async function open() { await load(p,url); if (type === 'file') await opened(p); await click(p,type); }
+      const dialog = type === 'themes' ? '.theme-menu' : '[aria-modal="true"]';
+      await check(`${type}: entry focus`, async () => { await open(); expect(await p.locator(dialog).evaluate(e => e.contains(document.activeElement))).toBe(true); });
+      await check(`${type}: Escape and focus return`, async () => {
+        await open(); await p.keyboard.press('Escape'); await expect(p.locator(dialog)).toHaveCount(0);
+        await expect(p.locator(`[data-action="${type}"]`).first()).toBeFocused();
+      });
+      await check(`${type}: background focus / Tab trap`, async () => {
+        await open();
+        await p.locator('.brand').evaluate(e => e.focus());
+        expect(await p.locator(dialog).evaluate(e => e.contains(document.activeElement))).toBe(true);
+        const buttons = p.locator(`${dialog} button`);
+        await buttons.last().focus(); await p.keyboard.press('Tab'); await expect(buttons.first()).toBeFocused();
+        await p.keyboard.press('Shift+Tab'); await expect(buttons.last()).toBeFocused();
+      });
+    }
+    await check('topic arrows both directions', async () => {
+      await load(p,url); await opened(p); await p.locator('[role="tab"][data-value="topic"]').focus();
+      await p.keyboard.press('ArrowRight'); await expect(p.locator('[role="tab"][data-value="episode"]')).toBeFocused();
+      await expect(p.locator('.execution-episodes')).toBeVisible();
+      await p.keyboard.press('ArrowLeft'); await expect(p.locator('[role="tab"][data-value="topic"]')).toBeFocused();
+    });
+    await check('browser back', async () => {
+      await load(p,url); await opened(p); await expect(p.locator('.project-detail')).toBeVisible(); await p.goBack(); await expect(p.locator('.project-detail')).toHaveCount(0);
+    });
+    await check('source scroll persists both views', async () => {
+      await load(p,url); await opened(p);
+      const sources = p.locator('.source-scroll'); await sources.evaluate(e => { e.scrollTop = e.scrollHeight; });
+      const top = await sources.evaluate(e => e.scrollTop); expect(top).toBeGreaterThan(0);
+      for (const tab of ['episode','topic']) { await p.locator(`[data-action="tab"][data-value="${tab}"]`).click(); expect(await sources.evaluate(e => e.scrollTop)).toBe(top); }
+      return `scrollTop=${top}`;
+    });
+    await check('theme survives reload', async () => {
+      await load(p,url,'notion'); await expect(p.locator('body')).toHaveAttribute('data-theme','notion');
+      expect(await p.evaluate(() => localStorage.getItem('ax_theme'))).toBe('notion');
+      await p.reload(); await expect(p.locator('body')).toHaveAttribute('data-theme','notion', { timeout: 1000 });
+    });
+    await check('invalid / absent / inaccessible storage uses initial theme', async () => {
+      for (const value of [null, 'invalid-theme']) {
+        await p.evaluate(value => value === null ? localStorage.removeItem('ax_theme') : localStorage.setItem('ax_theme', value), value);
+        await p.reload();
+        await expect(p.locator('body')).toHaveAttribute('data-theme', 'linear');
+        await expect(p.locator('body')).toHaveAttribute('data-palette', 'notion');
+      }
+      const isolated = await context.newPage();
+      await isolated.addInitScript(() => Object.defineProperty(window, 'localStorage', { get() { throw new Error('storage unavailable'); } }));
+      await isolated.goto(url);
+      await expect(isolated.locator('body')).toHaveAttribute('data-palette', 'notion');
+      await isolated.close();
+    });
+    for (const type of ['settings', 'reviews', 'file', 'themes']) {
+      await check(`${type}: skip link blocked / slash contained / close return`, async () => {
+        await load(p, url); if (type === 'file') await opened(p);
+        const launcher = p.locator(`[data-action="${type}"]`).nth(type === 'file' ? 1 : 0);
+        await launcher.focus(); await p.keyboard.press('Enter');
+        const dialog = p.locator('[aria-modal="true"]');
+        await p.locator('.skip-link').evaluate(e => e.focus());
+        expect(await dialog.evaluate(e => e.contains(document.activeElement))).toBe(true);
+        await p.keyboard.press('/');
+        expect(await dialog.evaluate(e => e.contains(document.activeElement))).toBe(true);
+        const closing = type === 'themes' ? p.locator('[data-action="theme"]').last() : dialog.locator('[data-action="close"]');
+        await closing.focus(); await p.keyboard.press('Space');
+        await expect(launcher).toBeFocused();
+      });
+    }
+    await check('keyboard summary / selects / filter focus continuity', async () => {
+      await load(p, url);
+      const summary = p.locator('summary').first();
+      await summary.focus(); await p.keyboard.press('Enter');
+      await expect(p.locator('details').first()).toHaveAttribute('open', '');
+      await p.keyboard.press('Space'); await expect(p.locator('details').first()).not.toHaveAttribute('open', '');
+      for (const id of ['weekSelect', 'ownerFilter']) {
+        const select = p.locator(`#${id}`); await select.focus();
+        await p.keyboard.press('ArrowDown'); await p.keyboard.press('Enter'); await expect(select).toBeFocused();
+        expect(await select.inputValue()).not.toBe(id === 'weekSelect' ? '0' : '전체');
+      }
+      const owner = p.locator('[data-action="owner"]').first(); await owner.focus(); await p.keyboard.press('Space');
+      await expect(owner).toBeFocused();
+    });
+    await check('Airtable view / fields / grouping keyboard continuity', async () => {
+      await load(p, url, 'airtable');
+      for (const action of ['fields', 'group']) {
+        const control = p.locator(`[data-action="${action}"]`); await control.focus(); await p.keyboard.press('Space');
+        await expect(control).toHaveAttribute('aria-pressed', 'true'); await expect(control).toBeFocused();
+      }
+      for (const view of ['gallery', 'timeline', 'grid']) {
+        const control = p.locator(`[data-action="airview"][data-value="${view}"]`); await control.focus(); await p.keyboard.press('Enter');
+        await expect(control).toHaveClass(/active/); await expect(control).toBeFocused();
+      }
+    });
+    for (const [width, height] of [[1440,900], [834,1112], [390,844]]) {
+      await p.setViewportSize({ width, height });
+      for (const theme of ['linear-notion','linear','notion','attio','airtable','clickup']) {
+        await check(`full Tab order / keyboard focus ${theme} ${width}x${height}`, async () => {
+          // Reset storage explicitly: load() otherwise correctly preserves the last chosen theme.
+          await p.evaluate(() => localStorage.removeItem('ax_theme'));
+          await load(p, url, theme); await opened(p);
+          await p.locator('[data-action="task"]').first().focus(); await p.keyboard.press('Enter');
+          await expect(p.locator('.task-expanded')).toBeVisible();
+          await p.locator('summary').first().focus(); await p.keyboard.press('Space');
+          const candidates = p.locator('a[href],button,input,select,summary,[tabindex="0"]');
+          const indices = await candidates.evaluateAll(els => els.flatMap((e, i) =>
+            e.tabIndex >= 0 && !e.disabled && e.checkVisibility() && !e.closest('[inert]') ? [i] : []));
+          const expected = await candidates.evaluateAll((els, indices) => indices.map(i => [...document.querySelectorAll('*')].indexOf(els[i])), indices);
+          await candidates.nth(indices[0]).focus();
+          const visited = [expected[0]], all = p.locator('*');
+          // Chromium also tabs to scroll containers without explicit tabindex.
+          while (visited.at(-1) !== expected.at(-1)) {
+            await p.keyboard.press('Tab');
+            const i = await p.evaluate(() => [...document.querySelectorAll('*')].indexOf(document.activeElement));
+            expect(i, 'forward DOM order, including native scroll containers').toBeGreaterThan(visited.at(-1));
+            expect(visited.length).toBeLessThan(300);
+            visited.push(i);
+            const visible = await all.nth(i).evaluate(e => {
+              const r = e.getBoundingClientRect(), s = getComputedStyle(e);
+              return s.outlineStyle !== 'none' && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+            });
+            expect(visible, `keyboard focus visible at control ${i}`).toBe(true);
+          }
+          expect(visited.filter(i => expected.includes(i))).toEqual(expected);
+          for (const i of visited.slice(0, -1).reverse()) {
+            await p.keyboard.press('Shift+Tab'); await expect(all.nth(i)).toBeFocused();
+          }
+          return `${indices.length} controls, DOM order forward/reverse; home + expanded task + summary + sources + timeline`;
+        });
+      }
+    }
+    await context.close();
+  }
+}
+try {
+  browser = await chromium.launch();
+  report.chromium = browser.version();
+  if (navigation) await nav(); else await visual();
+  if (update && !report.errors.length) {
+    const files = await Promise.all(report.checks.map(async ({ name }) => ({
+      name, sha256: createHash('sha256').update(await fs.readFile(path.join(baseline, name))).digest('hex')
+    })));
+    await fs.writeFile(path.join(baseline, 'manifest.json'), JSON.stringify({ chromium: report.chromium, playwright: '1.65.1', platform: process.platform, demoAsOf: fixture.demoAsOf, files }, null, 2) + '\n');
+  }
+} catch (e) { report.errors.push(e.stack); }
+finally {
+  await browser?.close();
+  await new Promise(resolve => server.close(resolve));
+  await fs.writeFile(path.join(results, navigation ? 'navigation.json' : 'visual.json'), JSON.stringify(report, null, 2));
+}
+console.log(JSON.stringify({ checks: report.checks.length, failures: report.checks.filter(c => c.status === 'fail').length, errors: report.errors.length }));
+// Both navigation failures and visual mismatches fail the gate.
+if (report.errors.length || report.checks.some(c => c.status === 'fail')) process.exitCode = 1;

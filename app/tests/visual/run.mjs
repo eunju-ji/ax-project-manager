@@ -110,6 +110,42 @@ async function nav() {
       catch (e) { report.checks.push({ kind, name, status: 'fail', evidence: e.message }); console.log(e.message); }
       console.log(`${kind}: ${name}: ${report.checks.at(-1).status}`);
     }
+    await check('home timeline expands and preserves filter', async () => {
+      await load(p,url); await expect(p.locator('.project-right-rail')).toHaveCount(0);
+      const row=p.locator('.unified-toggle').first(); await row.click(); await expect(row).toHaveAttribute('aria-expanded','true');
+      await expect(p.locator('.project-detail')).toBeVisible(); await row.click(); await expect(p.locator('.project-detail')).toHaveCount(0);
+      await p.locator('.unified-timeline .timeline-bar').first().click(); await expect(p.locator('.project-detail')).toBeVisible();
+    });
+    await check('top people filter derives from data', async () => {
+      await load(p,url); const names=await p.evaluate(()=>M.owners(projects));
+      expect(await p.locator('.heading-people button > span:last-child').allTextContents()).toEqual(names);
+      await p.locator('.heading-people button').first().click(); await expect(p.locator('#ownerFilter')).toHaveValue(names[0]);
+      await expect(p.locator('.heading-people button').first()).toHaveAttribute('aria-pressed','true');
+    });
+    await check('summary units and heatmap keyboard date selection', async () => {
+      await load(p,url);
+      for(const [unit,title] of [['day','하루의 업무'],['month','한 달의 업무'],['week','한 주의 업무']]) {
+        await p.locator('[data-action="summary-unit"][data-value="'+unit+'"]').click(); await expect(p.locator('#weekly-heading')).toHaveText(title);
+        await expect(p.locator('[data-action="week"][data-step="1"]')).toBeDisabled();
+        await p.locator('[data-action="week"][data-step="-1"]').click(); await expect(p.locator('#weekSelect')).toHaveValue('-1');
+      }
+      const last=p.locator('.heatmap-cell[data-action]').last(); await last.focus(); await p.keyboard.press('ArrowLeft');
+      const selected=await p.locator('.heatmap-cell:focus').getAttribute('data-value'); await p.keyboard.press('Enter');
+      await expect(p.locator('#weekly-heading')).toHaveText('하루의 업무');
+      expect(await p.evaluate(()=>week().start)).toBe(selected);
+      await expect(p.locator('.heatmap-cell[tabindex="0"]')).toHaveCount(1);
+    });
+    await check('folder preview switches files, traps focus and returns to launcher', async () => {
+      await load(p,url); await opened(p);
+      await p.evaluate(()=>{const p=projects.find(p=>p.id===state.project);p.files.slice(0,2).forEach((f,i)=>Object.assign(f,{name:'합성 폴더 자료 '+i,folderId:'synthetic-folder',folderPath:['AX_TF','합성 자료'],folderUrl:'https://drive.google.com/drive/folders/synthetic',url:'https://docs.google.com/document/d/synthetic-'+i}));render();});
+      const ids=await p.evaluate(()=>projects.find(p=>p.id===state.project).files.slice(0,2).map(f=>f.id));
+      const launcher=p.locator('[data-action="file"][data-file="'+ids[0]+'"]').last();await launcher.click();
+      await expect(p.locator('.folder-breadcrumb')).toContainText('합성 자료');await expect(p.locator('.folder-open')).toHaveAttribute('rel','noopener noreferrer');
+      const next=p.locator('[data-action="folder-file"][data-file="'+ids[1]+'"]');await next.click();await expect(next).toHaveAttribute('aria-current','true');await expect(next).toBeFocused();
+      await expect(p.locator('.file-dialog')).toHaveCount(1);
+      const controls=p.locator('.file-dialog a,.file-dialog button');await controls.last().focus();await p.keyboard.press('Tab');await expect(controls.first()).toBeFocused();await p.keyboard.press('Shift+Tab');await expect(controls.last()).toBeFocused();
+      await p.keyboard.press('Escape');await expect(p.locator('.file-dialog')).toHaveCount(0);await expect(launcher).toBeFocused();
+    });
     await check('/ search focus', async () => {
       await load(p,url); await p.keyboard.press('/'); await expect(p.locator('#homeSearch')).toBeFocused();
       expect(await p.locator('#homeSearch').evaluate(e => getComputedStyle(e).outlineStyle)).not.toBe('none');

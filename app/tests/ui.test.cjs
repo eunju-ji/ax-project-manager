@@ -20,7 +20,7 @@ test('all five theme renderers run and include weekly view, timeline and no life
  const a=app();
  for(const theme of ['linear','notion','attio','airtable','clickup']){
   a.run(`state.theme='${theme}';render()`);
-  assert.match(a.html(),/한 주의 업무/);assert.match(a.html(),/프로젝트 타임라인/);
+  assert.match(a.html(),/한 주의 업무/);assert.match(a.html(),/작업 내역 히트맵/);
   assert.doesNotMatch(a.html(),/진행 중|진척률|진행률|TO DO|IN PROGRESS|DONE/);
  }
 });
@@ -36,14 +36,14 @@ test('project opens inside list; task reveals every explicit subtask and source 
 test('team summary has separate person selection, week dropdown, settings, and no project-level work type filter',()=>{
  const a=app();assert.match(a.html(),/id="weekSelect"/);assert.match(a.html(),/data-action="week-person"/);
  assert.match(a.html(),/data-action="settings"/);assert.doesNotMatch(a.html(),/class="member-stack"|class="week-today|class="worktype-toolbar"/);
- assert.match(a.html(),/>ACTIVITY</);assert.doesNotMatch(a.html(),/recent-tasks-rail|>WORKSPACE</);
+ assert.match(a.html(),/activity-heatmap/);assert.doesNotMatch(a.html(),/project-right-rail|>WORKSPACE</);
  const team=a.run('records().length');a.run("state.query='없는검색어';render()");assert.equal(a.run('records().length'),team);
  a.run("state.weekOwner='박성진';render()");assert.ok(a.run("records().every(r=>r.subtask.owner==='박성진')"));
 });
-test('Activity and People panels are restored with real project participation counts',()=>{
- const a=app();assert.match(a.html(),/class="rail-activity"/);assert.match(a.html(),/>ACTIVITY</);
- assert.match(a.html(),/함께하는 사람/);assert.match(a.html(),/class="activity-time"/);
- assert.match(a.html(),/5개 프로젝트/);assert.match(a.html(),/4개 프로젝트/);
+test('people come from task and worklog owners, with worklog heatmap replacing rails',()=>{
+ const a=app();assert.match(a.html(),/class="heading-people"/);assert.match(a.html(),/activity-heatmap/);
+ assert.doesNotMatch(a.html(),/project-right-rail|rail-activity|rail-people/);
+ assert.deepEqual(Array.from(a.run('M.owners(projects)')).sort(),['김지현','박성진','이수민'].sort());
 });
 test('monthly timeline is independent of selected summary week and includes today marker',()=>{
  const a=app();const before=a.run('timeline(projects)');assert.match(before,/2026년 11월/);
@@ -70,7 +70,9 @@ test('episodes order all dates and times newest first',()=>{
 test('every open project has its own single-row timeline and highlighted review items',()=>{
  const a=app();for(const theme of ['linear','notion','attio','airtable','clickup']){
   a.run(`state.theme='${theme}';state.project='ax';render()`);
-  assert.match(a.html(),/class="project-local-timeline"/);assert.match(a.html(),/class="project-review-alert"/);
+  // Linear themes already show the project's row in the main timeline above the detail; other themes keep their own local timeline.
+  if(theme==='linear')assert.doesNotMatch(a.html(),/class="project-local-timeline"/);else assert.match(a.html(),/class="project-local-timeline"/);
+  assert.match(a.html(),/class="project-review-alert"/);
  }
 });
 test('week change updates totals from execution records and supports empty historical weeks',()=>{

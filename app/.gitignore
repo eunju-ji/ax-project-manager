@@ -10,3 +10,5 @@ server/.runtime/
 server/.benchmark/
 .secrets/
 server/.pilot/
+server/.real/
+server/.pilot.locked-*/

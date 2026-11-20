@@ -291,3 +291,10 @@
 - 최초 시각 비교 21건의 의도된 차이를 --update 후 재비교. 시각 기준 PNG 22개와 manifest 갱신(픽셀 차이 임계값 이하의 재인코딩 포함). 새 모바일 검사에서 스크롤바를 고려하도록 폭 검증 수정 후 최종 실패 0.
 - 변경: app/src/app.ts, app/app.js, app/styles.css, app/tests/ui.test.cjs, app/tests/visual/run.mjs, app/server/tests/browser.test.cjs, app/tests/visual/baseline, docs/home-ui-verification.md, tasks/current-state.md. 오프라인 preview 재생성. test-results/wbs-* 로그·모바일 행 이미지는 검증 산출물.
 - feat/home-project-timeline 유지. workNarrative의 기존 Lead 수정 보존, server/.real 접근·추가 위임·commit/push 없음. 미해결 문제 없음. 다음: AX-Lead 완료 판정 및 독립 검토.
+
+## 2026-11-20 WBS 간트 표 재설계 — AX-Builder 최신 인계
+
+- Linear·Linear/Notion 통합 타임라인을 4열 WBS 표로 재설계. 프로젝트 56px·태스크 36px, 계획 범위/진척 채움, 깊이 들여쓰기, 상태 칩, 바깥 막대 라벨, 주말/주 경계/오늘 선, 전체 펼침·접기 적용. 설명은 펼친 영역 첫 줄, 작업 내역은 행 아래 재사용 패널, 자료는 최대 6개 카드와 전체 보기 모달로 정리. 기존 큰 상세 헤더·속성 사이드바 제거.
+- 검증: build.py·typecheck exit 0, 단위 55/55, 서버 105/105, 시각 54/54(기준/오프라인 0px), 탐색 100/100. 1440·834·390px 확인. 첫 시각 실행의 Notion 홈 2px 차이는 재실행에서 0, 새 브라우저 검사의 정렬 대상 선택 오류는 프로젝트 ID 지정 후 통과. 미해결 문제 없음.
+- 변경: app/src/app.ts, app/app.js, app/styles.css, app/tests/ui.test.cjs, app/tests/visual/run.mjs, Linear 계열 baseline PNG 24개 및 manifest, docs/home-ui-verification.md, 이 문서. 오프라인 preview 재생성(Git 제외). 결과 이미지 app/test-results/wbs-table-{1440,834,390}-project.png. 상세 로그·기준 변경 사유는 검증 문서 참고.
+- feat/home-project-timeline 유지. workNarrative 원문 보존, 다른 테마 기준 이미지 원본 유지, 기존 다른 작업 변경 보존. server/.real 접근·추가 에이전트 호출·커밋·푸시 없음. 다음: AX-Lead 완료 판정 및 통합 검토.

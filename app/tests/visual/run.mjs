@@ -51,9 +51,10 @@ async function prepare(p, state) {
   if (['project', 'episode', 'sources-bottom', 'image'].includes(state)) await opened(p);
   if (state === 'episode') await p.locator('.gantt-task-toggle').first().click();
   if (state === 'sources-bottom') {
-    await p.locator('.source-scroll').scrollIntoViewIfNeeded();
-    await p.locator('.source-scroll').evaluate(e => { e.scrollTop = e.scrollHeight; });
-    const pos = await p.locator('.source-scroll').evaluate(e => ({ top: e.scrollTop, max: e.scrollHeight - e.clientHeight }));
+    await click(p, 'project-files');
+    await p.locator('.file-dialog .source-scroll').scrollIntoViewIfNeeded();
+    await p.locator('.file-dialog .source-scroll').evaluate(e => { e.scrollTop = e.scrollHeight; });
+    const pos = await p.locator('.file-dialog .source-scroll').evaluate(e => ({ top: e.scrollTop, max: e.scrollHeight - e.clientHeight }));
     if (pos.top <= 0 || Math.abs(pos.max - pos.top) > 1) throw Error('Source list did not scroll to bottom');
   }
   if (state === 'empty') { await p.locator('#homeSearch').fill('no-match-baseline-9x7'); await p.locator('#project-results').scrollIntoViewIfNeeded(); }
@@ -86,6 +87,7 @@ async function visual() {
           await load(p, url, theme);
           await prepare(p, state);
           shots.push(await p.screenshot({ animations: 'disabled' }));
+          if(kind==='dev' && state==='project' && theme==='linear-notion') {await p.evaluate(()=>window.scrollTo(0,0));await p.screenshot({path:path.join(results,`wbs-table-${width}-project.png`),fullPage:true});}
           await context.close();
         }
         if (update) await fs.writeFile(path.join(baseline, name), shots[0]);
@@ -120,19 +122,33 @@ async function nav() {
       await load(p,url); await p.setViewportSize({width:390,height:844});
       await p.evaluate(()=>{
         const p=projects[0], base=p.tasks[0];
-        p.tasks=[{...base,id:'wbs-ten',planSource:'wbs',wbsCode:'1.10',startDate:'2026-11-10',dueDate:'2026-11-12'},
-          {...base,id:'wbs-two',planSource:'wbs',wbsCode:'1.2',startDate:'2026-11-01',dueDate:'2026-11-03'}];
+        p.tasks=[{...base,id:'wbs-ten',planSource:'wbs',wbsCode:'1.10',status:'completed',startDate:'2026-11-10',dueDate:'2026-11-12'},
+          {...base,id:'wbs-two',planSource:'wbs',wbsCode:'1.2.1',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-03'}];
         state.project=p.id;state.expanded.clear();render();
       });
       expect(await p.locator('[data-gantt-task]').evaluateAll(rows=>rows.map(r=>r.dataset.ganttTask))).toEqual(['wbs-two','wbs-ten']);
+      const projectId=await p.evaluate(()=>projects[0].id);
+      expect(await p.locator(`.timeline-summary[data-id="${projectId}"] .summary-fill`).evaluate(e=>e.style.width)).toBe('50%');
+      expect(await p.locator('[data-gantt-task="wbs-two"] .gantt-task-copy').evaluate(e=>getComputedStyle(e).paddingLeft)).toBe('12px');
+      expect(await p.locator(`.unified-toggle[data-id="${projectId}"] .wbs-period`).textContent()).toBe('11/1–11/12');
       const bar=p.locator('[data-gantt-task="wbs-ten"] .task-gantt-bar');
       expect(await bar.evaluate(e=>({left:e.style.left,width:e.style.width}))).toEqual({left:'30%',width:'10%'});
+      const label=bar.locator('.gantt-bar-label');
+      expect(await label.evaluate(e=>getComputedStyle(e).position)).toBe('absolute');
+      expect(await label.evaluate(e=>e.getBoundingClientRect().left>=e.parentElement.getBoundingClientRect().right)).toBe(true);
       await p.locator('[data-gantt-task="wbs-two"] .gantt-task-toggle').click();
       await expect(p.locator('#task-wbs-two .subtask-execution-log').first()).toBeVisible();
       await expect(p.locator('.project-detail .work-section')).toHaveCount(0);
       expect(await p.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
       await p.locator('[data-gantt-task="wbs-two"]').screenshot({path:path.join(results,'wbs-mobile-row.png')});
       await p.setViewportSize({width:1440,height:900});
+    });
+    await check('WBS table columns, row density and expand all',async()=>{
+      await load(p,url);await p.locator('[data-action="projects-all"]').click();
+      expect(await p.locator('.wbs-project-row .unified-toggle[aria-expanded="true"]').count()).toBe(await p.evaluate(()=>filtered().length));
+      expect(await p.locator('.wbs-column-head>span').allTextContents()).toEqual(['이름 (WBS)','담당','기간','진척 / 상태']);
+      expect(await p.locator('.wbs-project-row').first().evaluate(e=>e.getBoundingClientRect().height)).toBe(56);
+      await p.locator('[data-action="projects-all"]').click();await expect(p.locator('.wbs-expanded')).toHaveCount(0);
     });
     await check('top people filter derives from data', async () => {
       await load(p,url); const names=await p.evaluate(()=>M.owners(projects));

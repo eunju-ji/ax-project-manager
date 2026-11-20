@@ -29,9 +29,9 @@ test('project opens inside list; task reveals every explicit subtask and source 
  assert.match(a.html(),/시스템 아키텍처 구조도.md/);
  assert.match(a.html(),/원본 접근 정보 명세.md/);
  const sourceCount=a.run("projects.find(p=>p.id==='ax').files.length");
- assert.equal((a.html().match(/class="source-row"/g)||[]).length,sourceCount);
- assert.match(a.html(),/class="source-scroll"/);assert.doesNotMatch(a.html(),/class="more-sources"/);
- a.run("state.tab='episode';render()");assert.equal((a.html().match(/class="source-row"/g)||[]).length,sourceCount);
+ assert.equal((a.html().match(/class="source-row"/g)||[]).length,Math.min(6,sourceCount));
+ assert.match(a.html(),/class="source-scroll source-cards"/);assert.doesNotMatch(a.html(),/class="more-sources"/);
+ a.run("state.tab='episode';render()");assert.equal((a.html().match(/class="source-row"/g)||[]).length,Math.min(6,sourceCount));
 });
 test('team summary has separate person selection, week dropdown, settings, and no project-level work type filter',()=>{
  const a=app();assert.match(a.html(),/id="weekSelect"/);assert.match(a.html(),/data-action="week-person"/);
@@ -98,14 +98,14 @@ test('settings exposes integration preparation without claiming an account is co
 });
 test('project review opens the exact work item; both answers update status and counts',()=>{
  const a=app();a.run("state.project='ax';render()");
- assert.match(a.html(),/data-action="review-task"/);
+ assert.match(a.html(),/data-action="reviews"/);
  const before=a.run('reviewCount()');
  a.run("openTaskReview('R-01')");
  assert.equal(a.run('state.reviews'),false);assert.equal(a.run('state.project'),'ax');assert.ok(a.run("state.expanded.has('AX-05')"));
  a.run("answerReview('R-01','완료')");assert.equal(a.run("state.taskStates.get('AX-05')"),'완료');assert.equal(a.run('reviewCount()'),before-1);
- assert.match(a.html(),/class="task-status status-complete"/);
+ assert.match(a.html(),/class="tag plan-status completed"/);
  a.run("answerReview('R-01','진행 중')");assert.equal(a.run("state.taskStates.get('AX-05')"),'진행 중');assert.equal(a.run('reviewCount()'),before-1);
- assert.match(a.html(),/class="task-status status-ongoing"/);
+ assert.match(a.html(),/class="tag plan-status (active|undated|late)"/);
 });
 test('no exclusive project phase classification and summary uses prose with optional details',()=>{
  const a=app();for(const theme of ['linear','notion','attio','airtable','clickup']){
@@ -184,4 +184,12 @@ test('heatmap counts unique owner task pairs by KST with fixed levels and record
   a.run(`state.owner='전체';projects[0].tasks=Array.from({length:${n}},(_,i)=>({id:String(i),subtasks:[{owner:'가',performedAt:'2026-11-17'}]}));`);
   assert.match(a.run('heatmap()'),new RegExp('level-'+level+'"[^>]*data-value="2026-11-17"'));
  }
+});
+
+test('WBS table columns, planned-only project range, depth, progress fill and all expand',()=>{
+ const a=app();a.run(`projects[0].tasks=[{...projects[0].tasks[0],id:'deep',planSource:'wbs',wbsCode:'1.1.1',startDate:'2026-11-02',dueDate:'2026-11-06',status:'completed'},{...projects[0].tasks[0],id:'later',planSource:'wbs',wbsCode:'1.2',startDate:'2026-11-09',dueDate:'2026-11-10',status:'in_progress'}];state.project=projects[0].id;`);
+ const html=a.run('timeline([projects[0]],false,true)');
+ assert.match(html,/이름 \(WBS\)/);assert.match(html,/진척 \/ 상태/);assert.match(html,/--wbs-depth:2/);assert.match(html,/class="summary-fill" style="width:50%"/);assert.match(html,/class="gantt-bar-label"/);assert.match(html,/11\/2–11\/10/);assert.match(html,/weekend/);assert.doesNotMatch(html,/inline-detail-head|project-properties/);
+ a.run("action({dataset:{action:'projects-all'}})");assert.equal(a.run('filtered().every(projectOpen)'),true);
+ a.run("action({dataset:{action:'projects-all'}})");assert.equal(a.run('filtered().some(projectOpen)'),false);
 });

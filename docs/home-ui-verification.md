@@ -116,3 +116,14 @@
 - 최초 시각 비교 21건의 의도된 차이를 --update 후 재비교. 시각 기준 PNG 22개와 manifest 갱신(픽셀 차이 임계값 이하의 재인코딩 포함). 새 모바일 검사에서 스크롤바를 고려하도록 폭 검증 수정 후 최종 실패 0.
 - 변경: app/src/app.ts, app/app.js, app/styles.css, app/tests/ui.test.cjs, app/tests/visual/run.mjs, app/server/tests/browser.test.cjs, app/tests/visual/baseline, docs/home-ui-verification.md, tasks/current-state.md. 오프라인 preview 재생성. test-results/wbs-* 로그·모바일 행 이미지는 검증 산출물.
 - feat/home-project-timeline 유지. workNarrative의 기존 Lead 수정 보존, server/.real 접근·추가 위임·commit/push 없음. 미해결 문제 없음. 다음: AX-Lead 완료 판정 및 독립 검토.
+
+## 2026-11-20 WBS 간트 표 재설계 — AX-Builder
+
+- 범위: `feat/home-project-timeline`의 Linear·Linear/Notion 통합 타임라인만 변경. 왼쪽 520px(모바일 260px)의 이름/WBS·담당·기간·진척/상태 열, 56px 프로젝트 그룹·36px 태스크 행, 계획 범위 요약과 진척 채움, 바깥 라벨, 주말/주 경계/오늘 표시, WBS 깊이 들여쓰기 적용.
+- 펼친 영역: 설명 한 줄 → 계획 태스크 → 계획 외 업무 → 관련 자료 최대 6개 카드/전체 보기 → 검토 알림. 태스크 아래 작업 내역·관련 자료·검토 폼 재사용. 모두 펼치기/접기, 기존 검색·담당자 필터·월 이동 유지.
+- 검증: build.py(설치된 Python 실행)·typecheck exit 0, 단위 55/55, 서버 105/105. 브라우저 테스트에 열 값·행 높이·진척 채움·계획 범위·WBS 들여쓰기·바깥 라벨·전체 펼침 추가. 최종 시각/탐색 결과는 아래 기록.
+- 시각 기준 변경 사유: Linear 계열 표 구조·행 밀도·자료 카드 및 전체 보기 화면 변경. 픽셀이 같은 PNG는 원본 복원. 다른 테마는 원본 유지. 첫 capture에서 Notion 834px 홈 개발/오프라인 간 2px 차이가 있어 재비교.
+- 보호 범위: workNarrative 원문 동일 확인. server/.real 접근, 추가 에이전트 호출, 커밋·푸시 없음. 작업 전 기존 PROJECT_PRESENTATION.html 및 .claude 설정 변경 보존.
+- 최종 결과: 시각 재비교 54/54(기준 및 오프라인 차이 모두 0px), 탐색 100/100(개발/오프라인, 1440·834·390px 키보드 순서 포함). 첫 탐색 실행의 새 진척 검사 2건은 정렬된 첫 프로젝트를 잘못 선택한 테스트 문제였으며, 합성 WBS 프로젝트 ID로 한정 후 전체 재실행 통과. 미해결 실패 없음.
+- 최종 기준: Linear 계열 PNG 24개와 manifest만 변경. Notion·Attio 등 다른 테마 PNG는 모두 원본 유지. PNG 해시 manifest 동기화 확인. git diff --check 통과.
+- 스크린샷: `app/test-results/wbs-table-1440-project.png`, `wbs-table-834-project.png`, `wbs-table-390-project.png`(프로젝트 한 개 펼침, 합성 fixture). 로그: 같은 폴더 `wbs-table-{unit,server,compare,navigation-final}.log`, `visual.json`, `navigation.json`.

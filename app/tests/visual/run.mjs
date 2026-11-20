@@ -49,7 +49,7 @@ async function opened(p) {
 }
 async function prepare(p, state) {
   if (['project', 'episode', 'sources-bottom', 'image'].includes(state)) await opened(p);
-  if (state === 'episode') await p.locator('[data-action="tab"][data-value="episode"]').click();
+  if (state === 'episode') await p.locator('.gantt-task-toggle').first().click();
   if (state === 'sources-bottom') {
     await p.locator('.source-scroll').scrollIntoViewIfNeeded();
     await p.locator('.source-scroll').evaluate(e => { e.scrollTop = e.scrollHeight; });
@@ -114,7 +114,25 @@ async function nav() {
       await load(p,url); await expect(p.locator('.project-right-rail')).toHaveCount(0);
       const row=p.locator('.unified-toggle').first(); await row.click(); await expect(row).toHaveAttribute('aria-expanded','true');
       await expect(p.locator('.project-detail')).toBeVisible(); await row.click(); await expect(p.locator('.project-detail')).toHaveCount(0);
-      await p.locator('.unified-timeline .timeline-bar').first().click(); await expect(p.locator('.project-detail')).toBeVisible();
+      await p.locator('.unified-timeline .timeline-summary').first().click(); await expect(p.locator('.project-detail')).toBeVisible();
+    });
+    await check('monthly WBS rows align and expand at mobile width', async () => {
+      await load(p,url); await p.setViewportSize({width:390,height:844});
+      await p.evaluate(()=>{
+        const p=projects[0], base=p.tasks[0];
+        p.tasks=[{...base,id:'wbs-ten',planSource:'wbs',wbsCode:'1.10',startDate:'2026-11-10',dueDate:'2026-11-12'},
+          {...base,id:'wbs-two',planSource:'wbs',wbsCode:'1.2',startDate:'2026-11-01',dueDate:'2026-11-03'}];
+        state.project=p.id;state.expanded.clear();render();
+      });
+      expect(await p.locator('[data-gantt-task]').evaluateAll(rows=>rows.map(r=>r.dataset.ganttTask))).toEqual(['wbs-two','wbs-ten']);
+      const bar=p.locator('[data-gantt-task="wbs-ten"] .task-gantt-bar');
+      expect(await bar.evaluate(e=>({left:e.style.left,width:e.style.width}))).toEqual({left:'30%',width:'10%'});
+      await p.locator('[data-gantt-task="wbs-two"] .gantt-task-toggle').click();
+      await expect(p.locator('#task-wbs-two .subtask-execution-log').first()).toBeVisible();
+      await expect(p.locator('.project-detail .work-section')).toHaveCount(0);
+      expect(await p.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+      await p.locator('[data-gantt-task="wbs-two"]').screenshot({path:path.join(results,'wbs-mobile-row.png')});
+      await p.setViewportSize({width:1440,height:900});
     });
     await check('top people filter derives from data', async () => {
       await load(p,url); const names=await p.evaluate(()=>M.owners(projects));
@@ -181,7 +199,7 @@ async function nav() {
       });
     }
     await check('topic arrows both directions', async () => {
-      await load(p,url); await opened(p); await p.locator('[role="tab"][data-value="topic"]').focus();
+      await load(p,url,'notion'); await opened(p); await p.locator('[role="tab"][data-value="topic"]').focus();
       await p.keyboard.press('ArrowRight'); await expect(p.locator('[role="tab"][data-value="episode"]')).toBeFocused();
       await expect(p.locator('.execution-episodes')).toBeVisible();
       await p.keyboard.press('ArrowLeft'); await expect(p.locator('[role="tab"][data-value="topic"]')).toBeFocused();
@@ -190,7 +208,7 @@ async function nav() {
       await load(p,url); await opened(p); await expect(p.locator('.project-detail')).toBeVisible(); await p.goBack(); await expect(p.locator('.project-detail')).toHaveCount(0);
     });
     await check('source scroll persists both views', async () => {
-      await load(p,url); await opened(p);
+      await load(p,url,'notion'); await opened(p);
       const sources = p.locator('.source-scroll'); await sources.evaluate(e => { e.scrollTop = e.scrollHeight; });
       const top = await sources.evaluate(e => e.scrollTop); expect(top).toBeGreaterThan(0);
       for (const tab of ['episode','topic']) { await p.locator(`[data-action="tab"][data-value="${tab}"]`).click(); expect(await sources.evaluate(e => e.scrollTop)).toBe(top); }

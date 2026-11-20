@@ -282,3 +282,12 @@
 - 절차서: real-collect.md §2-1 WBS 동기화 추가(정기 실행이 WBS 변경을 계속 반영).
 - 화면 확인: 별도 포트(8767, `.real/verify/`) 서버로 실데이터 확인. 사용자가 띄운 8766 서버는 옛 코드가 메모리에 있어 재시작해야 새 화면이 보인다.
 - 남은 일: 판단 보류(notes) 검토함 표시. PR 생성·main 병합은 사용자 승인 대기.
+
+## 2026-11-20 태스크 WBS 월간 간트 — AX-Builder
+
+- Linear 두 테마의 프로젝트 펼침에 같은 월간 축의 태스크 행 추가. WBS 자연 정렬, 담당·상태·기간, 계획 외 업무 최근순, 계획/작업 기간 막대, 월 밖 범위·일정 미정, 오늘선·작업 날짜 점 표시. 프로젝트는 얇은 요약 범위선 사용.
+- 태스크 클릭은 기존 작업 내역·자료 버튼·검토 폼을 재사용. Linear 상세의 중복 taskPanel 제거, 다른 테마 유지. 390px은 고정 330px 왼쪽 칸과 기존 가로 스크롤 사용.
+- 최종 검증: 단위 54/54, 서버 105/105, 시각 54/54(기준/오프라인 픽셀 차이 0), 탐색 98/98. typecheck·설치된 python3.15.exe build.py exit 0. 합성 WBS 정렬·막대 위치·클릭 펼침·중복 없음·모바일 넘침 검증 추가. 기존 목록/탭 테스트는 새 행 또는 Notion 에피소드로 조정.
+- 최초 시각 비교 21건의 의도된 차이를 --update 후 재비교. 시각 기준 PNG 22개와 manifest 갱신(픽셀 차이 임계값 이하의 재인코딩 포함). 새 모바일 검사에서 스크롤바를 고려하도록 폭 검증 수정 후 최종 실패 0.
+- 변경: app/src/app.ts, app/app.js, app/styles.css, app/tests/ui.test.cjs, app/tests/visual/run.mjs, app/server/tests/browser.test.cjs, app/tests/visual/baseline, docs/home-ui-verification.md, tasks/current-state.md. 오프라인 preview 재생성. test-results/wbs-* 로그·모바일 행 이미지는 검증 산출물.
+- feat/home-project-timeline 유지. workNarrative의 기존 Lead 수정 보존, server/.real 접근·추가 위임·commit/push 없음. 미해결 문제 없음. 다음: AX-Lead 완료 판정 및 독립 검토.

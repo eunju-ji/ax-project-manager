@@ -57,7 +57,7 @@ test('weekly visual distribution reconciles to actual execution records',()=>{
  const total=a.run('records().length');assert.equal(a.run('M.categories.reduce((n,c)=>n+records().filter(r=>r.task.topic===c).length,0)'),total);
 });
 test('execution episodes share the same timestamps and artifact sources as subtasks',()=>{
- const a=app();a.run("state.project='ax';state.tab='episode';render()");
+ const a=app();a.run("state.theme='notion';state.project='ax';state.tab='episode';render()");
  assert.equal((a.html().match(/class="execution-entry"/g)||[]).length,a.run("count(projects.find(p=>p.id==='ax'))"));
  assert.match(a.html(),/10:00/);assert.match(a.html(),/시스템 아키텍처 구조도.md/);
  assert.ok(a.run("projects.every(p=>p.tasks.every(t=>t.subtasks.every(s=>p.files.some(f=>f.id===s.sourceId))))"));
@@ -151,6 +151,26 @@ test('WBS tasks sort naturally before activity and show owner dates state and pl
  assert.ok(a.run('projectInfo(projects[0])').includes('진척 0% · 완료 0/2 · 계획 50%'));
  assert.match(a.run('projectInfo({id:"x",name:"",desc:"",tasks:[],files:[]})'),/진척 0% · 계획 없음/);
 });
+test('expanded monthly WBS rows share dates, natural order and reusable task details',()=>{
+ const a=app();a.run(`projects[0].tasks=[
+ {...projects[0].tasks[0],id:'ten',planSource:'wbs',wbsCode:'1.10',startDate:'2026-11-10',dueDate:'2026-11-12'},
+ {...projects[0].tasks[0],id:'two',planSource:'wbs',wbsCode:'1.2',startDate:'2026-11-01',dueDate:'2026-11-03'},
+ {...projects[0].tasks[0],id:'due',planSource:'wbs',dueDate:'2026-11-30',startDate:''},
+ {...projects[0].tasks[0],id:'none',planSource:'wbs',dueDate:'',startDate:''},
+ {...projects[0].tasks[0],id:'outside',planSource:'wbs',startDate:'2026-12-01',dueDate:'2026-12-03'},
+ {...projects[0].tasks[0],id:'activity',planSource:'activity'}];state.project=projects[0].id;`);
+ const html=a.run('timeline([projects[0]],false,true)');
+ assert.ok(html.indexOf('data-gantt-task="two"')<html.indexOf('data-gantt-task="ten"'));
+ assert.match(html,/class="timeline-summary/);assert.match(html,/계획外|계획 외 업무/);
+ assert.match(html,/left:30%;width:10%/);assert.match(html,/left:0%;width:10%/);
+ assert.match(html,/left:96.66666666666667%;width:3.3333333333333286%/);
+ assert.match(html,/일정 미정/);assert.match(html,/12\/1 — 12\/3/);
+ assert.doesNotMatch(a.run('projectDetail(projects[0])'),/class="work-section"/);
+ a.run("state.expanded.add('two')");assert.match(a.run('timeline([projects[0]],false,true)'),/id="task-two"/);
+ assert.match(a.run('timeline([projects[0]],false,true)'),/subtask-execution-log/);
+ a.run("state.theme='notion'");assert.match(a.run('projectDetail(projects[0])'),/class="work-section"/);
+});
+
 test('heatmap counts unique owner task pairs by KST with fixed levels and record totals',()=>{
  const a=app();a.run(`projects.splice(0,projects.length,{id:'x',tasks:[{id:'one',subtasks:[
  ...Array.from({length:5},()=>({owner:'가',performedAt:'2026-11-16T16:00:00Z'})),

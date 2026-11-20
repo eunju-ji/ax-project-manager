@@ -40,10 +40,10 @@ stdout은 요약 JSON 한 줄이다. `ok: true`면 exit 0, 거부·입력·I/O �
 
 ## 병합 계약
 
-- 최상위 필수값: `run_id`(영숫자·하이픈·밑줄, 1~64자), `collected_at`(시간대 포함 ISO). 선택값: `checkpoints`, 위 6개 레코드 배열, `task_updates`, `notes`. 그 밖의 최상위 필드는 거부한다.
+- 최상위 필수값: `run_id`(영숫자·하이픈·밑줄, 1~64자), `collected_at`(시간대 포함 ISO). 선택값: `checkpoints`, 위 6개 레코드 배열, `task_updates`, `worklog_updates`, `notes`. 그 밖의 최상위 필드는 거부한다.
 - 각 배열의 키: `person_id`, `project_id`, `task_id`, `worklog_id`, `source_key`, `link_id`. 새 레코드의 `run_id`와 `created_run_id`는 실행 ID로 강제한다. 기존 키는 두 provenance 필드를 제외한 내용이 같으면 무시하고, 다르면 전체 delta를 거부한다. JSON 객체 속성 순서는 무관하다.
 - 동일 run의 입력 digest를 `state.applied_runs`에 보관한다. 같은 run·같은 입력은 재적용하지 않는다. 같은 run·다른 입력은 거부한다. 최초 데이터셋에 이미 존재하지만 state에 추적되지 않은 run ID도 재사용할 수 없다.
-- `task_updates`: `task_id`와 `status`, `completed_at`, `completion_basis`, `due_date`, `due_basis`, `title`, `summary`, `category`, `assignee_id`, `project_id`만 허용한다. 값은 문자열 또는 null이며 상태는 `in_progress`, `completion_proposed`, `completed`만 허용한다. 한 실행에서 같은 태스크를 두 번 갱신할 수 없다.
+- `task_updates`: `task_id`와 `status`, `completed_at`, `completion_basis`, `due_date`, `due_basis`, `title`, `summary`, `category`, `assignee_id`, `project_id`, `wbs_code`, `start_date`, `plan_source`, `plan_ref`만 허용한다. 값은 문자열 또는 null이며 상태는 `in_progress`, `completion_proposed`, `completed`만 허용한다. 한 실행에서 같은 태스크를 두 번 갱신할 수 없다.
 - 변경 시 전체 태스크의 before/after와 `DELTA-<run_id>-<task_id>` history를 남긴다. 시각은 `collected_at`, actor는 `system`, reason은 `scheduled-collect task update`다. 기존 dataset history에서 actor가 system이 아닌 기록의 before/after 차이 필드는 보호한다. 보호 필드 변경 한 건이라도 있으면 전체 delta를 거부한다. 이미 같은 값인 필드는 수정으로 보지 않는다.
 - 병합 후 모든 태스크의 프로젝트, worklog의 태스크·수행자(`unknown` 예외), link의 target(`task`/`worklog`)·evidence(`source`/`event`)가 존재해야 한다. 기존 sourceEvents도 event 참조에 사용할 수 있다. assignee 참조도 검사한다.
 - worklog는 160자 이하 summary와 유효한 수행 시각 정밀도(`exact`/`date`/`unknown`)를 사용한다. source.title은 200자 이하, 파일 source.folder_path는 문자열 배열 필수(최상위면 빈 배열). `kind: message`는 folder_path가 없어도 된다. 길이는 유니코드 코드포인트로 센다.
@@ -61,3 +61,13 @@ stdout은 요약 JSON 한 줄이다. `ok: true`면 exit 0, 거부·입력·I/O �
 ## 검증
 
 신규 `server/tests/real-delta.test.cjs`는 정상 병합·재적용·충돌·참조·비밀값·길이·history·사람 보호·체크포인트·dry-run·lock·CLI·I/O 롤백·서버 재적재를 임시 합성 fixture로 검증한다. 실제 `server/.real` 폴더는 읽거나 수정하지 않았다. 전체 검증 결과는 `tasks/current-state.md`의 2026-11-20 증분 반영 항목을 참조한다.
+
+## WBS 계획 필드와 작업 내역 재연결 (ADR-018)
+
+신규 tasks와 task_updates는 선택 필드 wbs_code(문자열, 16자 이하), start_date 및 due_date(실제 존재하는 YYYY-MM-DD), plan_source(wbs 또는 activity), plan_ref(source_key 문자열)를 받는다. task_updates에서는 이 필드들을 null로 지울 수 있다. 신규 projects도 기존 추가 계약에 따라 지원한다.
+
+```json
+{"run_id":"WBS-DEMO","collected_at":"2026-11-20T21:00:00+09:00","tasks":[{"task_id":"DEMO-T2","project_id":"DEMO-PR","title":"계획 태스크","status":"in_progress","wbs_code":"1.1.1","start_date":"2026-11-01","due_date":"2026-11-30","plan_source":"wbs","plan_ref":"drive:demo-wbs"}],"worklog_updates":[{"worklog_id":"DEMO-W","task_id":"DEMO-T2"}]}
+```
+
+worklog_updates는 기존 worklog의 task_id만 변경한다. 대상 worklog는 실행 전 데이터셋에, 대상 task는 병합 후 데이터셋에 존재해야 한다. 같은 실행에서 동일 worklog를 두 번 보내거나 다른 필드를 보내면 전체 delta를 거부한다. 사람이 history에서 교정한 task_id는 덮어쓸 수 없다. 같은 값은 ignored로 집계한다. 변경하면 entity_type=worklogs, change_id=DELTA-<run_id>-<worklog_id>, actor_id=system과 before/after task_id를 history에 남긴다. 재실행 digest와 원자적 검증 규칙도 동일하게 적용된다.

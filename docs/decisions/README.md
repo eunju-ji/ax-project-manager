@@ -19,6 +19,7 @@
 | [ADR-013](ADR-013-db-source-of-truth.md) | 데이터 원본은 트랜잭션 DB, Sheets는 읽기 전용 사본 | OD-09 |
 | [ADR-016](ADR-016-auto-judgment-first.md) | 자동 판별 우선: 시스템이 판별·수정, 어려운 것만 사람 (ADR-008 대체) | 사용자 지시 |
 | [ADR-017](ADR-017-cross-source-content-digest.md) | 여러 소스 통합 취합 우선: 내용은 읽고 원문 대신 핵심만 저장 (ADR-011 확대, ADR-015 §4·ADR-016 내용 제외 변경) | 사용자 지시 |
+| [ADR-018](ADR-018-wbs-tasks-progress-heatmap.md) | WBS 말단 행 = 태스크, 진척률 = 완료 계획 태스크 비율(계획 진도 = 종료일 지난 비율), 히트맵 = 하루 (사람,태스크) 수·고정 단계 | 사용자 지시 |
 | [ADR-015](ADR-015-ax-tf-drive-pilot.md) | 실데이터 파일럿: 공유 드라이브 AX-TF, 사내 OAuth, 로컬 SQLite | G2 범위 |
 
 미결정 유지: OD-09 중 운영 DB 제품·배치(ADR-014 예정), OD-11(갱신 실행), OD-14(동일 업무 판별), OD-15(자동/검토 경계).

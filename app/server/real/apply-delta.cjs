@@ -5,7 +5,7 @@ const { isDeepStrictEqual: equal } = require('node:util');
 
 const DEFAULT_DATASET = path.join(__dirname, '../.real/real-dataset.json');
 const KEYS = { persons:'person_id', projects:'project_id', tasks:'task_id', worklogs:'worklog_id', sources:'source_key', links:'link_id' };
-const UPDATE_FIELDS = new Set(['status','completed_at','completion_basis','due_date','due_basis','title','summary','category','assignee_id','project_id']);
+const UPDATE_FIELDS = new Set(['status','completed_at','completion_basis','due_date','due_basis','title','summary','category','assignee_id','project_id','wbs_code','start_date','plan_source','plan_ref']);
 const SECRET = /AIza[0-9A-Za-z_-]{20,}|token=[A-Za-z0-9_-]{10,}|SMTP_PASSWORD=|KEY_JSON=|-----BEGIN/;
 const object = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 const iso = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(v) && Number.isFinite(Date.parse(v));
@@ -15,7 +15,20 @@ function canonical(v) {
  return v;
 }
 const digest = v => crypto.createHash('sha256').update(JSON.stringify(canonical(v))).digest('hex');
-const counts = d => Object.keys(KEYS).reduce((n,k)=>n+(d[k]?.length||0),0)+(d.task_updates?.length||0);
+const dateOnly = v => typeof v==='string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(v).toISOString().slice(0,10)===v;
+function validPlan(row, nullable=false) {
+ return ['wbs_code','start_date','due_date','plan_source','plan_ref'].every(k=>{
+  if (!(k in row)) return true;
+  const v=row[k];if(v===null)return nullable;
+  if(k==='start_date'||k==='due_date')return dateOnly(v);
+  if(k==='plan_source')return ['wbs','activity'].includes(v);
+  return typeof v==='string' && (k!=='wbs_code'||[...v].length<=16);
+ });
+}
+function humanChanged(dataset,type,id,field) {
+ return (dataset.history||[]).some(h=>h.entity_type===type&&h.entity_id===id&&h.actor_id!=='system'&&!equal(h.before?.[field],h.after?.[field]));
+}
+const counts = d => Object.keys(KEYS).reduce((n,k)=>n+(d[k]?.length||0),0)+(d.task_updates?.length||0)+(d.worklog_updates?.length||0);
 
 // No input values in errors: rejected input may itself contain credentials.
 function merge(dataset, state, delta) {
@@ -26,10 +39,10 @@ function merge(dataset, state, delta) {
  if (!object(delta)) { reject('object_required','delta'); return fail(); }
  if (typeof delta.run_id !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(delta.run_id)) reject('invalid_run_id','run_id');
  if (!iso(delta.collected_at)) reject('invalid_iso','collected_at');
- const allowed = new Set(['run_id','collected_at','checkpoints',...Object.keys(KEYS),'task_updates','notes']);
+ const allowed = new Set(['run_id','collected_at','checkpoints',...Object.keys(KEYS),'task_updates','worklog_updates','notes']);
  for (const k of Object.keys(delta)) if (!allowed.has(k)) reject('unknown_field','delta');
  if (SECRET.test(JSON.stringify(delta))) reject('secret_pattern','delta');
- for (const k of [...Object.keys(KEYS),'task_updates']) if (delta[k] !== undefined && (!Array.isArray(delta[k]) || delta[k].some(r=>!object(r)))) reject('record_array_required',k);
+ for (const k of [...Object.keys(KEYS),'task_updates','worklog_updates']) if (delta[k] !== undefined && (!Array.isArray(delta[k]) || delta[k].some(r=>!object(r)))) reject('record_array_required',k);
  if (delta.checkpoints !== undefined && !object(delta.checkpoints)) reject('object_required','checkpoints');
  for (const [k,v] of Object.entries(object(delta.checkpoints)?delta.checkpoints:{})) {
   if (!['drive','chat','gmail'].includes(k) || !iso(v)) reject('invalid_checkpoint','checkpoints');
@@ -54,6 +67,7 @@ function merge(dataset, state, delta) {
    const loc = `${table}[${i}]`;
    if (typeof row[key] !== 'string' || !row[key].length) { reject('missing_key',loc); continue; }
    if (['projects','tasks'].includes(table) && !/^[A-Za-z0-9_-]{1,64}$/.test(row[key])) reject('invalid_key',loc);
+   if (table==='tasks' && !validPlan(row)) reject('invalid_plan_field',loc);
    if (table==='worklogs' && (typeof row.summary!=='string' || [...row.summary].length>160)) reject('summary_limit',loc);
    if (table==='sources') {
     if (typeof row.title!=='string' || [...row.title].length>200) reject('title_limit',loc);
@@ -79,6 +93,7 @@ function merge(dataset, state, delta) {
   const fields = Object.keys(update).filter(k=>k!=='task_id');
   if (fields.some(k=>!UPDATE_FIELDS.has(k))) { reject('invalid_update_field',loc); continue; }
   if (fields.some(k=>update[k]!==null && typeof update[k]!=='string')) { reject('invalid_update_value',loc); continue; }
+  if (!validPlan(update,true)) { reject('invalid_plan_field',loc); continue; }
   const changed = fields.filter(k=>!equal(task[k],update[k]));
   const protectedFields = new Set();
   for (const h of dataset.history||[]) {
@@ -92,6 +107,21 @@ function merge(dataset, state, delta) {
   const before=structuredClone(task);
   Object.assign(task,Object.fromEntries(changed.map(k=>[k,update[k]])));
   next.history.push({change_id:`DELTA-${delta.run_id}-${update.task_id}`,entity_type:'tasks',entity_id:update.task_id,before,after:structuredClone(task),actor_id:'system',reason:'scheduled-collect task update',run_id:delta.run_id,result:'applied',applied_at:delta.collected_at});
+  result.updated++;
+ }
+ const seenWorklogs = new Set();
+ for (const [i,update] of (delta.worklog_updates||[]).entries()) {
+  const loc=`worklog_updates[${i}]`;
+  if(Object.keys(update).some(k=>!['worklog_id','task_id'].includes(k)) || typeof update.worklog_id!=='string' || typeof update.task_id!=='string') {reject('invalid_worklog_update',loc);continue;}
+  const worklog=(dataset.worklogs||[]).find(w=>w.worklog_id===update.worklog_id);
+  if(!worklog||seenWorklogs.has(update.worklog_id)){reject('missing_or_duplicate_worklog',loc);continue;}
+  seenWorklogs.add(update.worklog_id);
+  if(!next.tasks.some(t=>t.task_id===update.task_id)){reject('missing_task',loc);continue;}
+  if(worklog.task_id===update.task_id){result.ignored++;continue;}
+  if(humanChanged(dataset,'worklogs',update.worklog_id,'task_id')){reject('human_correction_protected',loc);continue;}
+  const target=next.worklogs.find(w=>w.worklog_id===update.worklog_id);
+  const before={task_id:target.task_id};target.task_id=update.task_id;
+  next.history.push({change_id:`DELTA-${delta.run_id}-${update.worklog_id}`,entity_type:'worklogs',entity_id:update.worklog_id,before,after:{task_id:target.task_id},actor_id:'system',reason:'scheduled-collect worklog update',run_id:delta.run_id,result:'applied',applied_at:delta.collected_at});
   result.updated++;
  }
  const ids = Object.fromEntries(Object.entries(KEYS).map(([k,key])=>[k,new Set(next[k].map(r=>r[key]))]));

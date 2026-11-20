@@ -82,3 +82,34 @@ test('server reloads changed dataset on next request without open database renam
  a.equal((await get()).projects[0].tasks[0].title,'초기');f.delta.task_updates=[{task_id:'T',title:'새 제목'}];a.equal(f.apply().ok,true);
  a.equal((await get()).projects[0].tasks[0].title,'새 제목');a.equal((await get()).collectedOn,'2026-11-21');
 });
+
+test('new projects and WBS fields are accepted; updates allow clearing',t=>{
+ const f=fixture(t);f.delta.projects=[{project_id:'PR2',name:'WBS'}];
+ f.delta.tasks=[{task_id:'T2',project_id:'PR2',status:'in_progress',wbs_code:'1.1.1',start_date:'2026-11-01',due_date:'2026-11-30',plan_source:'wbs',plan_ref:'drive:wbs'}];
+ a.equal(f.apply().ok,true);a.equal(f.read().tasks[1].wbs_code,'1.1.1');
+ a.equal(f.apply({run_id:'R2',collected_at:f.delta.collected_at,task_updates:[{task_id:'T2',wbs_code:null,start_date:null,due_date:null,plan_source:null,plan_ref:null}]}).ok,true);
+ a.equal(f.read().tasks[1].start_date,null);
+});
+for(const [key,value] of [['wbs_code','x'.repeat(17)],['wbs_code',4],['start_date','2026-02-30'],['start_date','2026-1-01'],['due_date','2026-13-01'],['plan_source','other'],['plan_ref',42]]) {
+ for(const update of [false,true])test('WBS format rejects '+key+' '+update,t=>{
+  const f=fixture(t);const fields={[key]:value};
+  if(update)f.delta.task_updates=[{task_id:'T',...fields}];else f.delta.tasks=[{task_id:'T2',project_id:'PR',status:'in_progress',...fields}];
+  a.equal(f.apply().ok,false);a.equal(f.read().tasks.length,1);
+ });
+}
+function existingLog(f){a.equal(f.apply().ok,true);return {run_id:'R2',collected_at:f.delta.collected_at,tasks:[{task_id:'T2',project_id:'PR',status:'in_progress'}],worklog_updates:[{worklog_id:'W',task_id:'T2'}]};}
+test('worklog reassignment records history, replay and unchanged values are ignored',t=>{
+ const f=fixture(t),d=existingLog(f);a.equal(f.apply(d).updated,1);const h=f.read().history[0];
+ a.equal(h.change_id,'DELTA-R2-W');a.equal(h.before.task_id,'T');a.equal(h.after.task_id,'T2');a.equal(h.entity_type,'worklogs');a.equal(h.actor_id,'system');
+ a.equal(f.apply(d).ignored,2);a.equal(f.read().history.length,1);
+ a.equal(f.apply({...d,run_id:'R3',tasks:[]}).ignored,1);a.equal(f.read().history.length,1);
+});
+for(const kind of ['missing task','missing worklog','duplicate','extra field','human'])test('worklog reassignment rejects '+kind,t=>{
+ const f=fixture(t),d=existingLog(f);
+ if(kind==='missing task')d.worklog_updates[0].task_id='missing';
+ if(kind==='missing worklog')d.worklog_updates[0].worklog_id='missing';
+ if(kind==='duplicate')d.worklog_updates.push({...d.worklog_updates[0]});
+ if(kind==='extra field')d.worklog_updates[0].summary='forbidden';
+ if(kind==='human'){const data=f.read();data.history.push({entity_type:'worklogs',entity_id:'W',actor_id:'P',before:{task_id:'old'},after:{task_id:'T'}});fs.writeFileSync(f.file,JSON.stringify(data));}
+ a.equal(f.apply(d).ok,false);a.equal(f.read().worklogs[0].task_id,'T');
+});

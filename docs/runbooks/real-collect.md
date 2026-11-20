@@ -21,7 +21,18 @@
 - **Gmail**: `workspace_action gmail.search_threads {query:"<query_base> after:<체크포인트 날짜>", maxResults:40}`. 업무 메일만(광고·알림·보안 알림 제외). 내용이 필요하면 `gmail.get_message {format:"full"}`, 첨부는 `gmail.get_attachments`로 파일 자료(`gmail-att:<messageId>:<partId>`).
 - 내용 읽기(`drive.read_text`, 메일 본문, 메시지 본문)는 판별에 필요한 것만.
 
+## 2-1. WBS 동기화 (ADR-018)
+- 계획 태스크(`plan_source:"wbs"`)의 `plan_ref` WBS 파일이 체크포인트 이후 수정됐으면 `drive.read_text`로 다시 읽는다.
+- 말단 행(하위 번호 없는 행)만 태스크다. `wbs_code`로 기존 태스크와 맞춘다.
+  - 새 행 → 새 태스크(`task_id: WBS-<번호의 .을 ->`, `plan_source:"wbs"`, `plan_ref`, `start_date`, `due_date`, 산출물은 `summary`·`completion_criteria`).
+  - 업무명·담당·시작일·종료일이 바뀐 행 → `task_updates`.
+  - 상태 칸 `완료` → `status:"completed"`, `completion_basis:"WBS 상태 칸 완료 표시"`. 빈칸·진행중·대기는 상태를 바꾸지 않는다(완료 판단은 3항 근거로).
+  - 사라진 행은 지우지 않고 `notes`에 남긴다.
+- 공동 담당 행은 수집 기록에서 실제 작업이 보이는 사람을 `assignee_id`로 둔다.
+- 새 달 WBS 파일이 생기면(`업무계획_WBS_<YYYYMM>`) 같은 방식으로 들인다. 프로젝트는 WBS 최상위 번호 단위로 기존 프로젝트에 맞추고, 단건 회의·회신은 `ops`에 넣는다.
+
 ## 3. 판별 (AX-Lead 기준)
+- 새 기록은 먼저 계획 태스크(WBS)에 맞는지 본다(업무명·산출물·담당·기간). 맞으면 그 태스크에 붙인다. 이미 다른 태스크에 붙은 기록이 WBS 태스크에 더 맞으면 `worklog_updates`로 옮긴다.
 - 새 기록마다 기존 태스크와 대조: 프로젝트·태스크 이름, 폴더 경로, 파일 이름, 참여자, 시기, 명시적 참조. 같은 업무면 기존 태스크에 작업 내역으로 붙인다(교차 소스 연결).
 - 기존 태스크에 안 맞으면 새 태스크, 기존 프로젝트에 안 맞으면 새 프로젝트를 만든다. 확신이 낮거나 근거가 엇갈리면 만들지 말고 `notes`에 사유를 남긴다(다음 실행 또는 사람이 판단).
 - **완료**: 근거가 분명하면 `task_updates`로 `status:"completed"`, `completed_at`, `completion_basis`. 분명한 근거 = 최종본·배포본·릴리스 공개, 완료·결정 메시지, 다음 단계 착수, 결과 보고서. 파일 수정만·초대만·이름의 "최종"만·활동 중단은 근거가 아니다.

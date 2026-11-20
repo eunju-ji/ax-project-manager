@@ -267,3 +267,18 @@
 - 미검증: 실제 Apps Script 배포·회사 정책·API 활성 상태. 이어받기 조각은 전체 파일 목록 없이 활동이 제외될 수 있어 합치기 필요. 현재 경로는 마지막 가져온 메타데이터 기준.
 - 다음: Lead 완료 검증·Reviewer 독립 보안 검토 후 사용자 본인 배포·실행. 자동 수정/전체 재검증 3회 종료, Builder 추가 수정 없음.
 
+
+## 2026-11-20 ADR-018 WBS·진척·히트맵 — AX-Builder
+
+- 구현: delta의 WBS 선택 필드 및 실제 달력 날짜 검증, worklog_updates 재연결·중복/참조 검사·사람 교정 보호·history·재실행 무시. 기존 projects 추가도 합성 테스트로 확인. adapter의 계획 메타데이터, 계획 태스크 기준 진척/계획 진도, taskState, WBS 자연 정렬과 담당·시작~종료·상태 배지 및 계획 외 업무 구분. 히트맵은 KST의 고유 (수행자, 태스크) 쌍, 고정 0/1/2/3–4/5+ 단계·기록 수 툴팁·태스크·일 합계로 변경.
+- 최종 검증: npm.cmd test 53/53, npm.cmd run test:server 105/105, typecheck exit 0. npm run build는 python PATH 부재로 실패했으나 설치된 python3.15.exe로 동일 build.py를 권한 확인 후 실행해 exit 0, app.js 및 오프라인 미리보기 생성. WBS 합성 Chromium 확인 1440/834/390px 3/3(5개 상태 배지·자연 정렬 확인).
+- 시각: 최초 최종본 비교 54개 중 4개 의도된 차이(진척 문구·히트맵). --update 후 재비교 54/54, 기준 및 오프라인 픽셀 차이 모두 0. navigation 96/96. 최종 실패 0. 기준 PNG는 linear-834x1112-home, linear-notion-834x1112-home, linear-notion-834x1112-settings, linear-notion-390x844-empty 4개와 manifest.json 변경.
+- 변경 파일: app/server/real/apply-delta.cjs, app/server/tests/real-delta.test.cjs, app/src/{adapter.js,model.js,app.ts}, app/app.js, app/styles.css, app/tests/{home-model.test.cjs,ui.test.cjs}, 위 시각 기준 5개, docs/runbooks/real-delta-format.md, docs/home-ui-verification.md, tasks/current-state.md. preview/AX_Project_Manager.html은 기존 Git 제외 정책 유지. test-results의 WBS 스크린샷은 검증 산출물.
+- 실제 server/.real 접근·추가 에이전트·commit/push 없음. 기존 다른 작업의 변경은 보존. 미해결 오류 없음. 다음: AX-Lead 완료 판정 및 독립 검토.
+
+## 2026-11-20 ADR-018 실데이터 반영 — AX-Lead
+- 결정: docs/decisions/ADR-018 (WBS 말단 행 = 태스크, 진척률 = 완료 계획 태스크 ÷ 계획 태스크, 계획 진도 = 종료일 지난 비율, 히트맵 = 하루 (사람, 태스크) 수·고정 단계).
+- 반영: 11월 WBS → delta RUN-WBS-202611201500 (apply-delta ok: 추가 30, 갱신 14). 새 프로젝트 2(GWS 공유폴더 이관·백엔드 개발자 채용), 새 WBS 태스크 28, 기존 태스크 8개를 WBS 행으로 전환, 작업 내역 6건 재연결. 완료: WBS 상태 칸 완료 4, 다음 단계 착수 근거 4. 생성기 `app/server/.real/wbs-delta.cjs`(Git 제외).
+- 절차서: real-collect.md §2-1 WBS 동기화 추가(정기 실행이 WBS 변경을 계속 반영).
+- 화면 확인: 별도 포트(8767, `.real/verify/`) 서버로 실데이터 확인. 사용자가 띄운 8766 서버는 옛 코드가 메모리에 있어 재시작해야 새 화면이 보인다.
+- 남은 일: 판단 보류(notes) 검토함 표시. PR 생성·main 병합은 사용자 승인 대기.

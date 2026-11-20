@@ -137,3 +137,31 @@ test('demo records have valid hierarchy, dates, project types and common categor
   for(const f of p.files){assert.ok(p.tasks.some(t=>t.id===f.taskId));assert.ok(categories.includes(f.topic));}
  }
 });
+
+
+test('WBS tasks sort naturally before activity and show owner dates state and plan progress',()=>{
+ const a=app();
+ a.run(`projects.splice(0,projects.length,{id:'wbs',name:'WBS',desc:'',owner:'',files:[],tasks:[
+ {id:'activity',title:'계획 밖',topic:'검증',status:'completed',subtasks:[]},
+ {id:'t10',title:'열번째',wbsCode:'1.10',planSource:'wbs',owner:'합성',startDate:'2026-11-18',dueDate:'2026-11-30',subtasks:[]},
+ {id:'t2',title:'두번째',wbsCode:'1.2',planSource:'wbs',owner:'합성',startDate:'2026-11-01',dueDate:'2026-11-16',subtasks:[]}]});`);
+ const html=a.run('taskPanel(projects[0])');
+ assert.ok(html.indexOf('두번째')<html.indexOf('열번째'));assert.ok(html.indexOf('열번째')<html.indexOf('계획 밖'));
+ assert.match(html,/1.2/);assert.ok(html.includes('합성 · 11/1~11/16'));assert.match(html,/>지연</);assert.match(html,/>예정</);assert.match(html,/계획 외 업무/);
+ assert.ok(a.run('projectInfo(projects[0])').includes('진척 0% · 완료 0/2 · 계획 50%'));
+ assert.match(a.run('projectInfo({id:"x",name:"",desc:"",tasks:[],files:[]})'),/진척 0% · 계획 없음/);
+});
+test('heatmap counts unique owner task pairs by KST with fixed levels and record totals',()=>{
+ const a=app();a.run(`projects.splice(0,projects.length,{id:'x',tasks:[{id:'one',subtasks:[
+ ...Array.from({length:5},()=>({owner:'가',performedAt:'2026-11-16T16:00:00Z'})),
+ {owner:'나',performedAt:'2026-11-17'},{owner:'가',performedAt:'2026-11-16T14:00:00Z'},
+ {owner:'가',performedAt:'',performedAtPrecision:'unknown'}]},
+ {id:'two',subtasks:[{owner:'가',performedAt:'2026-11-17'}]}]});`);
+ let html=a.run('heatmap()');assert.match(html,/level-3"[^>]*data-value="2026-11-17"[^>]*태스크 3개 · 기록 7건/);
+ assert.match(html,/태스크·일 4/);assert.match(html,/하루에 손댄 태스크 수/);assert.match(html,/3–4/);
+ a.run("state.owner='가'");html=a.run('heatmap()');assert.match(html,/level-2"[^>]*data-value="2026-11-17"[^>]*태스크 2개 · 기록 6건/);
+ for(const [n,level] of [[0,0],[1,1],[2,2],[3,3],[4,3],[5,4],[8,4]]) {
+  a.run(`state.owner='전체';projects[0].tasks=Array.from({length:${n}},(_,i)=>({id:String(i),subtasks:[{owner:'가',performedAt:'2026-11-17'}]}));`);
+  assert.match(a.run('heatmap()'),new RegExp('level-'+level+'"[^>]*data-value="2026-11-17"'));
+ }
+});

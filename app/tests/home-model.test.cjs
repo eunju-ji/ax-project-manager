@@ -5,15 +5,20 @@ test('people include task-only owners and rank by worklog count then name',()=>{
  const rows=[{tasks:[{owner:'다',subtasks:[{owner:'나'},{owner:'가'},{owner:'나'}]}]}];
  assert.deepEqual(M.owners(rows),['나','가','다']);
 });
-test('progress uses completed tasks, clamps schedule and handles missing deadlines',()=>{
- const p={tasks:[{status:'completed',createdAt:'2026-11-01',dueDate:'2026-11-11'},{createdAt:'2026-11-02'}]};
- assert.deepEqual(M.progress(p,'2026-11-07'),{percent:50,schedule:60,behind:true});
- assert.equal(M.progress(p,'2026-12-01').schedule,100);
- assert.equal(M.progress(p,'2026-10-01').schedule,0);
- assert.deepEqual(M.progress({tasks:[]},'2026-11-01'),{percent:0,schedule:null,behind:false});
- assert.equal(M.progress({tasks:[{createdAt:'2026-11-01'}]},'2026-11-02').schedule,null);
- assert.equal(M.progress({tasks:[{createdAt:'2026-11-01',dueDate:'2026-11-01'}]},'2026-11-01').schedule,100);
+test('progress counts only WBS tasks and dated plan deadlines',()=>{
+ const p={tasks:[{planSource:'wbs',status:'completed',dueDate:'2026-11-07'},{planSource:'wbs',dueDate:'2026-11-08'},{planSource:'wbs'},{status:'completed'}]};
+ assert.deepEqual(M.progress(p,'2026-11-07'),{percent:33,schedule:50,behind:true,planned:true,done:1,total:3});
+ assert.equal(M.progress(p,'2026-11-08').schedule,100);
+ assert.equal(M.progress(p,'2026-11-06').schedule,0);
+ assert.deepEqual(M.progress({tasks:[]},'2026-11-01'),{percent:0,schedule:null,behind:false,planned:false,done:0,total:0});
+ assert.deepEqual(M.progress({tasks:[{status:'completed'},{}]},'2026-11-01'),{percent:50,schedule:null,behind:false,planned:false,done:1,total:2});
+ assert.equal(M.progress({tasks:[{planSource:'wbs'}]},'2026-11-01').schedule,null);
 });
+test('taskState uses completion, overdue and start boundaries',()=>{
+ const now='2026-11-20';
+ for(const [task,state] of [[{status:'completed',dueDate:'2026-11-01'},'completed'],[{dueDate:'2026-11-19'},'late'],[{dueDate:now},'active'],[{startDate:now},'active'],[{startDate:'2026-11-21'},'upcoming'],[{},'undated']])assert.equal(M.taskState(task,now),state);
+});
+
 test('deadline urgency excludes completed tasks and includes today through three days',()=>{
  assert.equal(M.deadline({dueDate:'2026-11-16'},'2026-11-17'),'late');
  assert.equal(M.deadline({dueDate:'2026-11-20'},'2026-11-17'),'soon');
@@ -41,4 +46,11 @@ test('adapter forwards folder metadata and filters unsafe folder URLs',()=>{
   data.sources.forEach(s=>s.folder_uri=uri);
   assert.ok(require('../src/adapter.js').adapt(data).projects.flatMap(p=>p.files).every(f=>!f.folderUrl));
  }
+});
+
+test('adapter forwards WBS plan metadata and defaults activity source',()=>{
+ const data=structuredClone(require('./fixtures/ops-synthetic.json'));
+ Object.assign(data.tasks[0],{wbs_code:'1.1.1',start_date:'2026-11-01',plan_source:'wbs'});
+ const tasks=require('../src/adapter.js').adapt(data).projects.flatMap(p=>p.tasks),t=tasks.find(t=>t.id===data.tasks[0].task_id);
+ assert.equal(t.wbsCode,'1.1.1');assert.equal(t.startDate,'2026-11-01');assert.equal(t.planSource,'wbs');assert.ok(tasks.filter(x=>x!==t).every(x=>x.planSource==='activity'));
 });

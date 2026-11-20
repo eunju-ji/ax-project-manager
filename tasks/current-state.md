@@ -1,3 +1,11 @@
+# 2026-11-19 홈 UI 개편 + Part B 폴더 자료 탐색 — AX-Builder
+
+- 사양 1~7 및 추가 Part B 구현·검증 완료. 동적 담당자, 상단 사람 목록, 통합 월간 타임라인, 26주 히트맵, 마감·진척·기간별 요약, 폴더 안 자료 전환.
+- 검증: typecheck/build.py exit 0, 단위 49/49, 서버 65/65, navigation 96/96, visual 54/54(기준·오프라인 픽셀 차이 0). Python PATH 부재로 설치된 python3.15.exe로 같은 빌드 실행.
+- 기준 이미지 변경 51개(재생성 전 목록·사유 기록), 3개 원본 유지. 설정·기존 자료 창 내부 6개 영역 변화 0 pixels. local :8769 합성 7프로젝트·50태스크와 데이터 기반 사람 목록 확인.
+- 브랜치 feat/home-project-timeline. 기존 미커밋 변경 보존. 추가 에이전트·의존성·실데이터 접근·commit/push 없음. 미해결 오류 없음. 다음: AX-Lead 완료 판정·독립 검토.
+- 변경 파일·기준 이미지 전체 목록·사유·검증 상세: docs/home-ui-verification.md.
+
 # 2026-11-19 ADR-016 자동 판별 AX-Builder 인계 (최신)
 
 - 현재 작업 트리에서 `drive:auto-classify` extract/apply/dry-run/revert 구현. 판별은 AX-Lead가 수행하며 코드는 입력 최소화·결과 검증·반영만 담당한다. 첫 extract에서 자동 판별 모드 전환, 이후 수집 전건 검토 없음. confidence 기본 0.8, 근거·상충·사람 교정·완료 변경·오래된 입력 검증. 병합·분리·작업 내역·연결 생성/수정·감사·되돌리기·지표 구현.
@@ -28,6 +36,24 @@
 - 상세: docs/migration/m4-drive-connector-report.md의 사용자 준비 절차·게이트 1/4·보안 검토 대응 절. 다음: Lead/Reviewer 검토 및 미완료 검증의 후속 차수 범위 결정. Builder는 추가 수정하지 않음.
 
 ## 재개 요약 (2026-11-19 최신, 먼저 읽을 것)
+- **2026-11-20 완료**: 홈 UI 개편(Builder 5a5de4b6, 보고서 `docs/home-ui-verification.md`) + Lead 보정. Lead 검증: npm test 49, test:server 66, navigation 96, visual 54(개편으로 기준 이미지 갱신), typecheck·build 통과, 실데이터 화면 스크린샷 확인(사람 9명 동적, 기준일 11.19, 자료 창 폴더 경로·같은 폴더 목록·폴더/원본 열기)
+  - 2026-11-20 화면 다듬기: 요약 문장을 실제 작업 내역 제목 기반으로(weeklySummary 없을 때), linear 테마 프로젝트 영역 제목 중복 제거(툴바 '모든 프로젝트'·타임라인 제목 → 정렬 안내+월 이동 한 줄). linear 기준 이미지 21개 갱신. 검증 49/66/96/54
+  - 2026-11-20 기준일: real 모드 기준일=오늘(Asia/Seoul, 요청 시점), 수집일은 collectedOn·하단 '마지막 수집 2026-11-19'. 요약 문장=태스크 — 최근 작업 1개 외 N건. 검증 49/66/96/54
+  - Lead 보정: real 모드가 demoAsOf·demoNotice를 넘기게 함(예시 문구·기준일 11/17 오표시 수정), linear 테마 펼친 상세의 중복 타임라인 제거(ui.test 갱신, 기준 이미지 16개 재생성)
+  - 완료 판단 결정(ADR-016 §5, ADR-006 대체): 근거 분명하면 Lead가 자동 완료. 실데이터 완료 6건(DIAG-01·02, MON-01·02, EDU-01·02), 근거는 `server/.real/completions.cjs`, change_log(history) 기록
+- **지금 대기 중**: AX-Builder agent 5a5de4b6(홈 UI 개편) 결과. 오면 Lead가 테스트 재실행 + `?data=real`(8767 미리보기, 재시작 필요: `node -e "const {createServer}=require('./server/api/server.cjs');..."` dir=tmp/ax-real-preview) 화면 확인 후 보고
+- **사용자 답 대기**: 완료 판단 유지(사람 확정, Lead가 후보 제시) vs 자동(근거 분명하면 Lead가 완료 반영) — 진척률 의미에 영향
+- 실데이터 재생성: `node server/.real/build-real-dataset.cjs`(app/ 기준). 수집은 Lead만 가능(gws-work MCP는 Claude Code 세션 연결). 자료=파일만, 메시지·메일 kind 'message'
+- **첫 실데이터 반영 완료 (2026-11-19)**: gws-work MCP 읽기로 Drive(AX_TF 7/1~11/19 활동 전체)·Chat(AX, AX_공유방, 삼성 대시보드)·Gmail(최근 3주) 수집 → AX-Lead 판별 → `app/server/.real/real-dataset.json`(생성기 `build-real-dataset.cjs`, Git 제외·소유자 전용 ACL) → 화면 `?data=real`. 프로젝트 9·태스크 31·작업 내역 127·근거 92·참여자 9. 참여자 기준은 ADR-017 추가 절
+  - 코드: `server/api/server.cjs`(?data=real 조회·판단), `src/app.ts`(realMode), `src/adapter.js`(Chat·Gmail 출처 표시), `server/tests/real-mode.test.cjs` 신규 3건. 검증: npm test 43, test:server 63, navigation 88, visual 54, typecheck·build 통과
+  - 주의: 기존 `server/.pilot`은 하위 폴더가 Codex 샌드박스 소유라 접근 불가 → `server/.pilot.locked-20261119`로 이름 변경(빈 테스트 폴더뿐, Git 제외). 삭제는 샌드박스 계정 또는 관리자 권한 필요
+  - 자료 원본 링크 연결(2026-11-19): adapter가 https + 허용 호스트(drive/docs/chat/mail.google.com, github.com)만 `url`로 노출, 자료 창에 '원본 열기' 링크(새 탭, noopener). 예시 데이터(example.invalid)는 기존 예시 창 유지. test:server 64
+  - 자료 정의 변경(ADR-017 추가 절): 자료=파일만(Drive·Gmail 첨부·Chat 첨부). 메시지·메일 본문은 kind 'message' 근거로만 보존, adapter가 자료에서 제외. 반영 후 자료 74(Drive 58·Chat 첨부 13·Gmail 첨부 2·SharePoint 1), 작업 내역 127 중 102건에 자료. test:server 65
+  - 사용자 확인: 메시지·메일만 근거인 작업 내역에 별도 원문 링크 붙이지 않음(자료 아님)
+  - UI 개편 AX-Builder 위임(agent 5a5de4b6): 사람 목록 데이터 기반(하드코딩 김지현·박성진·이수민 제거), 오른쪽 레일 제거, PEOPLE 상단 소형, 프로젝트 목록=월간 타임라인 통합(행 클릭 상세), 하단 활동 히트맵(칸 클릭→일간 요약), 태스크 due_date·프로젝트 진척률/일정 경과율, 요약 일간·주간·월간. 바뀐 화면 기준 이미지 재생성 허용
+  - 자료 폴더 위치(2026-11-19): 실데이터 자료 74개 전부 folder_id·folder_path·folder_uri(`server/.real/folders.cjs`). Builder에 Part B 추가: 자료 창=경로+같은 폴더 자료 목록(현재 강조, 창 안 전환)+폴더 열기·원본 열기
+  - 실데이터 마감일: MON-04·OPS-03 = 2026-11-23(근거 있는 미래 일정만)
+  - 한계: sourceEvents(이벤트 원장) 미적재, 증분 수집·자동 재판별 미구현(수동 1회), Chat은 스페이스별 첫 페이지만
 - **기획 변경 (2026-11-19, ADR-017)**: 핵심 가치 = Drive·Gmail·Chat·GitHub 통합 취합. 내용은 읽고 원문은 저장 안 함, 핵심(요약·명칭·참조·사람·날짜)만 보호 정보 표에 저장해 다음 판별 기준으로 사용. 수집은 gws-work `workspace_action` 읽기 액션 허용 목록만. 다음: m5 핵심 추출·교차 소스 연결 설계
 - gws-work 진단: `workspace_action` drive.read_text는 성공(Claude Code). 앞선 실패는 `artiws_gws_read`의 비공개 입력 형식 문제였음(권한 문제 아님). Drive 활동 기록 액션은 workspace_action에 없음
 - gws-work OAuth 메타데이터: 동적 클라이언트 등록(/register), authorization_code+refresh_token, PKCE S256 지원 → 웹 사이트가 사용자별 OAuth 클라이언트가 되는 것이 기술적으로 가능(외부 redirect 허용 여부·운영 정책 미확인, 등록 시도 안 함)

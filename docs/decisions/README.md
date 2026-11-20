@@ -9,7 +9,7 @@
 | [ADR-003](ADR-003-work-hierarchy.md) | 프로젝트>태스크>작업 내역 + 업무 유형 5종 | OD-03 / D-03 |
 | [ADR-004](ADR-004-logical-data-model.md) | 논리 엔터티 방향, 이벤트 보존 계약 | OD-04 |
 | [ADR-005](ADR-005-ai-conversations.md) | AI 대화 원문 자동 수집 제외 | OD-06 / D-06 |
-| [ADR-006](ADR-006-completion-approval.md) | 담당자 판단 + 책임자 확정 | OD-07 / D-04 |
+| [ADR-006](ADR-006-completion-approval.md) | ~~담당자 판단 + 책임자 확정~~ → ADR-016 5항(근거 분명 시 자동 완료)으로 대체 | OD-07 / D-04 |
 | [ADR-007](ADR-007-protection-principles.md) | 원문 외 정보 보호·접근 감사·목적 제한 | OD-08 / D-07 |
 | [ADR-008](ADR-008-input-flow.md) | ~~자동 제안 + 사람 교정 기본~~ → ADR-016으로 대체 | OD-10 |
 | [ADR-009](ADR-009-generated-files.md) | 생성물 Git 추적 방식 | OD-12 |

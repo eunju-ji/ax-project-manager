@@ -34,3 +34,18 @@
 - 수집 경로가 운영 주체 미확인 외부 서버(gws-work)를 거친다. 계속 쓸지는 담당자 답변(운영 주체·로그 보관)으로 정한다.
 - 판별은 파일럿 동안 이 Claude Code 세션이 한다(ADR-016). 내용 기반 판별이므로 회사 내용이 Anthropic 서비스로 전달된다.
 - 기존 Drive 커넥터·Apps Script는 메타데이터 전용으로 만들어졌다. 핵심 추출·저장 구조는 후속 설계(m5)로 추가한다.
+
+## 참여자 기준 (2026-11-19, 사용자 지시)
+- **본 서비스**: GWS를 연동한 사람을 참여자로 본다.
+- **파일럿(데이터 부족 기간)**: 연동한 사람은 사용자 1명이다. 공유 드라이브 활동·Chat 스페이스·메일 일정에서 다른 사람의 업무가 보이면 그 사람도 참여자로 넣는다. 이름은 Google이 돌려준 표시 이름을 그대로 쓴다(추측 번역 안 함).
+- 미연동 참여자의 기록은 연동한 사람의 권한으로 보인 범위뿐이다. 본 서비스 전환 시 미연동 참여자 데이터의 표시 범위를 ADR-007 세부로 다시 정한다.
+
+## 첫 실데이터 반영 (2026-11-19)
+- 수집: gws-work `artiws_gws_read`(drive.drives.list·drive.activity.query·drive.revisions.list·chat.spaces.list·chat.messages.list)와 `workspace_action`(drive.inventory·get_metadata·read_text, gmail.search_threads·get_message). 모두 읽기, 쓰기 0건.
+- 결과: 프로젝트 9, 태스크 31, 작업 내역 127, 근거 92(Drive·Chat·Gmail), 참여자 9. 판별은 AX-Lead.
+- 저장: 원문 없이 파일·스레드 이름과 AX-Lead 요약만. 자격 증명이 들어 있던 Chat 메시지는 근거로 연결하지 않았고, 생성기가 비밀값 패턴을 검사한다.
+- 위치: `app/server/.real/`(Git 제외, 현재 사용자만 접근). 화면: `?data=real`.
+
+## 자료의 정의 (2026-11-19, 사용자 지시)
+- **자료 = 파일 형태만**: Drive 파일, Gmail 첨부, Chat 첨부(Chat·메일에 공유된 파일 링크 포함).
+- **자료가 아닌 것**: Chat 메시지 내용, Gmail 메일 내용. 이들은 작업 내역의 근거로 DB에 남기되(`kind: message`, 링크 역할 `참고`) 화면의 자료 목록·작업 결과물에는 나오지 않는다.

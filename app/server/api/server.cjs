@@ -1,4 +1,4 @@
-﻿const http=require('node:http');const fs=require('node:fs');const path=require('node:path');
+const http=require('node:http');const fs=require('node:fs');const path=require('node:path');
 const {open}=require('../repo/sqlite/index.cjs');const {seed}=require('../repo/sqlite/records.cjs');const {Service}=require('../service/index.cjs');
 function small(){return {persons:[{person_id:'P1',display_name:'김지현'}],projects:[{project_id:'PRJ-LOCAL',name:'로컬 합성 PoC',owner_id:'P1'}],tasks:[{task_id:'TSK-LOCAL',project_id:'PRJ-LOCAL',assignee_id:'P1',status:'in_progress',title:'로컬 저장 검증',category:'검증',created_at:'2026-11-17T00:00:00.000Z'}],reviews:[1,2].map(n=>({review_id:'RV-'+n,kind:'completion',subject_id:'TSK-LOCAL',subject_type:'task',status:'open',proposal:'합성 완료 제안 '+n}))};}
 function createServer({dir=path.join(__dirname,'../.runtime'),seedMode='large',reset=false,pilotProvider,realDatasetFile}={}){
@@ -10,8 +10,21 @@ function createServer({dir=path.join(__dirname,'../.runtime'),seedMode='large',r
  const service=new Service(db);
  const pilotFile=require('../connectors/drive/cli.cjs').PILOT_FILE;let pilotDb,pilotService;
  // Real-data mode: dataset judged by AX-Lead from GWS digests (ADR-017). Lives only in the Git-ignored, owner-only server/.real directory.
- const realDataset=realDatasetFile||path.join(__dirname,'../.real/real-dataset.json');let realDb,realService,realMeta={};
- function real(){if(!realService){if(!fs.existsSync(realDataset))throw Error('Real dataset not prepared');const data=JSON.parse(fs.readFileSync(realDataset,'utf8'));const rf=path.join(path.dirname(realDataset),'real.sqlite');seeds.prepare(rf,data,false);realDb=open(rf);seed(realDb,data);seeds.mark(realDb,data);realService=new Service(realDb);realMeta={collectedOn:String(data.demoAsOf||''),demoNotice:String(data.demoNotice||'')};}return realService;}
+ const realDataset=realDatasetFile||path.join(__dirname,'../.real/real-dataset.json');let realDb,realService,realMeta={},realDigest;
+ function real(){
+  if(!fs.existsSync(realDataset))throw Error('Real dataset not prepared');
+  const bytes=fs.readFileSync(realDataset);const digest=require('node:crypto').createHash('sha256').update(bytes).digest('hex');
+  if(!realService||digest!==realDigest){
+   const data=JSON.parse(bytes);const rf=path.join(path.dirname(realDataset),'real.sqlite');
+   // Release this runtime's SQLite lease/handles before prepare may rename the DB on Windows.
+   realDb?.close();realDb=undefined;realService=undefined;
+   seeds.prepare(rf,data,false);
+   const next=open(rf);
+   try{seed(next,data);seeds.mark(next,data);realService=new Service(next);realDb=next;realDigest=digest;realMeta={collectedOn:String(data.demoAsOf||''),demoNotice:String(data.demoNotice||'')};}
+   catch(error){next.close();throw error;}
+  }
+  return realService;
+ }
  function pilot(){if(pilotProvider)return pilotProvider();if(!fs.existsSync(pilotFile))throw Error('Pilot database not collected');if(!pilotDb){pilotDb=open(pilotFile);pilotService=new (require('../connectors/drive/store.cjs').DriveStore)(pilotDb,process.env.AX_DRIVE_ID||'unconfigured');}return pilotService;}
  const server=http.createServer(async(req,res)=>{
   const json=(code,data)=>{res.writeHead(code,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));};

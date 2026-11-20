@@ -1,3 +1,10 @@
+# 2026-11-20 실데이터 증분 반영 — AX-Builder
+
+- 구현: `app/server/real/apply-delta.cjs` CLI/모듈, 새 레코드·태스크 변경/history·사람 교정 보호·참조/비밀값/길이/체크포인트 검증·멱등·lock·임시 파일 교체/일반 I/O 롤백. `real()`은 데이터셋 digest 변경 시 DB 연결을 닫고 기존 prepare로 재시딩.
+- 검증: typecheck exit 0, 단위 49/49, 서버 84/84(신규 delta 18개 포함), navigation 96/96, visual 54/54(기준·오프라인 픽셀 차이 모두 0). node 구문 검사·git diff --check 통과. 수정·재검증 2회 사용(최대 3회).
+- 문서: `docs/runbooks/real-delta-format.md`(스케줄 에이전트용 합성 예시·CLI·제약). 강제 종료/전원 장애 시 3개 파일의 일괄 원자성은 보장하지 않음. 사람 교정 보호는 dataset.history 기준이며 SQLite 단독 교정은 재시딩 시 유실될 수 있음.
+- 실데이터 폴더 접근·추가 에이전트·npm 의존성·commit/push 없음. 다른 작업자의 current-state/real-collect 등 변경 보존. 다음: AX-Lead 독립 검토·완료 판정·push 및 수집 예약 연계.
+
 # 2026-11-19 홈 UI 개편 + Part B 폴더 자료 탐색 — AX-Builder
 
 - 사양 1~7 및 추가 Part B 구현·검증 완료. 동적 담당자, 상단 사람 목록, 통합 월간 타임라인, 26주 히트맵, 마감·진척·기간별 요약, 폴더 안 자료 전환.
@@ -36,6 +43,9 @@
 - 상세: docs/migration/m4-drive-connector-report.md의 사용자 준비 절차·게이트 1/4·보안 검토 대응 절. 다음: Lead/Reviewer 검토 및 미완료 검증의 후속 차수 범위 결정. Builder는 추가 수정하지 않음.
 
 ## 재개 요약 (2026-11-19 최신, 먼저 읽을 것)
+- **정기 수집 가동 (2026-11-20)**: Paseo 스케줄 `55620666` "AX 실데이터 정기 수집" — 매일 09·12·15·18시 KST, claude-opus-5-5, bypassPermissions, cwd 저장소 루트, 절차서 `docs/runbooks/real-collect.md`. 시험 실행(RUN-AUTO-202611201020) 성공: 추가 41·거부 0, 작업 내역 127→139, 태스크 31→32(DASH-06), 자료 74→79, 사람 +1. `apply-delta.cjs`(Builder 25b7df9e) 검증 test:server 84. 서버는 데이터셋 digest 변경 시 자동 재적재
+  - 점검 방법: `mcp__paseo__inspect_schedule 55620666`(실행 이력·출력), `app/server/.real/runs.log`, `app/server/.real/inbox/`
+- **정기 수집 구축 중 (2026-11-20, 사용자 지시: 매일 몇 시간마다 자동)**: 방식 = Paseo 스케줄이 Claude Code 에이전트를 띄워 gws-work MCP로 수집→판별→delta→`apply-delta.cjs` 반영. 절차서 `docs/runbooks/real-collect.md`. 설정·체크포인트 `app/server/.real/state.json`(drive 11-19T06:41:47Z, chat 06:05:00Z, gmail 05:32:49Z), Chat 1:1 제외. `build-real-dataset.cjs`는 state.json 있으면 실행 거부(--force-initial). AX-Builder 25b7df9e: apply-delta.cjs·서버 자동 재적재·형식 문서 진행 중. 끝나면 Lead 검증 → 스케줄 등록(예정 09·12·15·18시 KST) → 1회 시험 실행
 - **Git (2026-11-20, 사용자 커밋 승인)**: 브랜치 `feat/home-project-timeline` → origin 푸시 완료. 커밋 3138257(커넥터·SQLite·파일럿), 6c127e7(실데이터 보기·홈 개편), da8f871(결정 기록). PR 미생성: 이 PC에 gh 없음·GitHub MCP 미연결 → 사용자가 https://github.com/eunju-ji/ax-project-manager/compare/main...feat/home-project-timeline 에서 생성. main 병합은 사용자 승인 후
 - **2026-11-20 완료**: 홈 UI 개편(Builder 5a5de4b6, 보고서 `docs/home-ui-verification.md`) + Lead 보정. Lead 검증: npm test 49, test:server 66, navigation 96, visual 54(개편으로 기준 이미지 갱신), typecheck·build 통과, 실데이터 화면 스크린샷 확인(사람 9명 동적, 기준일 11.19, 자료 창 폴더 경로·같은 폴더 목록·폴더/원본 열기)
   - 2026-11-20 화면 다듬기: 요약 문장을 실제 작업 내역 제목 기반으로(weeklySummary 없을 때), linear 테마 프로젝트 영역 제목 중복 제거(툴바 '모든 프로젝트'·타임라인 제목 → 정렬 안내+월 이동 한 줄). linear 기준 이미지 21개 갱신. 검증 49/66/96/54

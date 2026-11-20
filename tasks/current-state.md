@@ -36,6 +36,7 @@
 - 상세: docs/migration/m4-drive-connector-report.md의 사용자 준비 절차·게이트 1/4·보안 검토 대응 절. 다음: Lead/Reviewer 검토 및 미완료 검증의 후속 차수 범위 결정. Builder는 추가 수정하지 않음.
 
 ## 재개 요약 (2026-11-19 최신, 먼저 읽을 것)
+- **Git (2026-11-20, 사용자 커밋 승인)**: 브랜치 `feat/home-project-timeline` → origin 푸시 완료. 커밋 3138257(커넥터·SQLite·파일럿), 6c127e7(실데이터 보기·홈 개편), da8f871(결정 기록). PR 미생성: 이 PC에 gh 없음·GitHub MCP 미연결 → 사용자가 https://github.com/eunju-ji/ax-project-manager/compare/main...feat/home-project-timeline 에서 생성. main 병합은 사용자 승인 후
 - **2026-11-20 완료**: 홈 UI 개편(Builder 5a5de4b6, 보고서 `docs/home-ui-verification.md`) + Lead 보정. Lead 검증: npm test 49, test:server 66, navigation 96, visual 54(개편으로 기준 이미지 갱신), typecheck·build 통과, 실데이터 화면 스크린샷 확인(사람 9명 동적, 기준일 11.19, 자료 창 폴더 경로·같은 폴더 목록·폴더/원본 열기)
   - 2026-11-20 화면 다듬기: 요약 문장을 실제 작업 내역 제목 기반으로(weeklySummary 없을 때), linear 테마 프로젝트 영역 제목 중복 제거(툴바 '모든 프로젝트'·타임라인 제목 → 정렬 안내+월 이동 한 줄). linear 기준 이미지 21개 갱신. 검증 49/66/96/54
   - 2026-11-20 기준일: real 모드 기준일=오늘(Asia/Seoul, 요청 시점), 수집일은 collectedOn·하단 '마지막 수집 2026-11-19'. 요약 문장=태스크 — 최근 작업 1개 외 N건. 검증 49/66/96/54

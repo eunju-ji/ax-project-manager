@@ -203,7 +203,7 @@ test('heatmap counts unique owner task pairs by KST with fixed levels and record
  {owner:'가',performedAt:'',performedAtPrecision:'unknown'}]},
  {id:'two',subtasks:[{owner:'가',performedAt:'2026-11-17'}]}]});`);
  let html=a.run('heatmap()');assert.match(html,/level-3"[^>]*data-value="2026-11-17"[^>]*태스크 3개 · 기록 7건/);
- assert.match(html,/최근 6개월/);assert.match(html,/적음/);assert.match(html,/많음/);assert.doesNotMatch(html,/태스크·일|하루에 손댄/);
+ assert.match(html,/최근 9개월/);assert.match(html,/적음/);assert.match(html,/많음/);assert.doesNotMatch(html,/태스크·일|하루에 손댄/);
  a.run("state.owner='가'");html=a.run('heatmap()');assert.match(html,/level-2"[^>]*data-value="2026-11-17"[^>]*태스크 2개 · 기록 6건/);
  for(const [n,level] of [[0,0],[1,1],[2,2],[3,3],[4,3],[5,4],[8,4]]) {
   a.run(`state.owner='전체';projects[0].tasks=Array.from({length:${n}},(_,i)=>({id:String(i),subtasks:[{owner:'가',performedAt:'2026-11-17'}]}));`);

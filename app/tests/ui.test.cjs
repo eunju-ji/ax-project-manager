@@ -21,9 +21,7 @@ test('reference tasks are absent from counts, progress, timeline, heatmap, summa
 test('folder preview shows unlinked files, current and linked badges, safe encoded Drive search',()=>{
  const a=app();a.run(`const f=projects[0].files[0];Object.assign(f,{folderId:'folder',folderPath:['合成'],folderUrl:'https://drive.google.com/drive/folders/f',name:'A & #한글'});AX_DATA.folders={folder:[{id:f.id,name:f.name,url:f.url,kind:'document',linked:true},{id:'unlinked',name:'B 未接続',url:'https://drive.google.com/file/d/b',kind:'document',linked:false}]};`);
  const html=a.run('folderBrowser(projects[0].files[0])');assert.match(html,/이 폴더의 파일 2개 · 연결된 자료 1개/);assert.match(html,/현재 자료/);assert.match(html,/연결됨/);assert.match(html,/B 未接続/);
- assert.ok(html.includes('https://drive.google.com/drive/search?q='+encodeURIComponent('A & #한글')));assert.match(html,/검색 결과에서 마우스 오른쪽 → 파일 위치 보기/);
  assert.match(html,/<a href="https:\/\/drive.google.com\/file\/d\/b" target="_blank" rel="noopener noreferrer">/);assert.ok(html.indexOf('A &amp;')<html.indexOf('B 未接続'));
- assert.match(html,/https:\/\/drive.google.com\/drive\/search\?q=A%20%26%20%23%ED%95%9C%EA%B8%80/);assert.match(html,/검색 결과에서 마우스 오른쪽 → 파일 위치 보기/);
  assert.match(html,/href="https:\/\/drive.google.com\/file\/d\/b" target="_blank" rel="noopener noreferrer"/);
 });
 test('API view reload refreshes folder files and clears stale folders',async()=>{
@@ -168,9 +166,9 @@ test('WBS tasks sort naturally before activity and show owner dates state and pl
  {id:'t2',title:'두번째',wbsCode:'1.2',planSource:'wbs',owner:'합성',startDate:'2026-11-01',dueDate:'2026-11-16',subtasks:[]}]});`);
  const html=a.run('taskPanel(projects[0])');
  assert.ok(html.indexOf('두번째')<html.indexOf('열번째'));assert.ok(html.indexOf('열번째')<html.indexOf('계획 밖'));
- assert.match(html,/1.2/);assert.ok(html.includes('합성 · 11/1~11/16'));assert.match(html,/>확인 필요</);assert.match(html,/>예정</);assert.match(html,/WBS에 없는 업무/);
- assert.ok(a.run('projectInfo(projects[0])').includes('진척 0% · 완료 0/2 · 계획 0%'));
- assert.match(a.run('projectInfo({id:"x",name:"",desc:"",tasks:[],files:[]})'),/진척 0% · 계획 없음/);
+ assert.match(html,/1.2/);assert.ok(html.includes('합성 · 11/1~11/16'));assert.match(html,/>확인 필요</);assert.match(html,/>예정</);assert.doesNotMatch(html,/gantt-group-label/);
+ assert.ok(a.run('projectInfo(projects[0])').includes('진척 33% · 완료 1/3 · 계획 0%'));
+ assert.match(a.run('projectInfo({id:"x",name:"",desc:"",tasks:[],files:[]})'),/진척 0% · 완료 0\/0/);
 });
 test('expanded monthly WBS rows share dates, natural order and reusable task details',()=>{
  const a=app();a.run(`projects[0].tasks=[
@@ -182,7 +180,7 @@ test('expanded monthly WBS rows share dates, natural order and reusable task det
  {...projects[0].tasks[0],id:'activity',planSource:'activity'}];state.project=projects[0].id;`);
  const html=a.run('timeline([projects[0]],false,true)');
  assert.ok(html.indexOf('data-gantt-task="two"')<html.indexOf('data-gantt-task="ten"'));
- assert.match(html,/class="timeline-summary/);assert.match(html,/WBS에 없는 업무/);
+ assert.match(html,/class="timeline-summary/);assert.doesNotMatch(html,/gantt-group-label/);
  assert.match(html,/left:30%;width:10%/);assert.match(html,/left:0%;width:10%/);
  assert.match(html,/left:96.66666666666667%;width:3.3333333333333286%/);
  assert.match(html,/일정 미정/);assert.match(html,/12\/1 — 12\/3/);
@@ -219,8 +217,8 @@ test('unverified chips, activity deadlines and six-state Gantt legend are distin
  {...projects[0].tasks[0],id:'unknown',planSource:'wbs',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-02',subtasks:[]},
  {...projects[0].tasks[0],id:'late',planSource:'wbs',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-02'},
  {...projects[0].tasks[0],id:'activity',planSource:'activity',status:'in_progress',dueDate:'2026-11-02',subtasks:[]}];state.project=projects[0].id;render()`);
- const html=a.html();assert.match(html,/class="tag plan-status unverified">확인 1</);assert.match(html,/class="tag plan-status late">지연</);
- assert.match(html,/task-gantt-bar  unverified/);assert.match(html,/task-gantt-bar  late/);
+ const html=a.html();assert.match(html,/class="tag plan-status unverified">확인 2</);assert.match(html,/class="tag plan-status late">지연</);
+ assert.match(html,/task-gantt-bar unverified/);assert.match(html,/task-gantt-bar late/);
  assert.match(a.run('taskItem(projects[0].tasks[2],projects[0])'),/확인 필요/);
  const legend=html.match(/<div class="gantt-status-legend"[^>]*>(.*?)<\/div>/)[1];
  for(const label of ['완료','진행 중','지연','확인 필요','예정','일정 미정'])assert.ok(legend.includes('>'+label+'<'));
@@ -229,7 +227,7 @@ test('unverified chips, activity deadlines and six-state Gantt legend are distin
 
  test('task drawer keeps properties, evidence, grouped logs and deduplicated source files',()=>{
  const a=app();a.run("state.drawerTask=projects[0].tasks[0].id;projects[0].tasks[0].completedAt='2026-11-17';projects[0].tasks[0].completionBasis='산출물 승인';");
- const html=a.run('taskDrawer()');assert.match(html,/role="dialog" aria-modal="true" aria-labelledby="task-drawer-title"/);for(const text of ['상태','담당','기간','완료일','산출물 승인','산출물','계획 출처','작업 내역','관련 자료'])assert.ok(html.includes(text));
+ const html=a.run('taskDrawer()');assert.match(html,/role="dialog" aria-modal="true" aria-labelledby="task-drawer-title"/);for(const text of ['상태','담당','기간','완료일','산출물 승인','산출물','작업 내역','관련 자료'])assert.ok(html.includes(text));
  assert.equal((html.match(/class="drawer-entry"/g)||[]).length,a.run('projects[0].tasks[0].subtasks.length'));
  assert.equal((html.match(/class="drawer-files"/g)||[]).length,1);a.run("state.theme='notion'");assert.equal(a.run('taskDrawer()'),'');
  });
@@ -247,11 +245,26 @@ test('WBS group rows summarize children, preserve root ordering and collapse nes
  html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');assert.doesNotMatch(html,/첫번째 말단|두번째 말단|2.1 비교평가/);assert.match(html,/최상위 아홉/);assert.equal((html.match(/data-gantt-group=/g)||[]).length,1);
  a.run(`action({dataset:{action:'wbs-group',group:JSON.stringify([projects[0].id,'2 플랫폼 비교평가'])}})`);
  assert.match(a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))'),/첫번째 말단/);
- a.run("state.drawerTask='a'");assert.match(a.run('taskDrawer()'),/2 플랫폼 비교평가 \/ 2.1 비교평가 \/ 2.1.1/);assert.match(a.run('taskDrawer()'),/팀 WBS \(11월\)/);
+ a.run("state.drawerTask='a'");assert.match(a.run('taskDrawer()'),/2 플랫폼 비교평가 \/ 2.1 비교평가 \/ 2.1.1/);assert.doesNotMatch(a.run('taskDrawer()'),/계획 출처/);
 });
 test('activity copy and work dots explain their meaning and daily record count',()=>{
  const a=app();a.run(`projects[0].tasks=[{id:'x',title:'합성',subtasks:[{performedAt:'2026-11-04',owner:'합성'},{performedAt:'2026-11-04',owner:'합성'}]}];state.drawerTask='x'`);
  const html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');
- assert.match(html,/WBS에 없는 업무 1/);assert.match(html,/수집한 기록에서 찾았지만 팀 WBS에는 없는 일 · 진척률에 포함 안 됨/);assert.match(html,/title="11월 4일 · 기록 2건" aria-label="11월 4일 · 기록 2건"/);
- assert.match(a.run('statusLegend()'),/● 작업 기록\(그날 기록이 있음\)/);assert.match(a.run('taskDrawer()'),/WBS에 없음 · 수집 기록에서 판별/);
+ assert.doesNotMatch(html,/gantt-group-label|activity-bar/);assert.match(html,/<code><\/code>/);assert.match(html,/title="11월 4일 · 기록 2건" aria-label="11월 4일 · 기록 2건"/);
+ assert.match(a.run('statusLegend()'),/● 작업 기록\(그날 기록이 있음\)/);assert.doesNotMatch(a.run('taskDrawer()'),/계획 출처|WBS에 없/);
+});
+
+test('source and build omit task classification copy',()=>{for(const f of ['src/app.ts','app.js'])assert.doesNotMatch(fs.readFileSync(path.join(root,f),'utf8'),/계획 외|WBS에 없|계획 출처|계획 없음/)});
+test('preview opens original folder with file fallback',()=>{
+ const a=app();a.run("const f=projects[0].files[0];f.url='https://docs.google.com/document/d/test';f.folderUrl='https://drive.google.com/drive/folders/f';state.modal={project:projects[0].id,file:f.id}");
+ let html=a.run('modal()');assert.ok(html.includes('href="https://drive.google.com/drive/folders/f"'));assert.match(html,/Google Drive에서 폴더 열기/);assert.doesNotMatch(html,/원본 열기|Drive에서 이 파일 찾기/);
+ a.run('delete projects[0].files[0].folderUrl');html=a.run('modal()');assert.ok(html.includes('href="'+a.run('projects[0].files[0].url')+'"'));
+});
+
+test('numberless tasks follow numbered tasks by start or first record with uniform bars',()=>{
+ const a=app();a.run(`const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'later',wbsCode:undefined,wbsGroups:['ignored'],planSource:'wbs',startDate:'2026-11-08',dueDate:'2026-11-09'},{...base,id:'first',wbsCode:undefined,wbsGroups:[],planSource:'activity',startDate:undefined,dueDate:undefined,subtasks:[{performedAt:'2026-11-02'}]},{...base,id:'number',wbsCode:'1.1',wbsGroups:[],planSource:'activity'}]`);
+ assert.deepEqual(Array.from(a.run('drawerTasks(projects[0]).map(t=>t.id)')),['number','first','later']);
+ const html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');
+ assert.ok(html.indexOf('data-gantt-task="number"')<html.indexOf('data-gantt-task="first"'));assert.ok(html.indexOf('data-gantt-task="first"')<html.indexOf('data-gantt-task="later"'));
+ assert.doesNotMatch(html,/activity-bar|gantt-group-label|wbs-group-row|--wbs-depth:1/);assert.equal((html.match(/<code><\/code>/g)||[]).length,2);
 });

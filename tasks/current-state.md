@@ -52,3 +52,4 @@
 - 판단 보류(notes) 항목을 검토함에 보여 주는 기능 미구현.
 - `.real/`의 오래된 `real.sqlite.previous-*` 백업 정리 여부 미정(지우지 않음).
 - gws-work 서버 운영 주체·로그 보관 정책 미확인(ADR-017 위험 항목).
+- (해결 11/23) 작업 내역 히트맵을 최근 39주(3월부터)로 늘림, 표기 "최근 9개월". 브랜치 `fix/heatmap-range` Push 완료(병합은 사용자). 같은 날 `feat/remove-nonwork`도 Push 대기 중 병합 필요.

@@ -18,6 +18,13 @@ test('reference tasks are absent from counts, progress, timeline, heatmap, summa
  for(const theme of ['linear','notion','attio','airtable','clickup']){const setup=`state.theme='${theme}';state.project=projects[0].id;render()`;a.run(setup);baseline.run(setup);assert.equal(a.html(),baseline.html());}
  assert.ok(!a.run("projects.flatMap(p=>p.tasks).some(t=>t.planSource==='reference')"));
 });
+test('merged tasks are absent from every theme, summaries, counts and drawer navigation',()=>{
+ const a=app(`AX_DATA.projects[0].tasks.push({...AX_DATA.projects[0].tasks[0],id:'merged',title:'MERGED_HIDDEN',merged_into:AX_DATA.projects[0].tasks[0].id,owner:'MERGED_OWNER'});AX_DATA.projects[0].files.push({...AX_DATA.projects[0].files[0],id:'merged-file',taskId:'merged',name:'MERGED_HIDDEN'});`),baseline=app();
+ assert.ok(!a.run("projects.flatMap(p=>p.tasks).some(t=>t.id==='merged')"));assert.ok(!a.run("M.owners(projects).includes('MERGED_OWNER')"));
+ for(const unit of ['day','week','month']){const code=`state.summaryUnit='${unit}';render()`;a.run(code);baseline.run(code);assert.equal(a.html(),baseline.html());}
+ for(const theme of ['linear-notion','linear','notion','attio','airtable','clickup']){const code=`state.theme='${theme}';state.project=projects[0].id;state.drawerTask=projects[0].tasks[0].id;render()`;a.run(code);baseline.run(code);assert.equal(a.html(),baseline.html());assert.doesNotMatch(a.html(),/MERGED_HIDDEN/);}
+});
+
 test('folder preview shows unlinked files, current and linked badges, safe encoded Drive search',()=>{
  const a=app();a.run(`const f=projects[0].files[0];Object.assign(f,{folderId:'folder',folderPath:['合成'],folderUrl:'https://drive.google.com/drive/folders/f',name:'A & #한글'});AX_DATA.folders={folder:[{id:f.id,name:f.name,url:f.url,kind:'document',linked:true},{id:'unlinked',name:'B 未接続',url:'https://drive.google.com/file/d/b',kind:'document',linked:false}]};`);
  const html=a.run('folderBrowser(projects[0].files[0])');assert.match(html,/이 폴더의 파일 2개 · 연결된 자료 1개/);assert.match(html,/현재 자료/);assert.match(html,/연결됨/);assert.match(html,/B 未接続/);

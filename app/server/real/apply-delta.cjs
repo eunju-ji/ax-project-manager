@@ -5,7 +5,8 @@ const { isDeepStrictEqual: equal } = require('node:util');
 
 const DEFAULT_DATASET = path.join(__dirname, '../.real/real-dataset.json');
 const KEYS = { persons:'person_id', projects:'project_id', tasks:'task_id', worklogs:'worklog_id', sources:'source_key', links:'link_id' };
-const UPDATE_FIELDS = new Set(['wbs_groups','description','status','completed_at','completion_basis','due_date','due_basis','title','summary','category','assignee_id','project_id','wbs_code','start_date','plan_source','plan_ref']);
+const UPDATE_FIELDS = new Set(['merged_into','wbs_groups','description','status','completed_at','completion_basis','due_date','due_basis','title','summary','category','assignee_id','project_id','wbs_code','start_date','plan_source','plan_ref']);
+const PROJECT_FIELDS = new Set(['name','purpose','display_owner','owner_id','deputy_id']);
 const SECRET = /AIza[0-9A-Za-z_-]{20,}|token=[A-Za-z0-9_-]{10,}|SMTP_PASSWORD=|KEY_JSON=|-----BEGIN/;
 const object = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 const iso = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(v) && Number.isFinite(Date.parse(v));
@@ -16,6 +17,9 @@ function canonical(v) {
 }
 const digest = v => crypto.createHash('sha256').update(JSON.stringify(canonical(v))).digest('hex');
 const dateOnly = v => typeof v==='string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(v).toISOString().slice(0,10)===v;
+// ADR-003 업무 유형 5종. WBS 카테고리명 등 다른 값은 거부한다.
+const CATEGORIES = ['기획·설계','조사·분석','제작·구현','검증','운영·지원'];
+const validCategory = row => !('category' in row) || CATEGORIES.includes(row.category);
 const validDescription = row => !('description' in row) || row.description === null || (typeof row.description === 'string' && [...row.description].length <= 200);
 const validGroups = row => !('wbs_groups' in row) || row.wbs_groups === null || (Array.isArray(row.wbs_groups) && row.wbs_groups.length <= 4 && row.wbs_groups.every(v=>typeof v==='string' && [...v].length<=120));
 function validPlan(row, nullable=false) {
@@ -30,7 +34,7 @@ function validPlan(row, nullable=false) {
 function humanChanged(dataset,type,id,field) {
  return (dataset.history||[]).some(h=>h.entity_type===type&&h.entity_id===id&&h.actor_id!=='system'&&!equal(h.before?.[field],h.after?.[field]));
 }
-const counts = d => Object.keys(KEYS).reduce((n,k)=>n+(d[k]?.length||0),0)+(d.task_updates?.length||0)+(d.worklog_updates?.length||0);
+const counts = d => Object.keys(KEYS).reduce((n,k)=>n+(d[k]?.length||0),0)+(d.task_updates?.length||0)+(d.worklog_updates?.length||0)+(d.project_updates?.length||0);
 
 // No input values in errors: rejected input may itself contain credentials.
 function merge(dataset, state, delta) {
@@ -41,10 +45,10 @@ function merge(dataset, state, delta) {
  if (!object(delta)) { reject('object_required','delta'); return fail(); }
  if (typeof delta.run_id !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(delta.run_id)) reject('invalid_run_id','run_id');
  if (!iso(delta.collected_at)) reject('invalid_iso','collected_at');
- const allowed = new Set(['run_id','collected_at','checkpoints',...Object.keys(KEYS),'task_updates','worklog_updates','notes']);
+ const allowed = new Set(['run_id','collected_at','checkpoints',...Object.keys(KEYS),'task_updates','worklog_updates','project_updates','notes']);
  for (const k of Object.keys(delta)) if (!allowed.has(k)) reject('unknown_field','delta');
  if (SECRET.test(JSON.stringify(delta))) reject('secret_pattern','delta');
- for (const k of [...Object.keys(KEYS),'task_updates','worklog_updates']) if (delta[k] !== undefined && (!Array.isArray(delta[k]) || delta[k].some(r=>!object(r)))) reject('record_array_required',k);
+ for (const k of [...Object.keys(KEYS),'task_updates','worklog_updates','project_updates']) if (delta[k] !== undefined && (!Array.isArray(delta[k]) || delta[k].some(r=>!object(r)))) reject('record_array_required',k);
  if (delta.checkpoints !== undefined && !object(delta.checkpoints)) reject('object_required','checkpoints');
  for (const [k,v] of Object.entries(object(delta.checkpoints)?delta.checkpoints:{})) {
   if (!['drive','chat','gmail'].includes(k) || !iso(v)) reject('invalid_checkpoint','checkpoints');
@@ -71,6 +75,7 @@ function merge(dataset, state, delta) {
    if (['projects','tasks'].includes(table) && !/^[A-Za-z0-9_-]{1,64}$/.test(row[key])) reject('invalid_key',loc);
    if (table==='tasks' && !validGroups(row)) reject('invalid_wbs_groups',loc);
    if (table==='tasks' && !validDescription(row)) reject('description_limit',loc);
+   if (table==='tasks' && !validCategory(row)) reject('invalid_category',loc);
    if (table==='tasks' && !validPlan(row)) reject('invalid_plan_field',loc);
    if (table==='worklogs' && (typeof row.summary!=='string' || [...row.summary].length>160)) reject('summary_limit',loc);
    if (table==='sources') {
@@ -88,6 +93,24 @@ function merge(dataset, state, delta) {
   }
  }
  next.history ||= [];
+ const seenProjects = new Set();
+ for (const [i,update] of (delta.project_updates||[]).entries()) {
+  const loc=`project_updates[${i}]`;
+  const project=next.projects.find(p=>p.project_id===update.project_id);
+  if (!project || seenProjects.has(update.project_id)) {reject('missing_or_duplicate_project',loc);continue;}
+  seenProjects.add(update.project_id);
+  const fields=Object.keys(update).filter(k=>k!=='project_id');
+  if (fields.some(k=>!PROJECT_FIELDS.has(k))) {reject('invalid_update_field',loc);continue;}
+  if (fields.some(k=>typeof update[k]!=='string')) {reject('invalid_update_value',loc);continue;}
+  if (('name' in update && [...update.name].length>120) || ('purpose' in update && [...update.purpose].length>200)) {reject('project_text_limit',loc);continue;}
+  const changed=fields.filter(k=>!equal(project[k],update[k]));
+  if (changed.some(k=>humanChanged(dataset,'projects',update.project_id,k))) {reject('human_correction_protected',loc);continue;}
+  if (!changed.length) {result.ignored++;continue;}
+  const before=structuredClone(project);
+  Object.assign(project,Object.fromEntries(changed.map(k=>[k,update[k]])));
+  next.history.push({change_id:`DELTA-${delta.run_id}-${update.project_id}`,entity_type:'projects',entity_id:update.project_id,before,after:structuredClone(project),actor_id:'system',reason:'scheduled-collect project update',run_id:delta.run_id,result:'applied',applied_at:delta.collected_at});
+  result.updated++;
+ }
  const seenUpdates = new Set();
  for (const [i,update] of (delta.task_updates||[]).entries()) {
   const loc = `task_updates[${i}]`;
@@ -99,6 +122,7 @@ function merge(dataset, state, delta) {
   if (fields.some(k=>k!=='wbs_groups' && update[k]!==null && typeof update[k]!=='string')) { reject('invalid_update_value',loc); continue; }
   if (!validGroups(update)) { reject('invalid_wbs_groups',loc); continue; }
   if (!validDescription(update)) { reject('description_limit',loc); continue; }
+  if (!validCategory(update)) { reject('invalid_category',loc); continue; }
   if (!validPlan(update,true)) { reject('invalid_plan_field',loc); continue; }
   const changed = fields.filter(k=>!equal(task[k],update[k]));
   const protectedFields = new Set();
@@ -131,10 +155,24 @@ function merge(dataset, state, delta) {
   result.updated++;
  }
  const ids = Object.fromEntries(Object.entries(KEYS).map(([k,key])=>[k,new Set(next[k].map(r=>r[key]))]));
+ const taskIndex = new Map(next.tasks.map(t=>[t.task_id,t]));
  for (const t of next.tasks) {
+  if (t.merged_into !== undefined && t.merged_into !== null) {
+   const target=taskIndex.get(t.merged_into);
+   if (typeof t.merged_into!=='string' || !target) reject('missing_merge_target','tasks');
+   else if (target===t || target.merged_into != null || target.project_id!==t.project_id) reject('invalid_merge_target','tasks');
+  }
   if (!['in_progress','completion_proposed','completed'].includes(t.status)) reject('invalid_task_status','tasks');
   if (!ids.projects.has(t.project_id)) reject('missing_project','tasks');
   if (t.assignee_id && t.assignee_id!=='unknown' && !ids.persons.has(t.assignee_id)) reject('missing_assignee','tasks');
+ }
+ // Existing historical logs may remain; only newly attached logs must target active tasks.
+ const existingLogs = new Map((dataset.worklogs||[]).map(w=>[w.worklog_id,w]));
+ for (const [i,w] of (delta.worklogs||[]).entries()) {
+  if (!existingLogs.has(w.worklog_id) && taskIndex.get(next.worklogs.find(row=>row.worklog_id===w.worklog_id)?.task_id)?.merged_into != null) reject('merged_task_worklog',`worklogs[${i}]`);
+ }
+ for (const [i,w] of (delta.worklog_updates||[]).entries()) {
+  if (existingLogs.get(w.worklog_id)?.task_id!==w.task_id && taskIndex.get(next.worklogs.find(row=>row.worklog_id===w.worklog_id)?.task_id)?.merged_into != null) reject('merged_task_worklog',`worklog_updates[${i}]`);
  }
  for (const w of next.worklogs) {
   if (!['exact','date','unknown'].includes(w.performed_at_precision) || (w.performed_at_precision==='exact'&&!iso(w.performed_at)) || (w.performed_at_precision==='date' && (typeof w.performed_at!=='string'||!/^\d{4}-\d{2}-\d{2}/.test(w.performed_at)))) reject('invalid_worklog_time','worklogs');

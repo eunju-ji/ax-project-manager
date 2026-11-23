@@ -18,7 +18,7 @@
     const events=new Map(unique(data.sourceEvents,'event_key').map(e=>[e.event_key,e]));
     const logs=unique(data.worklogs,'worklog_id').filter(w=>runs.get(w.run_id)==='complete');
     const allTasks=unique(data.tasks,'task_id');
-    const tasks=allTasks.filter(t=>t.plan_source!=='reference');
+    const tasks=allTasks.filter(t=>t.plan_source!=='reference' && t.merged_into == null);
     const logMap=new Map(logs.map(w=>[w.worklog_id,w]));
     const taskMap=new Map(tasks.map(t=>[t.task_id,t]));
     const links=unique(data.links,'link_id').filter(l=>l.status==='confirmed').flatMap(l=>{

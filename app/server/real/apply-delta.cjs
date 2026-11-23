@@ -27,28 +27,29 @@ function validPlan(row, nullable=false) {
   if (!(k in row)) return true;
   const v=row[k];if(v===null)return nullable;
   if(k==='start_date'||k==='due_date')return dateOnly(v);
-  if(k==='plan_source')return ['wbs','activity','reference'].includes(v);
+  if(k==='plan_source')return ['wbs','activity'].includes(v);
   return typeof v==='string' && (k!=='wbs_code'||[...v].length<=16);
  });
 }
 function humanChanged(dataset,type,id,field) {
  return (dataset.history||[]).some(h=>h.entity_type===type&&h.entity_id===id&&h.actor_id!=='system'&&!equal(h.before?.[field],h.after?.[field]));
 }
-const counts = d => Object.keys(KEYS).reduce((n,k)=>n+(d[k]?.length||0),0)+(d.task_updates?.length||0)+(d.worklog_updates?.length||0)+(d.project_updates?.length||0);
+const counts = d => Object.keys(KEYS).reduce((n,k)=>n+(d[k]?.length||0),0)+(d.task_updates?.length||0)+(d.worklog_updates?.length||0)+(d.project_updates?.length||0)+(d.worklog_removals?.length||0)+(d.task_removals?.length||0);
 
 // No input values in errors: rejected input may itself contain credentials.
 function merge(dataset, state, delta) {
  const errors = [];
  const reject = (code, location) => errors.push({code,location});
- const result = {ok:false,added:0,updated:0,ignored:0,rejected:0,errors};
- const fail = () => ({...result,added:0,updated:0,rejected:errors.length});
+ const result = {ok:false,added:0,updated:0,removed:0,ignored:0,rejected:0,errors};
+ const fail = () => ({...result,added:0,updated:0,removed:0,rejected:errors.length});
  if (!object(delta)) { reject('object_required','delta'); return fail(); }
  if (typeof delta.run_id !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(delta.run_id)) reject('invalid_run_id','run_id');
  if (!iso(delta.collected_at)) reject('invalid_iso','collected_at');
- const allowed = new Set(['run_id','collected_at','checkpoints',...Object.keys(KEYS),'task_updates','worklog_updates','project_updates','notes']);
+ const allowed = new Set(['run_id','collected_at','checkpoints',...Object.keys(KEYS),'task_updates','worklog_updates','project_updates','worklog_removals','task_removals','notes']);
  for (const k of Object.keys(delta)) if (!allowed.has(k)) reject('unknown_field','delta');
  if (SECRET.test(JSON.stringify(delta))) reject('secret_pattern','delta');
  for (const k of [...Object.keys(KEYS),'task_updates','worklog_updates','project_updates']) if (delta[k] !== undefined && (!Array.isArray(delta[k]) || delta[k].some(r=>!object(r)))) reject('record_array_required',k);
+ for (const k of ['worklog_removals','task_removals']) if (delta[k] !== undefined && (!Array.isArray(delta[k]) || delta[k].some(id=>typeof id!=='string'||!id.length))) reject('id_array_required',k);
  if (delta.checkpoints !== undefined && !object(delta.checkpoints)) reject('object_required','checkpoints');
  for (const [k,v] of Object.entries(object(delta.checkpoints)?delta.checkpoints:{})) {
   if (!['drive','chat','gmail'].includes(k) || !iso(v)) reject('invalid_checkpoint','checkpoints');
@@ -154,6 +155,25 @@ function merge(dataset, state, delta) {
   next.history.push({change_id:`DELTA-${delta.run_id}-${update.worklog_id}`,entity_type:'worklogs',entity_id:update.worklog_id,before,after:{task_id:target.task_id},actor_id:'system',reason:'scheduled-collect worklog update',run_id:delta.run_id,result:'applied',applied_at:delta.collected_at});
   result.updated++;
  }
+ // Apply removals after all additions and updates, before final reference validation.
+ for (const [table,key,targetType] of [['worklogs','worklog_id','worklog'],['tasks','task_id','task']]) {
+  const field=targetType+'_removals',seen=new Set();
+  for (const [i,id] of (delta[field]||[]).entries()) {
+   const loc=`${field}[${i}]`;
+   const original=(dataset[table]||[]).find(r=>r[key]===id);
+   if (!original || seen.has(id)) {reject('missing_or_duplicate_removal',loc);continue;}
+   seen.add(id);
+   // Avoid multiple changes with the same history ID and ambiguous add/remove runs.
+   if ((delta[table]||[]).some(r=>r[key]===id) || (delta[targetType+'_updates']||[]).some(r=>r[key]===id)) {reject('conflicting_removal',loc);continue;}
+   if ((dataset.history||[]).some(h=>h.entity_type===table&&h.entity_id===id&&h.actor_id!=='system')) {reject('human_correction_protected',loc);continue;}
+   if (table==='tasks' && next.worklogs.some(w=>w.task_id===id)) {reject('task_has_worklogs',loc);continue;}
+   if (table==='tasks' && next.tasks.some(t=>t.task_id!==id&&t.merged_into===id)) {reject('task_is_merge_target',loc);continue;}
+   next[table]=next[table].filter(r=>r[key]!==id);
+   next.links=next.links.filter(l=>l.target_type!==targetType||l.target_id!==id);
+   next.history.push({change_id:`DELTA-${delta.run_id}-${id}`,entity_type:table,entity_id:id,before:structuredClone(original),after:null,actor_id:'system',reason:'remove non-work record',run_id:delta.run_id,result:'applied',applied_at:delta.collected_at});
+   result.removed++;
+  }
+ }
  const ids = Object.fromEntries(Object.entries(KEYS).map(([k,key])=>[k,new Set(next[k].map(r=>r[key]))]));
  const taskIndex = new Map(next.tasks.map(t=>[t.task_id,t]));
  for (const t of next.tasks) {
@@ -216,7 +236,7 @@ function applyDelta(delta, {dataset=DEFAULT_DATASET,dryRun=false}={}) {
  const dir=path.dirname(path.resolve(dataset));
  const stateFile=path.join(dir,'state.json'), logFile=path.join(dir,'runs.log'), lock=path.join(dir,'apply-delta.lock');
  let owned=false;
- const failure=code=>({ok:false,added:0,updated:0,ignored:0,rejected:1,errors:[{code,location:'filesystem'}]});
+ const failure=code=>({ok:false,added:0,updated:0,removed:0,ignored:0,rejected:1,errors:[{code,location:'filesystem'}]});
  try {
   if (fs.existsSync(lock)) {
    if (Date.now()-fs.statSync(lock).mtimeMs<=30*60*1000 || dryRun) return failure('locked');

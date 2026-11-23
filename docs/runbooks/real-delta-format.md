@@ -36,11 +36,11 @@ node server/real/apply-delta.cjs delta.json --dataset /path/to/fixture.json --dr
 {"run_id":"COLLECT-20261120-2100","collected_at":"2026-11-20T21:00:00+09:00","task_updates":[{"task_id":"DEMO-T","status":"completed","completed_at":"2026-11-20","completion_basis":"완료 판별 근거 요약"}]}
 ```
 
-stdout은 요약 JSON 한 줄이다. `ok: true`면 exit 0, 거부·입력·I/O 오류면 exit 1이다. `added`, `updated`, `ignored`, `rejected`, `errors`를 확인한다. 오류는 값 대신 코드와 위치만 출력하므로 비밀값을 다시 노출하지 않는다. `--dry-run`은 JSON·state·로그·lock 모두 변경하지 않는다. lock이 있으면 dry-run도 거부한다.
+stdout은 요약 JSON 한 줄이다. `ok: true`면 exit 0, 거부·입력·I/O 오류면 exit 1이다. `added`, `updated`, `removed`, `ignored`, `rejected`, `errors`를 확인한다. 오류는 값 대신 코드와 위치만 출력하므로 비밀값을 다시 노출하지 않는다. `--dry-run`은 JSON·state·로그·lock 모두 변경하지 않는다. lock이 있으면 dry-run도 거부한다.
 
 ## 병합 계약
 
-- 최상위 필수값: `run_id`(영숫자·하이픈·밑줄, 1~64자), `collected_at`(시간대 포함 ISO). 선택값: `checkpoints`, 위 6개 레코드 배열, `task_updates`, `worklog_updates`, `project_updates`, `notes`. 그 밖의 최상위 필드는 거부한다.
+- 최상위 필수값: `run_id`(영숫자·하이픈·밑줄, 1~64자), `collected_at`(시간대 포함 ISO). 선택값: `checkpoints`, 위 6개 레코드 배열, `task_updates`, `worklog_updates`, `project_updates`, `worklog_removals`, `task_removals`, `notes`. 그 밖의 최상위 필드는 거부한다.
 - 각 배열의 키: `person_id`, `project_id`, `task_id`, `worklog_id`, `source_key`, `link_id`. 새 레코드의 `run_id`와 `created_run_id`는 실행 ID로 강제한다. 기존 키는 두 provenance 필드를 제외한 내용이 같으면 무시하고, 다르면 전체 delta를 거부한다. JSON 객체 속성 순서는 무관하다.
 - 동일 run의 입력 digest를 `state.applied_runs`에 보관한다. 같은 run·같은 입력은 재적용하지 않는다. 같은 run·다른 입력은 거부한다. 최초 데이터셋에 이미 존재하지만 state에 추적되지 않은 run ID도 재사용할 수 없다.
 - `task_updates`: `merged_into`, `wbs_groups`, `description`, `task_id`와 `status`, `completed_at`, `completion_basis`, `due_date`, `due_basis`, `title`, `summary`, `category`, `assignee_id`, `project_id`, `wbs_code`, `start_date`, `plan_source`, `plan_ref`만 허용한다. `wbs_groups` 외 값은 문자열 또는 null이며 상태는 `in_progress`, `completion_proposed`, `completed`만 허용한다. 한 실행에서 같은 태스크를 두 번 갱신할 수 없다.
@@ -64,9 +64,19 @@ stdout은 요약 JSON 한 줄이다. `ok: true`면 exit 0, 거부·입력·I/O �
 
 ## WBS 계획 필드와 작업 내역 재연결 (ADR-018)
 
-신규 tasks와 task_updates는 선택 필드 wbs_code(문자열, 16자 이하), start_date 및 due_date(실제 존재하는 YYYY-MM-DD), plan_source(wbs, activity 또는 reference), plan_ref(source_key 문자열)를 받는다. task_updates에서는 이 필드들을 null로 지울 수 있다. 신규 projects도 기존 추가 계약에 따라 지원한다.
+신규 tasks와 task_updates는 선택 필드 wbs_code(문자열, 16자 이하), start_date 및 due_date(실제 존재하는 YYYY-MM-DD), plan_source(wbs 또는 activity), plan_ref(source_key 문자열)를 받는다. task_updates에서는 이 필드들을 null로 지울 수 있다. 신규 projects도 기존 추가 계약에 따라 지원한다.
 
-`plan_source: "reference"`는 태스크가 아닌 참고 기록이다(ADR-018 §8). 원본 데이터와 판별 근거는 유지하지만 화면의 태스크·작업 내역·진척률·히트맵·일/주/월 요약·담당자 집계에서 제외하며, 모든 태스크가 참고 기록인 프로젝트도 숨긴다. 폴더 맥락은 완료 Run의 파일형 source 전체를 `folder_id`로 묶어 제공하고 메시지는 제외한다. 연결되지 않은 파일도 표시하며 URL은 기존 허용 호스트 검증을 통과한 경우에만 제공한다.
+`plan_source: "reference"` 신규 입력·갱신은 거부한다. 기존 데이터에 남아 있는 값은 검증 실패로 보지 않으며 기존 화면 제외 로직은 호환용으로 유지한다. 업무가 아닌 기록은 아래 제거 계약으로 삭제한다. 폴더 맥락은 완료 Run의 파일형 source 전체를 `folder_id`로 묶어 제공하고 메시지는 제외한다. 연결되지 않은 파일도 표시하며 URL은 기존 허용 호스트 검증을 통과한 경우에만 제공한다.
+
+## 업무가 아닌 기록 제거
+
+`worklog_removals: ["DEMO-W"]`, `task_removals: ["DEMO-T"]`는 실행 전 존재하는 ID의 배열이다. 빈 문자열·문자열 이외 값·동일 배열의 중복 ID·없는 ID는 거부한다. 같은 대상의 추가/갱신과 제거를 한 delta에 섞을 수 없다. 삭제는 모든 추가·갱신 및 worklog 제거 후 적용한다. task 제거 시 최종 상태에서 해당 task를 가리키는 worklog가 없어야 하므로, 같은 delta에서 worklog를 제거하거나 `worklog_updates`로 다른 task에 옮길 수 있다. 다른 task의 `merged_into` 대상인 task는 제거할 수 없다.
+
+dataset.history에 해당 대상의 actor_id가 system이 아닌 이력이 하나라도 있으면 제거를 거부한다. 제거한 worklog/task를 target으로 하는 links도 함께 제거하고 sources는 유지한다. 각 제거는 `DELTA-<run_id>-<id>`, entity_type(worklogs/tasks), 원래 전체 레코드 before, after:null, actor_id:system, reason:`remove non-work record`, applied_at:collected_at으로 history에 남긴다. `removed`는 직접 제거한 worklog/task 수이며 함께 제거한 links는 세지 않는다. 재실행은 제거 요청도 ignored로 세고 history를 추가하지 않는다. 한 건이라도 실패하면 전체 delta를 거부하고 removed는 0이다. dry-run 및 파일 롤백 계약은 동일하다.
+
+```json
+{"run_id":"REMOVE-DEMO","collected_at":"2026-11-23T09:00:00+09:00","worklog_removals":["DEMO-W"],"task_removals":["DEMO-T"]}
+```
 
 ```json
 {"run_id":"WBS-DEMO","collected_at":"2026-11-20T21:00:00+09:00","tasks":[{"task_id":"DEMO-T2","project_id":"DEMO-PR","title":"계획 태스크","status":"in_progress","wbs_code":"1.1.1","start_date":"2026-11-01","due_date":"2026-11-30","plan_source":"wbs","plan_ref":"drive:demo-wbs"}],"worklog_updates":[{"worklog_id":"DEMO-W","task_id":"DEMO-T2"}]}

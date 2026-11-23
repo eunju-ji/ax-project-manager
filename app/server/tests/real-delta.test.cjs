@@ -11,6 +11,40 @@ function mergeCase() {
  const data={persons:[{person_id:'P'}],projects:[{project_id:'PR',name:'Old'},{project_id:'OTHER'}],tasks:['A','B','C'].map(task_id=>({task_id,project_id:'PR',status:'in_progress'})),worklogs:[{worklog_id:'W',task_id:'A',performer_id:'unknown',summary:'synthetic',performed_at_precision:'unknown'}]};
  return {data,delta:{run_id:'MERGE',collected_at:'2026-11-23T00:00:00Z',task_updates:[{task_id:'A',merged_into:'B'}],worklog_updates:[{worklog_id:'W',task_id:'B'}]}};
 }
+
+function removalCase() {
+ const {data}=mergeCase();data.tasks[0].plan_source='reference';
+ data.sources=[{source_key:'S'}];data.links=[['LW','worklog','W'],['LT','task','A'],['KEEP','task','B']].map(([link_id,target_type,target_id])=>({link_id,target_type,target_id,evidence_type:'source',evidence_key:'S',status:'confirmed'}));
+ return {data,delta:{run_id:'REMOVE',collected_at:'2026-11-23T00:00:00Z',worklog_removals:['W'],task_removals:['A']}};
+}
+test('removals delete targets and links, preserve sources and full history, replay once',()=>{
+ const {data,delta}=removalCase(),before=structuredClone(data),r=merge(data,{},delta);a.equal(r.ok,true);a.equal(r.removed,2);a.equal(r.dataset.worklogs.length,0);a.deepEqual(r.dataset.tasks.map(t=>t.task_id),['B','C']);a.deepEqual(r.dataset.links.map(l=>l.link_id),['KEEP']);a.deepEqual(r.dataset.sources,data.sources);a.deepEqual(data,before);
+ for(const [type,id] of [['worklogs','W'],['tasks','A']]){const h=r.dataset.history.find(h=>h.entity_id===id);a.equal(h.change_id,'DELTA-REMOVE-'+id);a.deepEqual(h.before,data[type][0]);a.equal(h.after,null);a.equal(h.reason,'remove non-work record');a.equal(h.actor_id,'system');}
+ const replay=merge(r.dataset,r.state,delta);a.equal(replay.ok,true);a.equal(replay.ignored,2);a.equal(replay.removed,0);a.equal(replay.dataset.history.length,2);
+});
+test('task removal accepts reassignment and retains worklog links; legacy reference permits unrelated update',()=>{
+ const {data,delta}=removalCase();delete delta.worklog_removals;delta.worklog_updates=[{worklog_id:'W',task_id:'B'}];const r=merge(data,{},delta);a.equal(r.ok,true);a.equal(r.dataset.worklogs[0].task_id,'B');a.deepEqual(r.dataset.links.map(l=>l.link_id),['LW','KEEP']);
+ a.equal(merge(data,{}, {run_id:'OLD',collected_at:delta.collected_at,task_updates:[{task_id:'A',title:'updated'}]}).ok,true);
+});
+for(const kind of ['remaining worklog','new worklog','merge target','human task','human worklog','human unchanged history','updated removal','new removal'])test('removal rejects '+kind+' atomically',()=>{
+ const {data,delta}=removalCase();
+ if(kind==='remaining worklog')delete delta.worklog_removals;
+ if(kind==='new worklog')delta.worklogs=[{...data.worklogs[0],worklog_id:'NEW'}];
+ if(kind==='merge target')data.tasks[1].merged_into='A';
+ if(kind.startsWith('human')){const type=kind==='human worklog'?'worklogs':'tasks',id=type==='tasks'?'A':'W';data.history=[{entity_type:type,entity_id:id,actor_id:'P',before:{title:'old'},after:{title:kind==='human unchanged history'?'old':'new'}}];}
+ if(kind==='updated removal')delta.task_updates=[{task_id:'A',title:'new'}];
+ if(kind==='new removal'){delta.tasks=[{task_id:'NEW',project_id:'PR',status:'in_progress'}];delta.task_removals=['NEW'];}
+ const before=structuredClone(data),r=merge(data,{},delta);a.equal(r.ok,false);a.equal(r.removed,0);a.deepEqual(data,before);
+});
+for(const field of ['worklog_removals','task_removals'])for(const value of ['W',[1],[''],[null],['missing'],field==='task_removals'?['A','A']:['W','W']])test(field+' rejects malformed, missing or duplicate '+JSON.stringify(value),()=>{
+ const {data,delta}=removalCase();delta[field]=value;const before=structuredClone(data);a.equal(merge(data,{},delta).ok,false);a.deepEqual(data,before);
+});
+test('removal dry-run preserves bytes; API reload drops removed task',async t=>{
+ const f=fixture(t);a.equal(f.apply().ok,true);
+ const {server}=createServer({dir:f.dir,seedMode:'small',realDatasetFile:f.file});f.setServer(server);await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const get=async()=>await(await fetch(`http://127.0.0.1:${server.address().port}/api/view?data=real`)).json();a.equal((await get()).projects[0].tasks.length,1);
+ const d={run_id:'REMOVE',collected_at:f.delta.collected_at,worklog_removals:['W'],task_removals:['T']},before=f.read();a.equal(f.apply(d,{dryRun:true}).ok,true);a.deepEqual(f.read(),before);a.equal(f.apply(d).removed,2);a.equal(f.read().sources.length,1);a.equal((await get()).projects.flatMap(p=>p.tasks).length,0);
+});
 test('task merge and worklog move validate final state, preserve history and allow clearing',()=>{
  const {data,delta}=mergeCase(),r=merge(data,{},delta);a.equal(r.ok,true);a.equal(r.updated,2);
  a.equal(r.dataset.tasks[0].merged_into,'B');a.equal(r.dataset.worklogs[0].task_id,'B');a.equal(r.dataset.history[0].after.merged_into,'B');a.equal(data.tasks[0].merged_into,undefined);
@@ -68,10 +102,10 @@ function fixture(t) {
  delta.links[0].status='confirmed';
  return {dir,file,data,delta,setServer:s=>server=s,read:()=>JSON.parse(fs.readFileSync(file,'utf8')),apply:(d=delta,opts={})=>applyDelta(d,{dataset:file,...opts})};
 }
-test('reference plan source is retained on new tasks and task updates',t=>{
+test('reference plan source is rejected on new tasks and task updates',t=>{
  const f=fixture(t);f.delta.tasks=[{task_id:'REF',project_id:'PR',title:'참고',status:'in_progress',plan_source:'reference'}];
- f.delta.task_updates=[{task_id:'T',plan_source:'reference'}];a.equal(f.apply().ok,true);
- a.equal(f.read().tasks.find(t=>t.task_id==='REF').plan_source,'reference');a.equal(f.read().tasks.find(t=>t.task_id==='T').plan_source,'reference');
+ a.equal(f.apply().ok,false);delete f.delta.tasks;
+ f.delta.task_updates=[{task_id:'T',plan_source:'reference'}];a.equal(f.apply().ok,false);
 });
 test('merge stamps provenance, Seoul date, state and audit; replay is idempotent', t => {
  const f=fixture(t); const r=f.apply(); a.equal(r.ok,true); a.equal(r.added,3);

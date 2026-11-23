@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AX 프로젝트 관리장 | 진행 요약</title>
+<style>
+:root{color-scheme:light;--bg:#f3f5f1;--panel:#fff;--ink:#23302a;--soft:#4e6056;--line:#dbe4db;--green:#285c45;--tint:#edf4ee;--amber:#845114}
+*{box-sizing:border-box}html{scroll-padding-top:4.5rem}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 "Malgun Gothic","Apple SD Gothic Neo",sans-serif;word-break:keep-all;overflow-wrap:anywhere}
+a{color:var(--green);text-underline-offset:.22em}a:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+header{position:sticky;top:0;z-index:1;background:#f3f5f1f7;border-bottom:1px solid var(--line)}
+nav,main,footer{max-width:1090px;margin:auto;padding-inline:1.25rem}nav{display:flex;gap:1.2rem;align-items:center;overflow:auto;padding-block:.72rem;white-space:nowrap}nav a{text-decoration:none}nav a:first-child{font-weight:800;margin-right:auto}
+main{padding-block:1.35rem;display:grid;gap:1rem}
+section,.intro{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:clamp(1rem,3vw,1.65rem);min-width:0}
+.intro{background:#e7efe6}h1,h2,h3{line-height:1.3;letter-spacing:-.04em;margin:0}h1{font-size:clamp(1.55rem,3.5vw,2.1rem)}h2{font-size:clamp(1.18rem,2.4vw,1.45rem);margin-bottom:.45rem}h3{font-size:1.02rem;margin-bottom:.3rem}.subhead{margin-top:1.35rem}.steps{padding-left:1.45rem}.steps li{margin-bottom:.55rem;padding-left:.15rem}
+p{margin:.35rem 0 .85rem}p:last-child{margin-bottom:0}.meta,.source{font-size:.83rem;color:var(--soft)}.source{margin-top:.85rem}
+.summary,.flow,.stats{list-style:none;padding:0;margin:.85rem 0 0;display:grid;gap:.65rem}.summary{grid-template-columns:repeat(3,minmax(0,1fr))}
+.summary li,.flow li,.stats li{padding:.75rem .85rem;background:var(--tint);border-radius:6px}.intro .summary li{background:#f8fbf7}
+.summary strong,.flow strong,.stats strong{display:block;color:var(--green);margin-bottom:.15rem}
+.flow{grid-template-columns:repeat(5,minmax(0,1fr));gap:1.35rem;margin-bottom:.9rem}.flow li{position:relative;border-top:2px solid var(--green);font-size:.91rem}.flow li:not(:last-child)::after{content:"→";position:absolute;left:calc(100% + .24rem);top:35%;color:var(--green)}
+.flow.stack{grid-template-columns:repeat(4,minmax(0,1fr))} table{border-collapse:collapse;width:100%;text-align:left;margin-top:.75rem;font-size:.93rem}
+th,td{padding:.58rem .65rem;border-bottom:1px solid var(--line);vertical-align:top}thead th{background:var(--tint);color:var(--green)}tbody th{width:19%}.state{font-weight:700;color:var(--green)}.pending{color:var(--amber)}
+.stats{grid-template-columns:repeat(4,minmax(0,1fr))}.stats strong{font-size:1.25rem;line-height:1.2}
+details{margin-top:.75rem;color:var(--soft);font-size:.83rem}pre{white-space:pre-wrap}footer{padding-bottom:1.5rem;color:var(--soft);font-size:.88rem}
+@media(max-width:650px){nav{gap:1rem} .summary,.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.flow,.flow.stack{grid-template-columns:1fr;gap:1.05rem}.flow li:not(:last-child)::after{content:"↓";left:.85rem;top:100%} th,td{padding:.48rem .35rem}tbody th{width:24%}}
+@media(max-width:400px){.summary,.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><nav aria-label="목차">
+<a href="#top">AX 프로젝트 관리장</a><a href="#flow">업무 흐름</a><a href="#logic">업무 판별 기준</a><a href="#history">문제와 변경</a><a href="#service">서비스 구성</a><a href="#data">데이터 관리</a>
+</nav></header>
+<main id="top">
+<div class="intro">
+<h1>AX 프로젝트 관리장</h1>
+<p>프로젝트를 열면 누가 어떤 일을 했는지, 어디까지 진행됐는지, 관련 자료가 무엇인지 한곳에서 볼 수 있다.</p>
+<ul class="summary">
+<li><strong>팀원</strong>이번 주에 한 일과 관련 자료를 확인한다.</li>
+<li><strong>담당자</strong>잘못 붙은 자료를 고치고 맡은 일이 끝났는지 판단한다.</li>
+<li><strong>프로젝트 책임자</strong>완료를 확정하고 남은 일을 확인한다.</li>
+</ul>
+<p class="meta">2026-11-19 작업 기록 기준</p>
+</div>
+
+<section id="flow">
+<h2>예시 · 회의안 문서를 수정했을 때</h2>
+<p>AX-TF 공유 드라이브에서 ‘인터뷰 회의안’이 수정되면, AI가 어느 프로젝트와 태스크에 속하는지 판단한다. 이어 기존 작업의 추가 근거인지 새 작업인지 분류한다. 아래는 목표 흐름의 예시다.</p>
+<ol class="flow" aria-label="자료가 업무에 연결되는 순서">
+<li><strong>Drive에서 작업</strong>‘인터뷰 회의안’ 수정</li>
+<li><strong>AI가 업무 분류</strong>‘사용자 조사 → 인터뷰 준비’로 분류</li>
+<li><strong>AI가 작업 유형 판단</strong>같은 초안을 다듬은 활동이라 기존 작업에 근거 추가로 판단</li>
+<li><strong>책임자가 완료 확정</strong>담당자의 완료 판단과 근거를 확인</li>
+<li><strong>나중에 다시 조회</strong>남은 일과 완료된 일, 관련 자료를 확인</li>
+</ol>
+<p>AI의 업무 분류와 태스크 완료는 별개다. 담당자가 결과물을 확인하고 책임자가 완료를 확정한다. 주간 화면의 건수는 작업 기록 수이며, 걸린 시간을 뜻하지 않는다.</p>
+</section>
+
+<section id="logic">
+<h2>업무 판별 기준</h2>
+<p>층위는 리소스 관리에서 내려야 할 결정으로 구분한다. 프로젝트에서는 인력을 어디에 배분할지, 태스크에서는 누가 어떤 결과를 책임질지, 하위태스크에서는 그 결과를 위해 어떤 일을 했는지 본다. 자료가 부족한 층위는 비워 둘 수 있다.</p>
+<table>
+<thead><tr><th scope="col">층위</th><th scope="col">구분 기준</th><th scope="col">같은 층위끼리 맞추는 기준</th></tr></thead>
+<tbody>
+<tr><th scope="row">프로젝트</th><td>하나의 사업·업무 목표 아래 여러 결과물을 묶어 인력과 우선순위를 조정하는 단위</td><td>독립된 목표와 성과 판단 기준이 있고, 별도로 인력을 배분할 필요가 있는 업무끼리 나눈다. 단일 산출물은 우선 태스크로 검토한다.</td></tr>
+<tr><th scope="row">태스크</th><td>한 명의 책임자에게 맡겨 진행·완료를 추적할 수 있는 결과물 단위. 기여자는 여러 명일 수 있다.</td><td>담당자, 결과물, 완료 기준을 한 문장으로 설명할 수 있어야 한다. 하나의 태스크에 따로 배정하거나 완료할 수 있는 결과가 여러 개라면 나눈다.</td></tr>
+<tr><th scope="row">하위태스크<br><small>현재 제품의 작업 내역</small></th><td>태스크의 결과를 만드는 과정에서 실제로 수행한 의미 있는 작업 묶음. 누가 어떤 기여를 했는지 확인하는 단위다.</td><td>동일한 중간 결과를 위한 반복 편집은 한 작업에 근거로 묶는다. 준비·실행·검토처럼 기여나 결과가 구분되는 작업은 나눌 수 있다. 저장·열람 같은 개별 이벤트는 근거만 남긴다.</td></tr>
+</tbody>
+</table>
+
+<h3 class="subhead">AI가 크기와 경계를 맞추는 순서</h3>
+<ol class="steps">
+<li><strong>같은 프로젝트의 기존 태스크와 비교한다.</strong> AI는 폴더 깊이보다 목표, 결과물, 책임자, 완료 기준을 먼저 본다. ‘온보딩 개선’ 아래에 여러 결과물이 있으면 프로젝트 수준의 묶음으로 보고, ‘질문지 문구 수정’은 독립 배정이 필요 없는 경우 작업 내역으로 본다.</li>
+<li><strong>결과가 독립적으로 완료되는지 본다.</strong> ‘인터뷰 설계 및 결과 분석’에서 질문지 확정과 인사이트 보고서 작성이 따로 완료될 수 있다면 두 태스크로 나눈다. 반대로 초안 작성과 여러 차례의 문구 수정이 같은 질문지 확정을 위한 것이면 한 태스크 안에 묶는다.</li>
+<li><strong>작업 내역과 활동 근거를 분리한다.</strong> ‘초안 작성’과 ‘이해관계자 검토 반영’은 중간 결과와 기여가 다르면 작업 내역으로 나눌 수 있다. 같은 초안을 저장한 여러 이벤트는 기존 작업의 근거로 붙이고 집계는 늘리지 않는다.</li>
+<li><strong>근거가 닿는 층위까지만 분류한다.</strong> 프로젝트만 확실하면 프로젝트를 확인하고 태스크는 미분류로 둔다. 태스크를 찾았어도 기존 작업과의 관계가 불명확하면 태스크 근거로만 보관한다. 빈자리를 채우기 위해 새 업무를 만들거나 작업 건수에 포함하지 않는다.</li>
+</ol>
+
+<h3 class="subhead">같은 크기로 정리한 예시</h3>
+<table>
+<thead><tr><th scope="col">프로젝트</th><th scope="col">태스크 · 독립적으로 완료할 결과</th><th scope="col">하위태스크 · 실제 작업 예시</th></tr></thead>
+<tbody>
+<tr><th scope="row" rowspan="3">신규 사용자 온보딩 개선</th><td>인터뷰 진행안 확정</td><td>질문지 초안 작성, 검토 의견 반영</td></tr>
+<tr><td>사용자 인터뷰 결과 정리</td><td>인터뷰 진행, 응답을 주제별로 정리</td></tr>
+<tr><td>온보딩 개선안 검증</td><td>테스트 시나리오 작성, 관찰 결과 정리</td></tr>
+</tbody>
+</table>
+<p>크기가 비슷하다는 것은 건당 시간이 같다는 뜻이 아니다. 태스크마다 독립적으로 맡기고 완료할 결과가 있고, 작업 내역마다 구분할 만한 기여가 있다는 뜻이다. 이번 기준은 기획안이며, 현재 Drive 파일럿은 폴더·파일명 기반 태스크 연결 제안까지 구현돼 있다.</p>
+<p class="source"><a href="../decisions/ADR-003-work-hierarchy.md">업무 계층 결정</a> · <a href="../decisions/ADR-002-resource-unit.md">리소스 집계 기준</a> · <a href="../design/m1-03-matching-and-automation.md">동일 업무 판별 설계</a></p>
+<h3 class="subhead">현재 파일럿의 연결 제안 순서</h3>
+<ol class="steps">
+<li><strong>업무 목록을 먼저 확정한다.</strong> 폴더에서 만든 CSV 초안에 담당자가 포함 여부와 태스크 정보를 입력한다. 목록을 가져오면 그 기준으로 연결 후보를 다시 계산한다.</li>
+<li><strong>기존 태스크 후보를 찾는다.</strong> 확정 목록의 폴더 매핑을 우선 본다. 매핑이 없으면 파일명·폴더 경로에 등록된 태스크 이름이나 식별 코드가 있는지 확인한다. 이전에 거절되어 차단된 연결은 후보에서 뺀다.</li>
+<li><strong>후보 수에 따라 검토함에 보낸다.</strong> 하나면 연결을 제안한다. 없거나 여러 개면 ‘판단 불가’로 둔다. 팀원이 제안을 확정하거나 다른 태스크로 교정할 수 있다. 작업자를 대조하지 못한 경우도 별도로 표시한다.</li>
+<li><strong>연결과 완료를 따로 처리한다.</strong> 연결을 확정하면 태스크에 활동 근거가 붙는다. 태스크 완료는 담당자가 결과물과 완료 기준을 확인한 뒤 프로젝트 책임자가 확정한다.</li>
+</ol>
+<p class="source"><a href="../../app/server/connectors/drive/store.cjs">Drive 연결 제안과 확정 처리</a> · <a href="../decisions/ADR-006-completion-approval.md">완료 판단 결정</a></p>
+
+<h3 class="subhead">예외 처리 기준</h3>
+<table>
+<thead><tr><th scope="col">예외</th><th scope="col">현재 Drive 파일럿</th><th scope="col">추가 설계·확인</th></tr></thead>
+<tbody>
+<tr><th scope="row">폴더가 여러 단계로 중첩됨</th><td>파일에서 상위로 올라가며 확정 매핑을 찾는다. 파일과 가장 가까운 매핑을 우선하고, 같은 거리에 후보가 여러 개면 자동으로 고르지 않는다.</td><td>공용 폴더와 참고 자료 폴더를 업무 목록에서 제외할지 담당자가 확인한다.</td></tr>
+<tr><th scope="row">폴더 매핑과 파일명 단서가 다름</th><td>수집 시 폴더 매핑이 있으면 그 후보를 사용한다. 파일명·경로의 태스크 코드나 제목은 매핑이 없을 때만 사용한다. 목록 변경 후 재판별은 폴더 매핑만 다시 계산한다.</td><td>두 단서를 동시에 비교하고, 서로 다른 태스크를 가리키면 충돌 사유를 검토함에 표시하는 방안은 후속 설계다.</td></tr>
+<tr><th scope="row">후보 없음 또는 복수 후보</th><td>‘판단 불가’로 검토함에 남긴다. 검토자가 등록된 태스크를 지정하거나 판단 불가로 마무리한다.</td><td>기존 태스크가 충분히 등록됐는지부터 확인한다. 등록이 충분하고 목적·완료 기준이 다를 때 새 태스크 후보로 올리는 흐름은 제품 설계 범위다.</td></tr>
+<tr><th scope="row">같은 파일을 여러 번 수정함</th><td>동일 이벤트가 다시 수집되면 중복 제거한다. 별개의 편집 이벤트는 이력으로 남길 수 있다.</td><td>같은 결과물을 다듬는 작업은 기존 내역의 근거로 묶고, 별개의 실행과 결과가 확인될 때 새 작업 내역을 제안한다. 편집 횟수로 작업 건수를 늘리는 규칙은 두지 않는다.</td></tr>
+<tr><th scope="row">사람이 이전에 확정하거나 거절함</th><td>재판별은 확정 링크와 이미 판단한 검토 건을 보존한다. 차단 이력이 있는 조합은 연결 후보에서 제외한다.</td><td>거절을 해당 활동에만 적용할지, 같은 파일의 이후 활동에도 적용할지 구분하는 정책은 제품 설계안에 있다.</td></tr>
+<tr><th scope="row">폴더 이동·접근 권한 상실·작업자 미상</th><td>수집·가져오기에서 확인한 폴더 정보로 판단한다. 작업자를 확인하지 못하면 미상 검토 건으로 남긴다.</td><td>이동·권한 상실 후 변경된 경로와 표시 범위를 확인한다. 자료를 볼 수 없게 돼도 이미 남긴 판단과 업무 이력은 보존한다.</td></tr>
+</tbody>
+</table>
+<p class="source"><a href="../../app/server/connectors/drive/structure.cjs">가장 가까운 폴더 매핑과 재판별</a> · <a href="../../app/server/connectors/drive/store.cjs">수집 시 후보 선정</a> · <a href="../design/m1-03-matching-and-automation.md">예외·교정 정책 설계</a></p><h3 class="subhead">같은 업무인지 판단하는 기준</h3>
+<p>아래는 AI의 업무 판별 기준이다. 세 유형을 AI가 분류하는 것은 목표 흐름이다. 현재 Drive 파일럿 코드는 폴더·파일명 규칙에 따른 연결 제안과 검토 절차를 구현했다.</p>
+<table>
+<thead><tr><th scope="col">들어온 활동</th><th scope="col">판단 기준</th><th scope="col">예시</th></tr></thead>
+<tbody>
+<tr><th scope="row">기존 작업의 추가 근거</th><td>이미 기록한 작업과 같은 결과물을 뒷받침하면 기존 내역에 자료만 추가한다. 작업 건수는 유지한다.</td><td>‘회의안 초안 작성’에 같은 초안의 수정 기록을 추가</td></tr>
+<tr><th scope="row">새 작업 내역</th><td>태스크의 목적 안에서 별도의 실행과 결과가 확인되면 새 내역으로 제안한다.</td><td>같은 ‘인터뷰 준비’ 태스크에서 회의안 작성 후 질문지 검토를 별도로 기록</td></tr>
+<tr><th scope="row">새 태스크 후보</th><td>기존 태스크의 목적이나 완료 기준에 들어가지 않으면 새 태스크 후보로 검토한다.</td><td>‘인터뷰 준비’와 별개 결과물이 필요한 ‘인터뷰 결과 분석’</td></tr>
+</tbody>
+</table>
+<p>제목이 비슷하거나 작업자가 같다는 사실은 후보를 찾는 단서다. 같은 업무인지 확정할 때는 이전 교정, 연결된 자료, 결과물, 완료 기준을 함께 본다.</p>
+<p class="source"><a href="../design/m1-03-matching-and-automation.md">동일 업무 판별 설계안</a></p>
+</section>
+<section id="history">
+<h2>문제 및 수정</h2>
+<table>
+<thead><tr><th scope="col">사용 중 생긴 문제</th><th scope="col">왜 생겼나</th><th scope="col">어떻게 바꿨나</th></tr></thead>
+<tbody>
+<tr><th scope="row">저장했다고 나오는데 판단이 반영되지 않음</th><td>이전에는 판단 결과, 태스크 상태, 변경 기록을 따로 저장했다. 중간에 멈추면 일부만 남았고, 다시 처리해도 실제 반영 여부가 정확히 표시되지 않는 경우가 있었다.</td><td>관련 기록을 한꺼번에 저장하도록 바꿨다. 중간에 실패하면 함께 되돌리고, 보는 사이 다른 판단이 저장됐으면 기존 결과를 덮어쓰지 않는다.</td></tr>
+<tr><th scope="row">작업 시간이 자정으로 보이거나 사람별 건수가 어긋남</th><td>날짜만 아는 기록과 정확한 시각을 아는 기록을 같은 방식으로 처리했다. 작업자가 확인되지 않은 기록도 구별할 필요가 있었다.</td><td>시각이나 작업자를 모르면 그대로 표시한다. 작업자 미상은 개인별 건수에서 빼고, 같은 작업 기록은 팀 합계에서 한 번만 센다.</td></tr>
+<tr><th scope="row">Drive에서 가져온 자료를 어느 일에 붙일지 모름</th><td>파일 이름과 폴더만으로는 담당자나 업무 범위를 확정하기 어렵다. 실제 프로젝트와 태스크 목록도 준비돼 있어야 연결 후보를 찾을 수 있다.</td><td>폴더에서 업무 목록 초안을 만들고, 사람이 고친 목록을 가져와 연결 후보를 다시 계산하는 기능을 구현했다. 실제 AX-TF 자료에서 후보가 적절한지, 예외가 어떻게 나타나는지 확인이 남아 있다.</td></tr>
+</tbody>
+</table>
+<p class="source"><a href="../../tasks/current-state.md">작업 기록</a> · <a href="../decisions/ADR-013-db-source-of-truth.md">저장 방식 변경 근거</a></p>
+</section>
+
+<section id="service">
+<h2>서비스 구성</h2>
+<ul class="summary">
+<li><strong>가져오기</strong>승인된 AX-TF 공유 드라이브에서 파일 정보와 활동을 읽는다. 화면을 열 때마다 Drive를 조회하지 않고, 별도 수집 작업으로 가져온다.</li>
+<li><strong>조회 · 로컬 API</strong>브라우저는 서버의 조회 API에서 SQLite에 저장된 프로젝트, 주간 현황, 미확정 연결 후보를 받아 표시한다. 검토함은 판단이 필요한 건을 모아 보여준다.</li>
+<li><strong>판단 · 업무 서비스</strong>서버는 검토 건과 대상 태스크를 확인하고, 근거 연결과 판단 이력을 SQLite에 함께 저장한다. 화면은 서버의 저장 결과를 받는다.</li>
+</ul>
+<p><strong>현재 쓸 수 있는 범위</strong> · 예시 화면과 로컬 저장 흐름은 합성 데이터로 확인했다. AX-TF 수집 범위는 승인됐고 수집 기능은 준비됐다. 폴더 초안·CSV 가져오기와 Apps Script 내보내기 자료의 로컬 가져오기 경로도 구현됐다. 회사 환경에서 실제 배포·수집한 결과는 확인되지 않았다.</p>
+<p class="source"><a href="../migration/m4-drive-connector-report.md">Drive 수집 준비 기록</a> · <a href="../decisions/ADR-015-ax-tf-drive-pilot.md">파일럿 승인 범위</a></p>
+</section>
+
+<section id="data">
+<h2>데이터 관리</h2><h3 class="subhead">왜 DB가 필요한가</h3>
+<p>‘완료 확정’ 한 건은 검토 결과, 태스크 상태, 변경 이력을 함께 바꾼다. 이전 JSON 방식은 이 기록을 따로 쓰다가 중단되면 일부만 남았다. SQLite에서는 관련 변경을 <strong>한 트랜잭션</strong>으로 처리해 모두 반영하거나 모두 되돌린다. 버전 검사로 동시 판단의 덮어쓰기를 막고, 같은 요청을 다시 보내도 결과가 중복 반영되지 않도록 요청 ID를 기록한다.</p>
+<ul class="summary">
+<li><strong>SQLite · 현재</strong>한 PC에서 합성 검증 DB와 파일럿 DB를 별도로 운영한다. 판단·이력 저장, 백업·복원, 판단 기록 내보내기를 로컬에서 검증한다.</li>
+<li><strong>PostgreSQL · 이관 목표</strong>여러 사용자가 서버에서 함께 쓰는 환경을 준비한다. 실제 이관, 동시 사용, 운영 백업은 검증 대상이다.</li>
+<li><strong>Google Sheets · 공유 사본</strong>공유가 필요할 때 DB의 조회 결과를 내보낸다. 업무 상태와 검토 이력은 SQLite 또는 이관 후 PostgreSQL에서 관리한다.</li>
+</ul>
+<table>
+<thead><tr><th scope="col">어디에 남나</th><th scope="col">무엇이 남나</th><th scope="col">사용할 때 어떤 차이가 있나</th></tr></thead>
+<tbody>
+<tr><th scope="row">Google Drive</th><td>문서·파일 원본</td><td>원문은 Drive에서 본다. 관리장은 파일이나 댓글 본문을 복사해 저장하지 않는다.</td></tr>
+<tr><th scope="row">SQLite · 업무 데이터</th><td>파일 이름·경로·활동 정보, 업무와 자료의 연결, 완료 판단과 변경 기록</td><td>같은 활동을 다시 가져와도 기록이 늘어나지 않고, 팀원이 교정한 결과는 다시 열어도 남는다.</td></tr>
+<tr><th scope="row">SQLite · 파일럿 DB</th><td>실제 파일럿 데이터용 공간과 예시 데이터용 공간을 분리</td><td>예시 기록이 실제 업무 현황에 섞이지 않는다. 사람이 남긴 판단은 이후 옮길 수 있도록 내보내기와 가져오기를 준비했다.</td></tr>
+<tr><th scope="row">Google Sheets</th><td>추후 팀 공유용 현황 사본</td><td>팀이 현황을 보는 용도다. 업무 상태와 판단의 수정은 관리장에서 한다.</td></tr>
+</tbody>
+</table>
+<p class="source"><a href="../decisions/ADR-013-db-source-of-truth.md">관리장과 Sheets의 역할</a> · <a href="../decisions/ADR-015-ax-tf-drive-pilot.md">저장 범위</a></p>
+</section>
+</main>
+<footer>이전 검토 시점의 상세 문서 · <a href="PROJECT_PLAN.md">기획안</a> · <a href="PROJECT_STATUS.md">현상황</a> · <a href="REQUIREMENTS_TRACEABILITY.md">요구사항 추적표</a></footer>
+</body>
+</html>

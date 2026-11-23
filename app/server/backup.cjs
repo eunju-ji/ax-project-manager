@@ -1,0 +1,4 @@
+﻿const {open}=require('./repo/sqlite/index.cjs');const {snapshot}=require('./repo/sqlite/records.cjs');const {digest}=require('./domain/rules.cjs');
+async function verifyBackup(db,destination){const before=db.tx(tx=>digest(snapshot(tx)));await db.backup(destination);const restored=open(destination);try{return restored.tx(tx=>{const integrity=tx.get('PRAGMA integrity_check').integrity_check;const references=tx.all('PRAGMA foreign_key_check');const after=digest(snapshot(tx));if(integrity!=='ok'||references.length||before!==after)throw Error('backup verification failed');return {integrity,references:references.length,businessDigest:after};});}finally{restored.close();}}
+if(require.main===module){const db=open(process.argv[2]);verifyBackup(db,process.argv[3]).then(r=>console.log(JSON.stringify(r))).finally(()=>db.close());}
+module.exports={verifyBackup};

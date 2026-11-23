@@ -96,3 +96,20 @@ Discovery → Design → Build → Review → Iterate
 - 다음 작업
 
 승인이 필요한 사항만 사용자에게 질문한다.
+
+## 8. Git 자동화 및 작업 종료
+- Git 관련 공통 정책은 AGENTS.md를 따른다.
+- 구현 태스크 시작 시 독립 작업 브랜치를 준비한다.
+- Builder가 구현을 완료하면 테스트 결과를 확인한다.
+- 필요한 경우 Reviewer의 독립 검토를 수행한다.
+- 완료 기준 충족 후 변경 파일을 검토한다.
+- Git diff를 기반으로 자연스러운 한국어 커밋 메시지를 작성한다.
+- 작업 브랜치에 Commit 및 Push한다.
+- 주요 기능은 Pull Request를 생성한다.
+- main 브랜치 병합은 사용자 승인 후 수행한다.
+- Commit 및 Push 성공 여부를 직접 확인한다.
+- tasks/current-state.md에 브랜치와 커밋 상태를 기록한다.
+- 작업 완료 보고에는 브랜치명, 커밋 메시지,
+  Push 결과 및 PR 주소를 포함한다.
+
+

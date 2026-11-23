@@ -3,3 +3,7 @@
 !.env.example
 node_modules/
 .cache/
+preview/
+__pycache__/
+test-results/
+playwright-report/

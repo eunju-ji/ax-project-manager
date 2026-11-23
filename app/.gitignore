@@ -1,0 +1,14 @@
+node_modules/
+__pycache__/
+debug.log
+
+poc/.runtime/
+
+poc/.runtime.backup-*/
+
+server/.runtime/
+server/.benchmark/
+.secrets/
+server/.pilot/
+server/.real/
+server/.pilot.locked-*/

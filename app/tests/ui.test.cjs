@@ -101,7 +101,7 @@ test('project review opens the exact work item; both answers update status and c
  assert.match(a.html(),/data-action="reviews"/);
  const before=a.run('reviewCount()');
  a.run("openTaskReview('R-01')");
- assert.equal(a.run('state.reviews'),false);assert.equal(a.run('state.project'),'ax');assert.ok(a.run("state.expanded.has('AX-05')"));
+ assert.equal(a.run('state.reviews'),false);assert.equal(a.run('state.project'),'ax');assert.equal(a.run('state.drawerTask'),'AX-05');
  a.run("answerReview('R-01','완료')");assert.equal(a.run("state.taskStates.get('AX-05')"),'완료');assert.equal(a.run('reviewCount()'),before-1);
  assert.match(a.html(),/class="tag plan-status completed"/);
  a.run("answerReview('R-01','진행 중')");assert.equal(a.run("state.taskStates.get('AX-05')"),'진행 중');assert.equal(a.run('reviewCount()'),before-1);
@@ -166,8 +166,7 @@ test('expanded monthly WBS rows share dates, natural order and reusable task det
  assert.match(html,/left:96.66666666666667%;width:3.3333333333333286%/);
  assert.match(html,/일정 미정/);assert.match(html,/12\/1 — 12\/3/);
  assert.doesNotMatch(a.run('projectDetail(projects[0])'),/class="work-section"/);
- a.run("state.expanded.add('two')");assert.match(a.run('timeline([projects[0]],false,true)'),/id="task-two"/);
- assert.match(a.run('timeline([projects[0]],false,true)'),/subtask-execution-log/);
+ a.run("state.drawerTask='two'");assert.doesNotMatch(a.run('timeline([projects[0]],false,true)'),/gantt-task-details/);assert.match(a.run('taskDrawer()'),/drawer-day/);
  a.run("state.theme='notion'");assert.match(a.run('projectDetail(projects[0])'),/class="work-section"/);
 });
 
@@ -206,3 +205,10 @@ test('unverified chips, activity deadlines and six-state Gantt legend are distin
  for(const label of ['완료','진행 중','지연','확인 필요','예정','일정 미정'])assert.ok(legend.includes('>'+label+'<'));
  const css=fs.readFileSync(path.join(root,'styles.css'),'utf8');assert.match(css,/plan-status.unverified[^}]*dashed/);assert.match(css,/task-gantt-bar.unverified[^}]*repeating-linear-gradient/);
 });
+
+ test('task drawer keeps properties, evidence, grouped logs and deduplicated source files',()=>{
+ const a=app();a.run("state.drawerTask=projects[0].tasks[0].id;projects[0].tasks[0].completedAt='2026-11-17';projects[0].tasks[0].completionBasis='산출물 승인';");
+ const html=a.run('taskDrawer()');assert.match(html,/role="dialog" aria-modal="true" aria-labelledby="task-drawer-title"/);for(const text of ['상태','담당','기간','완료일','산출물 승인','산출물','계획 출처','작업 내역','관련 자료'])assert.ok(html.includes(text));
+ assert.equal((html.match(/class="drawer-entry"/g)||[]).length,a.run('projects[0].tasks[0].subtasks.length'));
+ assert.equal((html.match(/class="drawer-files"/g)||[]).length,1);a.run("state.theme='notion'");assert.equal(a.run('taskDrawer()'),'');
+ });

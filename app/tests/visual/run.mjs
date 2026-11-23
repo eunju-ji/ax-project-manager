@@ -137,11 +137,26 @@ async function nav() {
       expect(await label.evaluate(e=>getComputedStyle(e).position)).toBe('absolute');
       expect(await label.evaluate(e=>e.getBoundingClientRect().left>=e.parentElement.getBoundingClientRect().right)).toBe(true);
       await p.locator('[data-gantt-task="wbs-two"] .gantt-task-toggle').click();
-      await expect(p.locator('#task-wbs-two .subtask-execution-log').first()).toBeVisible();
+      await expect(p.locator('.task-drawer .drawer-entry').first()).toBeVisible();
       await expect(p.locator('.project-detail .work-section')).toHaveCount(0);
       expect(await p.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+      await p.keyboard.press('Escape');await expect(p.locator('.task-drawer')).toHaveCount(0);
       await p.locator('[data-gantt-task="wbs-two"]').screenshot({path:path.join(results,'wbs-mobile-row.png')});
       await p.setViewportSize({width:1440,height:900});
+    });
+    await check('task drawer: document, keyboard, navigation, sources and responsive sheet',async()=>{
+      await load(p,url);await opened(p);
+      const rows=p.locator('.gantt-task-toggle'),first=rows.first(),task=await first.getAttribute('data-task');
+      await first.click();const drawer=p.locator('.task-drawer');await expect(drawer).toBeVisible();await expect(p.locator('#task-drawer-title')).toBeFocused();
+      await expect(p.locator('.gantt-task-details')).toHaveCount(0);await expect(p.locator('.task-properties')).toContainText('\uacc4\ud68d \ucd9c\ucc98');
+      await expect(p.locator('.drawer-day').first()).toBeVisible();expect((await drawer.boundingBox()).width).toBe(520);
+      const controls=drawer.locator('button:not([disabled]),a[href]');await p.keyboard.press('Shift+Tab');await expect(controls.last()).toBeFocused();await p.keyboard.press('Tab');await expect(controls.first()).toBeFocused();
+      const title=await p.locator('#task-drawer-title').textContent();await p.locator('[data-action="drawer-step"][data-step="1"]').click();await expect(p.locator('#task-drawer-title')).not.toHaveText(title);await p.locator('[data-action="drawer-step"][data-step="-1"]').click();await expect(p.locator('#task-drawer-title')).toHaveText(title);
+      await rows.nth(1).click();await expect(p.locator('.task-drawer')).toHaveCount(1);await expect(rows.nth(1)).toHaveAttribute('aria-expanded','true');await first.click();
+      const file=drawer.locator('[data-action="file"]:not([disabled])').first();if(await file.count()){await file.click();await expect(p.locator('.file-dialog')).toBeVisible();await p.keyboard.press('Escape');await expect(p.locator('.file-dialog')).toHaveCount(0);await expect(file).toBeFocused();}
+      await p.screenshot({path:path.join(results,'drawer-1440-'+kind+'.png')});await p.keyboard.press('Escape');await expect(drawer).toHaveCount(0);await expect(first).toBeFocused();
+      await first.click();await p.locator('.page-heading h1').click();await expect(drawer).toHaveCount(0);
+      await p.setViewportSize({width:390,height:844});await first.click();await expect(drawer).toBeVisible();expect((await drawer.boundingBox()).width).toBe(390);await p.screenshot({path:path.join(results,'drawer-390-'+kind+'.png')});await p.locator('.task-drawer [data-action="drawer-close"]').click();await expect(drawer).toHaveCount(0);await expect(first).toBeFocused();await p.setViewportSize({width:1440,height:900});
     });
     await check('WBS table columns, row density and expand all',async()=>{
       await load(p,url);await p.locator('[data-action="projects-all"]').click();
@@ -296,7 +311,12 @@ async function nav() {
           await p.evaluate(() => localStorage.removeItem('ax_theme'));
           await load(p, url, theme); await opened(p);
           await p.locator('[data-action="task"]').first().focus(); await p.keyboard.press('Enter');
-          await expect(p.locator('.task-expanded')).toBeVisible();
+          if (theme === 'linear' || theme === 'linear-notion') {
+            await expect(p.locator('.task-drawer')).toBeVisible();
+            await expect(p.locator('#task-drawer-title')).toBeFocused();
+            await p.keyboard.press('Escape');await expect(p.locator('.task-drawer')).toHaveCount(0);
+            await expect(p.locator('[data-action="task"]').first()).toBeFocused();
+          } else await expect(p.locator('.task-expanded')).toBeVisible();
           await p.locator('summary').first().focus(); await p.keyboard.press('Space');
           const candidates = p.locator('a[href],button,input,select,summary,[tabindex="0"]');
           const indices = await candidates.evaluateAll(els => els.flatMap((e, i) =>

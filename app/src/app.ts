@@ -11,6 +11,8 @@ interface Subtask {
     summary: string;
 }
 interface Task {
+    completedAt?: string;
+    completionBasis?: string;
     wbsCode?: string;
     startDate?: string;
     planSource?: string;
@@ -111,7 +113,7 @@ const THEMES: {
     name: string;
     hint: string;
 }[] = [{ id: 'linear', name: 'Linear', hint: '이슈 목록 · 속성 레일' }, { id: 'linear-notion', name: 'Linear · Notion 색상', hint: 'Linear 구조 · Notion 팔레트' }, { id: 'notion', name: 'Notion', hint: '문서 · 갤러리 · 타임라인' }, { id: 'attio', name: 'Attio', hint: '레코드 · 관계 속성' }, { id: 'airtable', name: 'Airtable', hint: '베이스 · Views · 그리드' }, { id: 'clickup', name: 'ClickUp', hint: '보드 · 담당자별 업무' }];
-const state = { theme: 'linear-notion' as Theme, query: '', topic: '전체', owner: '전체', week: 0, summaryUnit: 'week', project: '', openProjects: new Set<string>(), tab: 'topic', expanded: new Set<string>(), themeOpen: false, settingsOpen: false, integration: '', weekOwner: '전체', timelineMonth: 0, reviews: false, reviewed: new Set<string>(), reviewAnswers: new Map<string, string>(), taskStates: new Map<string, string>(), modal: null as null | {
+const state = { theme: 'linear-notion' as Theme, query: '', topic: '전체', owner: '전체', week: 0, summaryUnit: 'week', project: '', openProjects: new Set<string>(), tab: 'topic', expanded: new Set<string>(), drawerTask: '', themeOpen: false, settingsOpen: false, integration: '', weekOwner: '전체', timelineMonth: 0, reviews: false, reviewed: new Set<string>(), reviewAnswers: new Map<string, string>(), taskStates: new Map<string, string>(), modal: null as null | {
         project: string;
         file?: string;
         task?: string;
@@ -232,17 +234,17 @@ function taskTimeline(p: Project, month: DateRange & {days: number}): string {
     const today = M.day(AX_DATA.demoAsOf), index = (Date.parse(today)-Date.parse(month.start))/86400000;
     const todayLine = index >= 0 && index < month.days ? `<span class="today-line" style="left:${(index+.5)/month.days*100}%"></span>` : '';
     const rows = (items: Task[]) => items.map(t => {
-        const range = taskSchedule(t), open = state.expanded.has(t.id), planned = t.planSource === 'wbs';
+        const range = taskSchedule(t), open = linearTheme() ? state.drawerTask === t.id : state.expanded.has(t.id), planned = t.planSource === 'wbs';
         const status = M.taskState(effectiveTask(t), AX_DATA.demoAsOf);
         let lane = '<span class="timeline-outside">일정 미정</span>';
         if (range) {
             const from = (Date.parse(range.start)-Date.parse(month.start))/86400000, to = (Date.parse(range.end)-Date.parse(month.start))/86400000;
             const left = Math.max(0,from)/month.days*100, right = Math.min(month.days,to+1)/month.days*100;
-            lane = right > left ? `<button class="timeline-bar task-gantt-bar ${planned ? '' : 'activity-bar'} ${status}" style="left:${left}%;width:${right-left}%" data-action="task" data-task="${esc(t.id)}" aria-expanded="${open}" aria-controls="task-${esc(t.id)}" aria-label="${esc(t.title)} ${range.start}부터 ${range.end}까지"> <span class="gantt-bar-label">${esc(t.title)}</span></button>` : `<span class="timeline-outside">이 달의 일정 없음 · ${planDate(range.start)} — ${planDate(range.end)}</span>`;
+            lane = right > left ? `<button class="timeline-bar task-gantt-bar ${planned ? '' : 'activity-bar'} ${status}" style="left:${left}%;width:${right-left}%" data-action="task" data-task="${esc(t.id)}" aria-expanded="${open}" aria-controls="${linearTheme() ? 'task-drawer' : 'task-'+esc(t.id)}" aria-label="${esc(t.title)} ${range.start}부터 ${range.end}까지"> <span class="gantt-bar-label">${esc(t.title)}</span></button>` : `<span class="timeline-outside">이 달의 일정 없음 · ${planDate(range.start)} — ${planDate(range.end)}</span>`;
         }
         const ticks = [...new Set(t.subtasks.map(s => M.day(s.performedAt)).filter(d => d >= month.start && d <= month.end))].map(d => `<i class="task-work-tick" style="left:${((Date.parse(d)-Date.parse(month.start))/86400000+.5)/month.days*100}%" title="${fullDate(d)} 작업 내역"></i>`).join('');
         const depth=planned && t.wbsCode ? Math.max(0,t.wbsCode.split('.').length-1):0;
-        return `<div class="timeline-row task-gantt-row ${open?'is-expanded':''}" data-gantt-task="${esc(t.id)}"><button class="gantt-task-toggle wbs-columns" data-action="task" data-task="${esc(t.id)}" aria-expanded="${open}" aria-controls="task-${esc(t.id)}"><span class="gantt-task-copy" style="--wbs-depth:${depth}" title="${esc(t.title)}"><span class="expand-chevron">${icon('chevron',12)}</span><code>${esc(t.wbsCode||'—')}</code><strong>${esc(t.title)}</strong></span><span class="wbs-owner">${avatar(t.owner||'미정')}<span>${esc(t.owner||'미정')}</span></span><span class="wbs-period">${range?planDate(range.start)+'–'+planDate(range.end):'일정 미정'}</span><span>${planStatus(t)}</span></button><div class="timeline-lane">${wbsGrid(month)}${todayLine}${lane}${ticks}</div></div>${open?'<div class="gantt-task-details">'+taskDetails(t,p)+'</div>':''}`;
+        return `<div class="timeline-row task-gantt-row ${open?'is-expanded':''}" data-gantt-task="${esc(t.id)}"><button class="gantt-task-toggle wbs-columns" data-action="task" data-task="${esc(t.id)}" aria-expanded="${open}" aria-controls="${linearTheme() ? 'task-drawer' : 'task-'+esc(t.id)}"><span class="gantt-task-copy" style="--wbs-depth:${depth}" title="${esc(t.title)}"><span class="expand-chevron">${icon('chevron',12)}</span><code>${esc(t.wbsCode||'—')}</code><strong>${esc(t.title)}</strong></span><span class="wbs-owner">${avatar(t.owner||'미정')}<span>${esc(t.owner||'미정')}</span></span><span class="wbs-period">${range?planDate(range.start)+'–'+planDate(range.end):'일정 미정'}</span><span>${planStatus(t)}</span></button><div class="timeline-lane">${wbsGrid(month)}${todayLine}${lane}${ticks}</div></div>${open&&!linearTheme()?'<div class="gantt-task-details">'+taskDetails(t,p)+'</div>':''}`;
     }).join('');
     return rows(planned) + (activity.length ? '<div class="gantt-group-label">계획 외 업무 · '+activity.length+'</div>'+rows(activity) : '');
 }
@@ -313,23 +315,56 @@ function openTaskReview(id: string) { const r = completionReviews().find(r => r.
     return; reveal(r.project, r.taskId); const panel = document.querySelector<HTMLElement>(`[data-review-id="${id}"]`); panel?.scrollIntoView({ block: 'center', behavior: 'instant' }); panel?.querySelector<HTMLElement>('button')?.focus(); }
 function answerReview(id: string, value: string) { const r = completionReviews().find(r => r.id === id); if (!r || !['완료', '진행 중'].includes(value))
     return; if (localPoc) { void saveLocalReview(id, value); return; } state.reviewAnswers.set(id, value); state.taskStates.set(r.taskId, value); state.reviewed.add(id); render(`[data-action="review-answer"][data-id="${id}"][data-value="${value}"]`); }
+function linearTheme() { return state.theme === 'linear' || state.theme === 'linear-notion'; }
+function drawerTasks(p: Project) {
+    return [...p.tasks.filter(t => t.planSource === 'wbs').sort((a,b) => (a.wbsCode || '').localeCompare(b.wbsCode || '', undefined, {numeric:true}) || a.id.localeCompare(b.id)),
+        ...p.tasks.filter(t => t.planSource !== 'wbs').sort((a,b) => (taskSchedule(b)?.end || b.createdAt || '').localeCompare(taskSchedule(a)?.end || a.createdAt || ''))];
+}
+function drawerTime(value: string) { return value && !/^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) ? clockTime(value).split(' ').at(-1) : ''; }
+function taskDrawer(): string {
+    if (!state.drawerTask || !linearTheme()) return '';
+    const p = projects.find(p => p.tasks.some(t => t.id === state.drawerTask));
+    const t = p?.tasks.find(t => t.id === state.drawerTask);
+    if (!p || !t) return '';
+    const tasks = drawerTasks(p), index = tasks.indexOf(t), status = M.taskState(effectiveTask(t), AX_DATA.demoAsOf);
+    const entries = [...t.subtasks].sort((a,b) => b.performedAt.localeCompare(a.performedAt));
+    const days = [...new Set(entries.map(s => M.day(s.performedAt)))];
+    const files = [...new Set(entries.map(s => s.sourceId).filter(Boolean))].map(id => p.files.find(f => f.id === id)).filter((f): f is SourceFile => Boolean(f));
+    const property = (label: string, value: string) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
+    return `<div class="task-drawer-backdrop" data-action="drawer-close"></div><section class="task-drawer" id="task-drawer" role="dialog" aria-modal="true" aria-labelledby="task-drawer-title"><header><div class="task-drawer-toolbar"><small>${esc(p.name)} / ${esc(t.wbsCode || '계획 외 업무')}</small><nav aria-label="태스크 이동"><button class="icon-button" data-action="drawer-step" data-step="-1" aria-label="이전 태스크" ${index === 0 ? 'disabled' : ''}>↑</button><button class="icon-button" data-action="drawer-step" data-step="1" aria-label="다음 태스크" ${index === tasks.length-1 ? 'disabled' : ''}>↓</button><button class="icon-button" data-action="drawer-close" aria-label="태스크 닫기">${icon('x',18)}</button></nav></div><h2 id="task-drawer-title" tabindex="-1">${esc(t.title)}</h2></header><div class="task-drawer-body"><dl class="task-properties">${property('상태',planStatus(t))}${property('담당',avatar(t.owner || '미정')+' '+esc(t.owner || '미정'))}${property('기간',esc(t.startDate || '미정')+' ~ '+esc(t.dueDate || '미정'))}${t.completedAt ? property('완료일',esc(fullDate(t.completedAt))) : ''}${t.completionBasis ? property('완료 근거',esc(t.completionBasis)) : ''}${property('산출물',esc([t.summary,t.detail].filter(Boolean).join('\n') || '등록된 산출물이 없습니다.'))}${property('계획 출처',t.planSource === 'wbs' ? 'WBS' : '계획 외 업무')}</dl>${status === 'unverified' ? '<p class="drawer-notice">종료일이 지났지만 작업 기록·완료 근거를 찾지 못했습니다</p>' : ''}${taskReviewForm(t,p)}<section class="drawer-history"><h3>작업 내역 <small>${entries.length}건</small></h3>${days.map(day => `<section class="drawer-day"><h4>${day ? new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric',weekday:'short'}).format(new Date(day+'T00:00:00+09:00')) : '날짜 미상'}</h4>${entries.filter(s => M.day(s.performedAt) === day).map(s => `<article class="drawer-entry"><div class="drawer-entry-meta"><time datetime="${esc(s.performedAt)}">${drawerTime(s.performedAt) || '시각 미상'}</time><span>${avatar(s.owner)} ${esc(s.owner)}</span></div><strong>${esc(s.title)}</strong><p>${esc(s.summary)}</p>${artifactButton(p,t,s)}</article>`).join('')}</section>`).join('') || '<p class="drawer-empty">아직 작업 내역이 없습니다.</p>'}</section><section class="drawer-files"><h3>관련 자료 <small>${files.length}개</small></h3>${files.map(f => `<button class="artifact-link" data-action="file" data-id="${esc(p.id)}" data-file="${esc(f.id)}" ${f.previewable === false ? 'disabled' : ''}>${icon('file',16)}${esc(f.name)}${icon('external',13)}</button>`).join('') || '<p class="drawer-empty">연결된 자료가 없습니다.</p>'}</section></div></section>`;
+}
+let drawerReturnTask = '';
+let drawerClosing = false;
+function closeTaskDrawer() {
+    if (drawerClosing) return;
+    const finish = () => {
+        drawerClosing = false; state.drawerTask = ''; render();
+        document.querySelector<HTMLElement>(`.gantt-task-toggle[data-task="${CSS.escape(drawerReturnTask)}"]`)?.focus();
+    };
+    const drawer = document.querySelector<HTMLElement>('.task-drawer');
+    if (drawer && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        drawerClosing = true;
+        drawer.animate([{transform:'translateX(0)'},{transform:'translateX(100%)'}],{duration:180,easing:'ease-in',fill:'forwards'}).finished.then(finish,finish);
+    } else finish();
+}
 let returnFocus: HTMLElement | null = null;
 function render(focusKey = '') {
     const oldSources = document.querySelector<HTMLElement>('.source-scroll'), oldSourceProject = oldSources?.dataset.project, oldSourceTop = oldSources?.scrollTop ?? 0;
     const input = document.activeElement as HTMLInputElement, position = input?.id === 'homeSearch' ? input.selectionStart : null;
     document.body.dataset.theme = state.theme === 'linear-notion' ? 'linear' : state.theme;
     document.body.dataset.palette = state.theme === 'linear-notion' ? 'notion' : '';
-    document.getElementById('app')!.innerHTML = header() + `<main id="main"><div class="page-heading"><div><div class="eyebrow">AX팀 업무 기록</div><h1>팀의 일, 한눈에.</h1><p>누가 어떤 일을 했는지, 프로젝트에서 작업 내역까지.</p></div><div class="heading-right">${activityPeople()}<span class="page-date">${icon('calendar', 14)} ${fullDate(AX_DATA.demoAsOf)} 기준</span></div></div>${weekly()}<section class="projects-section">${projectArea()}</section><footer class="page-footer"><span>AX 프로젝트 관리장</span><small>${esc(AX_DATA.demoNotice)}</small></footer></main>` + themePicker() + settingsDialog() + reviewDrawer() + modal();
+    document.getElementById('app')!.innerHTML = header() + `<main id="main"><div class="page-heading"><div><div class="eyebrow">AX팀 업무 기록</div><h1>팀의 일, 한눈에.</h1><p>누가 어떤 일을 했는지, 프로젝트에서 작업 내역까지.</p></div><div class="heading-right">${activityPeople()}<span class="page-date">${icon('calendar', 14)} ${fullDate(AX_DATA.demoAsOf)} 기준</span></div></div>${weekly()}<section class="projects-section">${projectArea()}</section><footer class="page-footer"><span>AX 프로젝트 관리장</span><small>${esc(AX_DATA.demoNotice)}</small></footer></main>` + themePicker() + settingsDialog() + reviewDrawer() + taskDrawer() + modal();
     const newSources = document.querySelector<HTMLElement>('.source-scroll');
     if(newSources && newSources.dataset.project === oldSourceProject) newSources.scrollTop = oldSourceTop;
     const overlay = Boolean(state.reviews || state.modal || state.settingsOpen);
+    document.querySelector('.task-drawer')?.toggleAttribute('inert', Boolean(state.modal));
     const focusBlocked = overlay || state.themeOpen;
     document.querySelector('.skip-link')?.toggleAttribute('inert', focusBlocked);
     document.querySelector('.global-header')?.toggleAttribute('inert', focusBlocked);
     document.querySelector('main')?.toggleAttribute('inert', focusBlocked);
     document.querySelector('.theme-launcher')?.toggleAttribute('inert', state.themeOpen);
     document.querySelector('.theme-picker-anchor')?.toggleAttribute('inert', overlay);
-    document.body.classList.toggle('overlay-open', overlay);
+    document.body.classList.toggle('overlay-open', overlay || Boolean(state.drawerTask));
     if (focusKey === 'homeSearch') {
         const e = document.getElementById('homeSearch') as HTMLInputElement;
         e.focus();
@@ -349,15 +384,18 @@ function reveal(id: string, task?: string) {
     state.topic = '전체';
     state.owner = '전체';
     state.query = '';
-    if (task)
-        state.expanded.add(task);
+    if (task) {
+        if (linearTheme()) { drawerReturnTask = task; state.drawerTask = task; }
+        else state.expanded.add(task);
+    }
     if (state.airView === 'timeline')
         state.airView = 'grid';
     history.pushState(null, '', `#project/${id}`);
-    render();
+    render(state.drawerTask ? '#task-drawer-title' : '');
     document.getElementById(`project-${id}`)?.scrollIntoView({ block: 'start', behavior: 'instant' });
 }
 function close() {
+    if (state.drawerTask && !state.modal && !state.reviews && !state.settingsOpen) { closeTaskDrawer(); return; }
     state.settingsOpen = false;
     state.modal = null;
     state.reviews = false;
@@ -398,8 +436,16 @@ function action(el: HTMLElement) {
         reveal(id, el.dataset.task);
         return;
     }
+    if (a === 'drawer-close') { closeTaskDrawer(); return; }
+    if (a === 'drawer-step') {
+        const p = projects.find(p => p.tasks.some(t => t.id === state.drawerTask));
+        if (p) { const tasks = drawerTasks(p), index = tasks.findIndex(t => t.id === state.drawerTask);
+            state.drawerTask = tasks[index + Number(el.dataset.step)]?.id || state.drawerTask; render('#task-drawer-title'); }
+        return;
+    }
     if (a === 'task') {
         const t = el.dataset.task!;
+        if (linearTheme()) { drawerReturnTask = t; state.drawerTask = t; render('#task-drawer-title'); return; }
         state.expanded.has(t) ? state.expanded.delete(t) : state.expanded.add(t);
         render(`[data-action="task"][data-task="${t}"]`);
         return;
@@ -427,6 +473,7 @@ function action(el: HTMLElement) {
     }
     if (a === 'episode-task') {
         state.tab = 'topic';
+        if (linearTheme()) { drawerReturnTask = el.dataset.task!; state.drawerTask = el.dataset.task!; render('#task-drawer-title'); return; }
         state.expanded.add(el.dataset.task!);
         render(`[data-action="task"][data-task="${el.dataset.task}"]`);
         return;
@@ -521,8 +568,16 @@ function init() {
     fromHash();
     window.addEventListener('popstate', fromHash);
     document.addEventListener('pointerdown', () => document.body.removeAttribute('data-keyboard-navigation'));
+    document.addEventListener('focusin', event => {
+        if (state.drawerTask && !state.modal && !state.reviews && !state.settingsOpen && !(event.target as HTMLElement).closest('.task-drawer')) {
+            document.getElementById('task-drawer-title')?.focus();
+        }
+    });
     document.addEventListener('click', event => {
         const target = event.target as HTMLElement, button = target.closest<HTMLElement>('[data-action]');
+        if (state.drawerTask && !state.modal && !target.closest('.task-drawer') && button?.dataset.action !== 'task') {
+            closeTaskDrawer(); return;
+        }
         if (button) {
             action(button);
             return;
@@ -558,17 +613,17 @@ function init() {
             close();
             return;
         }
-        if (event.key === '/' && !state.themeOpen && !state.settingsOpen && !state.reviews && !state.modal && !['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
+        if (event.key === '/' && !state.themeOpen && !state.settingsOpen && !state.reviews && !state.modal && !state.drawerTask && !['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) {
             event.preventDefault();
             document.getElementById('homeSearch')?.focus();
         }
-        if (event.key === 'Tab' && (state.modal || state.reviews || state.settingsOpen || state.themeOpen)) {
-            const dialog = document.querySelector<HTMLElement>('[aria-modal="true"]'), els = Array.from(dialog?.querySelectorAll<HTMLElement>('button:not([disabled]),a[href],input,select,[tabindex="0"]') || []), first = els[0], last = els.at(-1);
-            if (event.shiftKey && document.activeElement === first) {
+        if (event.key === 'Tab' && (state.modal || state.reviews || state.settingsOpen || state.themeOpen || state.drawerTask)) {
+            const dialog = document.querySelector<HTMLElement>(state.modal ? '.file-dialog' : state.drawerTask ? '.task-drawer' : '[aria-modal="true"]'), els = Array.from(dialog?.querySelectorAll<HTMLElement>('button:not([disabled]),a[href],input,select,[tabindex="0"]') || []), first = els[0], last = els.at(-1);
+            if (event.shiftKey && (document.activeElement === first || !els.includes(document.activeElement as HTMLElement))) {
                 event.preventDefault();
                 last?.focus();
             }
-            else if (!event.shiftKey && document.activeElement === last) {
+            else if (!event.shiftKey && (document.activeElement === last || !els.includes(document.activeElement as HTMLElement))) {
                 event.preventDefault();
                 first?.focus();
             }

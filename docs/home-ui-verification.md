@@ -135,3 +135,13 @@
 - 검증: 설치된 `python3.15.exe build.py` exit 0, `npm.cmd run typecheck` exit 0, `npm.cmd test` 57/57. 모델 경계·확인 필요 제외 계산, UI 칩 병행·계획 외 업무·범례·스타일 회귀 테스트 포함. 브라우저 시각 비교 및 기준 이미지 갱신은 수행하지 않았다.
 - 변경: `app/src/model.js`, `app/src/app.ts`, `app/styles.css`, `app/app.js`, `app/tests/home-model.test.cjs`, `app/tests/ui.test.cjs`, 이 문서와 `tasks/current-state.md`. 오프라인 preview 재생성(Git 제외).
 - `workNarrative` 수정, `app/server/.real/` 접근, 추가 위임, 커밋·푸시 없음. 기존 ADR-018 및 로컬 설정 변경 보존. 다음: AX-Lead 완료 판정 및 통합 검토.
+
+## 2026-11-23 태스크 문서 드로어 — AX-Builder
+
+- Linear·Linear/Notion 태스크 클릭을 인라인 펼침에서 오른쪽 520px 드로어로 변경. 단일 `drawerTask`, 선택 행 강조, 같은 프로젝트 순서의 이전·다음 이동. 다른 테마의 인라인 동작 유지.
+- 속성(상태·담당·기간·완료일/근거·산출물·계획 출처), 확인 필요 안내/기존 검토 폼, KST 날짜별 작업 내역, 중복 없는 관련 자료와 기존 미리보기 연결. adapter에서 `completedAt`·`completionBasis` 전달.
+- 제목 초기 포커스, Tab/Shift+Tab 가두기, X/Esc/바깥 클릭 닫기와 행 포커스 복귀, 중첩 미리보기 복귀 검증. 슬라이드와 reduced-motion 대응, 600px 이하 전체 화면 폭(스크롤바 예약 영역 포함).
+- build.py·typecheck exit 0, 단위/UI 58/58, 서버 105/105, 전체 탐색 102/102. 드로어 전용 개발/오프라인 검증 2/2. 최종 시각 54/54, 기준 및 오프라인 픽셀 차이 모두 0. 첫 재비교의 기존 Notion 834px 홈 2px 차이는 기준 수정 없이 전체 재실행에서 0으로 확인.
+- 시각 기준 갱신: linear-notion의 1440·834·390px `episode`·`review` 6장과 manifest. 인라인 상세가 문서 드로어로 바뀐 의도된 차이. 나머지 PNG 원본 보존.
+- 스크린샷: `app/test-results/drawer-1440-dev.png`, `drawer-390-dev.png`(오프라인은 `-offline.png`). 로그: `drawer-unit.log`, `drawer-server-final.log`, `drawer-navigation-final.log`, `drawer-focused.log`, `drawer-visual-{initial,update,final}.log`. 기준 갱신은 탐색 서버와 충돌하지 않도록 동일 러너의 임시 복사본에서 포트만 8768로 분리. 최종 비교는 `node tests/visual/run.mjs`로 실행했고 임시 러너는 삭제. manifest 54개 해시 일치, git diff --check 통과.
+- workNarrative 원문 동일 확인. server/.real 접근·추가 에이전트·커밋·푸시 없음. 동시 작업자의 current-state 기록과 로컬 설정 보존. 다음: AX-Lead 완료 판정·독립 검토.

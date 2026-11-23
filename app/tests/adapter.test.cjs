@@ -1,5 +1,12 @@
 ﻿const {test}=require('node:test');const assert=require('node:assert/strict');const fixture=require('./fixtures/ops-synthetic.json');const M=require('../src/model.js');
 const adapt=d=>require('../src/adapter.js').adapt(d);const clone=()=>structuredClone(fixture);const all=v=>v.projects.flatMap(p=>p.tasks.flatMap(t=>t.subtasks));
+
+test('merged tasks, logs, files and reviews never enter the screen projection',()=>{
+ const d=clone(),id=d.tasks[0].task_id;d.tasks[0].merged_into=d.tasks[1].task_id;const before=structuredClone(d),v=adapt(d);
+ assert.ok(!v.projects.flatMap(p=>p.tasks).some(t=>t.id===id));assert.ok(!all(v).some(w=>d.worklogs.some(raw=>raw.task_id===id&&raw.worklog_id===w.id)));
+ assert.ok(!v.projects.flatMap(p=>p.files).some(f=>f.taskId===id));assert.ok(!v.reviews.some(r=>r.taskId===id));assert.deepEqual(d,before);
+ d.tasks[0].merged_into=null;assert.ok(adapt(d).projects.flatMap(p=>p.tasks).some(t=>t.id===id));
+});
 test('reference tasks, records, reviews and reference-only projects are excluded without deleting data',()=>{
  const d=clone();d.tasks[0].plan_source='reference';const before=JSON.stringify(d),v=adapt(d);
  assert.ok(!v.projects.flatMap(p=>p.tasks).some(t=>t.id===d.tasks[0].task_id));

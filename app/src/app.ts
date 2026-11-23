@@ -11,6 +11,7 @@ interface Subtask {
     summary: string;
 }
 interface Task {
+    merged_into?: string | null;
     description?: string;
     completedAt?: string;
     completionBasis?: string;
@@ -113,7 +114,8 @@ let saveStatus = '';
 let saving = false;
 const localVersions = new Map<string, number>();
 const pendingDecisions = new Map<string, string>();
-const M = AXModel, projects = AX_DATA.projects.filter(p => !p.tasks.length || p.tasks.some(t => t.planSource !== 'reference')).map(p => ({...p, tasks: p.tasks.filter(t => t.planSource !== 'reference'), files: p.files.filter(f => !p.tasks.some(t => t.id === f.taskId && t.planSource === 'reference'))}));
+const visibleTask = (t: Task) => t.planSource !== 'reference' && t.merged_into == null;
+const M = AXModel, projects = AX_DATA.projects.filter(p => !p.tasks.length || p.tasks.some(visibleTask)).map(p => ({...p, tasks: p.tasks.filter(visibleTask), files: p.files.filter(f => !p.tasks.some(t => t.id === f.taskId && !visibleTask(t)))}));
 const THEMES: {
     id: Theme;
     name: string;

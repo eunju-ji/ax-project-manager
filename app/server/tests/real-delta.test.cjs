@@ -5,6 +5,58 @@ const os = require('node:os');
 const path = require('node:path');
 const { applyDelta } = require('../real/apply-delta.cjs');
 const { createServer } = require('../api/server.cjs');
+const { merge } = require('../real/apply-delta.cjs');
+
+function mergeCase() {
+ const data={persons:[{person_id:'P'}],projects:[{project_id:'PR',name:'Old'},{project_id:'OTHER'}],tasks:['A','B','C'].map(task_id=>({task_id,project_id:'PR',status:'in_progress'})),worklogs:[{worklog_id:'W',task_id:'A',performer_id:'unknown',summary:'synthetic',performed_at_precision:'unknown'}]};
+ return {data,delta:{run_id:'MERGE',collected_at:'2026-11-23T00:00:00Z',task_updates:[{task_id:'A',merged_into:'B'}],worklog_updates:[{worklog_id:'W',task_id:'B'}]}};
+}
+test('task merge and worklog move validate final state, preserve history and allow clearing',()=>{
+ const {data,delta}=mergeCase(),r=merge(data,{},delta);a.equal(r.ok,true);a.equal(r.updated,2);
+ a.equal(r.dataset.tasks[0].merged_into,'B');a.equal(r.dataset.worklogs[0].task_id,'B');a.equal(r.dataset.history[0].after.merged_into,'B');a.equal(data.tasks[0].merged_into,undefined);
+ a.equal(merge(r.dataset,r.state,{run_id:'CLEAR',collected_at:delta.collected_at,task_updates:[{task_id:'A',merged_into:null}]}).ok,true);
+});
+for(const kind of ['missing','self','chain','cycle','cross-project','invalid','new log','moved log','human'])test('task merge rejects '+kind,()=>{
+ const {data,delta}=mergeCase();
+ if(kind==='missing')delta.task_updates[0].merged_into='absent';
+ if(kind==='self')delta.task_updates[0].merged_into='A';
+ if(kind==='chain')delta.task_updates.push({task_id:'B',merged_into:'C'});
+ if(kind==='cycle')delta.task_updates.push({task_id:'B',merged_into:'A'});
+ if(kind==='cross-project')delta.task_updates.push({task_id:'B',project_id:'OTHER'});
+ if(kind==='invalid')delta.task_updates[0].merged_into=42;
+ if(kind==='new log')delta.worklogs=[{...data.worklogs[0],worklog_id:'NEW'}];
+ if(kind==='moved log'){data.worklogs[0].task_id='C';delta.worklog_updates[0].task_id='A';}
+ if(kind==='human')data.history=[{entity_type:'tasks',entity_id:'A',actor_id:'P',before:{merged_into:'C'},after:{merged_into:null}}];
+ const before=structuredClone(data);a.equal(merge(data,{},delta).ok,false);a.deepEqual(data,before);
+});
+test('merge may retain historical logs and can clear target merge in same delta',()=>{
+ const {data,delta}=mergeCase();data.tasks[1].merged_into='C';delta.task_updates.push({task_id:'B',merged_into:null});delete delta.worklog_updates;
+ a.equal(merge(data,{},delta).ok,true);
+});
+test('project updates record full history, protect human fields and replay counts',()=>{
+ const {data,delta}=mergeCase();delta.project_updates=[{project_id:'PR',name:'😀'.repeat(120),purpose:'가'.repeat(200),display_owner:'Owner',owner_id:'P',deputy_id:'P'}];
+ const r=merge(data,{},delta);a.equal(r.ok,true);a.equal(r.updated,3);const h=r.dataset.history.find(h=>h.entity_type==='projects');a.equal(h.change_id,'DELTA-MERGE-PR');a.equal(h.before.name,'Old');a.equal(h.after.owner_id,'P');a.equal(merge(r.dataset,r.state,delta).ignored,3);
+ a.equal(merge(r.dataset,r.state,{...delta,run_id:'UNCHANGED'}).ignored,3);
+ data.history=[{entity_type:'projects',entity_id:'PR',actor_id:'P',before:{name:'Earlier'},after:{name:'Old'}}];a.equal(merge(data,{},delta).ok,false);
+ delta.project_updates=[{project_id:'PR',purpose:'Allowed'}];a.equal(merge(data,{},delta).ok,true);
+});
+for(const update of [{project_id:'missing',name:'x'},{project_id:'PR',name:'x'.repeat(121)},{project_id:'PR',purpose:'x'.repeat(201)},{project_id:'PR',name:null},{project_id:'PR',owner_id:4},{project_id:'PR',body:'raw'},{project_id:'PR',purpose:'token=1234567890abc'}])test('invalid project update '+JSON.stringify(update).slice(0,60),()=>{
+ const {data,delta}=mergeCase();delta.project_updates=[update];a.equal(merge(data,{},delta).ok,false);
+});
+test('duplicate project updates are rejected',()=>{
+ const {data,delta}=mergeCase();delta.project_updates=[{project_id:'PR',name:'A'},{project_id:'PR',purpose:'B'}];a.equal(merge(data,{},delta).ok,false);
+});
+test('unchanged historical worklog submissions remain ignored on merged tasks',()=>{
+ const {data,delta}=mergeCase();data.tasks[0].merged_into='B';delta.worklogs=[{...data.worklogs[0]}];delta.worklog_updates[0].task_id='A';
+ const r=merge(data,{},delta);a.equal(r.ok,true);a.equal(r.ignored,3);
+});
+test('merged tasks and updated project fields survive SQLite reload into API projection',async t=>{
+ const f=fixture(t);a.equal(f.apply().ok,true);
+ const delta={run_id:'API-MERGE',collected_at:f.delta.collected_at,tasks:[{task_id:'T2',project_id:'PR',title:'합친 업무',status:'in_progress'}],task_updates:[{task_id:'T',merged_into:'T2'}],worklog_updates:[{worklog_id:'W',task_id:'T2'}],project_updates:[{project_id:'PR',name:'새 프로젝트',purpose:'새 목적',display_owner:'새 담당'}]};
+ a.equal(f.apply(delta).ok,true);const {server}=createServer({dir:f.dir,seedMode:'small',realDatasetFile:f.file});f.setServer(server);await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const v=await (await fetch(`http://127.0.0.1:${server.address().port}/api/view?data=real`)).json();
+ a.equal(v.projects[0].name,'새 프로젝트');a.equal(v.projects[0].desc,'새 목적');a.equal(v.projects[0].owner,'새 담당');a.deepEqual(v.projects[0].tasks.map(t=>t.id),['T2']);a.equal(v.projects[0].tasks[0].subtasks[0].id,'W');
+});
 function fixture(t) {
  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ax-delta-'));
  let server;
@@ -140,3 +192,13 @@ for (const value of ['bad',[1],Array(5).fill('가'),['가'.repeat(121)]]) for(co
 test('wbs_groups secrets are rejected without exposing input',t=>{
  const f=fixture(t);f.delta.task_updates=[{task_id:'T',wbs_groups:['token=1234567890abc']}];const r=f.apply();a.equal(r.ok,false);a.ok(!JSON.stringify(r.errors).includes('1234567890abc'));
 });
+for (const target of ['tasks','task_updates']) {
+ test(target+' accepts the five work types only',t=>{
+  const f=fixture(t);f.delta[target]=[{task_id:target==='tasks'?'T2':'T',...(target==='tasks'?{project_id:'PR',title:'합성',status:'in_progress'}:{}),category:'검증'}];
+  a.equal(f.apply().ok,true);
+ });
+ for (const category of ['AX 현업진단','검토','']) test(target+' rejects category '+JSON.stringify(category),t=>{
+  const f=fixture(t);f.delta[target]=[{task_id:target==='tasks'?'T2':'T',...(target==='tasks'?{project_id:'PR',title:'합성',status:'in_progress'}:{}),category}];
+  a.equal(f.apply().ok,false);a.deepEqual(f.read(),f.data);
+ });
+}

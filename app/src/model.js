@@ -16,6 +16,19 @@
   const taskState=(t,asOf)=>{if(t.status==='completed')return 'completed';const due=day(t.dueDate),start=day(t.startDate),today=day(asOf);if(due&&due<today)return (t.subtasks||[]).length?'late':'unverified';if(start)return start<=today?'active':'upcoming';return due?'active':'undated';};
   const deadline=(t,asOf)=>{if(!day(t.dueDate)||t.status==='completed')return '';const diff=(Date.parse(day(t.dueDate))-Date.parse(day(asOf)))/86400000;return diff<0?((t.subtasks||[]).length?'late':'unverified'):diff<=3?'soon':'';};
   const summaryRange=(asOf,unit,offset)=>{if(unit==='week')return weekRange(asOf,offset);if(unit==='month'){const m=monthRange(asOf,offset);return {start:m.start,end:m.end};}const d=addDays(day(asOf),offset);return {start:d,end:d};};
-  const api={categories,day,addDays,weekRange,latestTask,sortProjects,weekRecords,sortedSources,projectRange,monthRange,owners,progress,taskState,deadline,summaryRange};
+  const taskSchedule=(t,asOf)=>{
+    if(t.planSource==='wbs') {
+      const start=day(t.startDate)||day(t.dueDate),due=day(t.dueDate);
+      if(!start)return null;
+      return due?{start,end:due}:{start,end:[start,day(asOf)].sort().at(-1),openEnd:true};
+    }
+    const dates=(t.subtasks||[]).map(s=>day(s.performedAt)).filter(Boolean).sort();
+    return dates.length?{start:dates[0],end:dates.at(-1)}:null;
+  };
+  const plannedRange=(p,asOf)=>{
+    const ranges=p.tasks.filter(t=>t.planSource==='wbs').map(t=>taskSchedule(t,asOf)).filter(Boolean);
+    return ranges.length?{start:ranges.map(r=>r.start).sort()[0],end:ranges.map(r=>r.end).sort().at(-1),...(ranges.some(r=>r.openEnd)?{openEnd:true}:{})}:projectRange(p);
+  };
+  const api={taskSchedule,plannedRange,categories,day,addDays,weekRange,latestTask,sortProjects,weekRecords,sortedSources,projectRange,monthRange,owners,progress,taskState,deadline,summaryRange};
   if(typeof module!=='undefined')module.exports=api;else root.AXModel=api;
 })(globalThis);

@@ -145,3 +145,11 @@
 - 시각 기준 갱신: linear-notion의 1440·834·390px `episode`·`review` 6장과 manifest. 인라인 상세가 문서 드로어로 바뀐 의도된 차이. 나머지 PNG 원본 보존.
 - 스크린샷: `app/test-results/drawer-1440-dev.png`, `drawer-390-dev.png`(오프라인은 `-offline.png`). 로그: `drawer-unit.log`, `drawer-server-final.log`, `drawer-navigation-final.log`, `drawer-focused.log`, `drawer-visual-{initial,update,final}.log`. 기준 갱신은 탐색 서버와 충돌하지 않도록 동일 러너의 임시 복사본에서 포트만 8768로 분리. 최종 비교는 `node tests/visual/run.mjs`로 실행했고 임시 러너는 삭제. manifest 54개 해시 일치, git diff --check 통과.
 - workNarrative 원문 동일 확인. server/.real 접근·추가 에이전트·커밋·푸시 없음. 동시 작업자의 current-state 기록과 로컬 설정 보존. 다음: AX-Lead 완료 판정·독립 검토.
+
+## 2026-11-23 업무 설명·종료일 미정 — AX-Builder
+
+- tasks/task_updates에 선택 description(null 또는 유니코드 200자 이하) 검증·비밀값 검사·사람 교정 보호를 적용하고 adapter로 전달. 드로어 제목 아래 3줄 본문과 간트 이름 툴팁에 표시, 산출물 값의 접두어 제거.
+- 시작일만 있는 WBS 태스크는 기준일까지 열린 막대(오른쪽 점선), `종료일 미정` 기간·라벨로 표시. 프로젝트 범위는 열린 태스크를 기준일까지 포함하고 `진행 중`으로 표시. 상태·지연 판정 유지. 계산을 model의 순수 함수로 이동.
+- 최종 검증: 설치된 python3.15.exe build.py 및 typecheck exit 0, 단위/UI 59/59, 서버 117/117, 탐색 104/104, 시각 54/54(기준·오프라인 차이 모두 0). 최초 탐색에서 발견한 태스크 행 문구 누락 수정 후 전체 재검증. 기존 Notion 834px 홈 2px 흔들림은 기준·허용치 변경 없이 동일 명령 재실행에서 0으로 확인. 기준 이미지 원본 유지.
+- 합성 데이터만 사용. workNarrative 원문 동일 확인. server/.real 접근·추가 에이전트·커밋·푸시 없음. 동시 작업자의 real-collect.md 및 로컬 설정 보존. 미해결 기능 오류 없음. 다음: AX-Lead 완료 판정 및 독립 검토.
+- 증거: `app/test-results/open-ended-description-{dev,offline}.png`, `navigation.json`(104건), `visual.json`(54건). 로그: `description-open-ended-{unit-tests,server-tests,navigation-final,visual-recheck}.log`. 초기 실패·2px 흔들림 로그도 같은 접두어로 보존.

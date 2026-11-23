@@ -113,3 +113,14 @@ for(const kind of ['missing task','missing worklog','duplicate','extra field','h
  if(kind==='human'){const data=f.read();data.history.push({entity_type:'worklogs',entity_id:'W',actor_id:'P',before:{task_id:'old'},after:{task_id:'T'}});fs.writeFileSync(f.file,JSON.stringify(data));}
  a.equal(f.apply(d).ok,false);a.equal(f.read().worklogs[0].task_id,'T');
 });
+
+for (const target of ['tasks','task_updates']) {
+ for (const description of ['😀'.repeat(200),null]) test(target+' accepts nullable Unicode description '+(description===null?'null':'200'),t=>{
+  const f=fixture(t);f.delta[target]=[{task_id:target==='tasks'?'T2':'T',...(target==='tasks'?{project_id:'PR',title:'합성',status:'in_progress'}:{}),description}];
+  a.equal(f.apply().ok,true);a.equal(f.read().tasks.find(x=>x.task_id===(target==='tasks'?'T2':'T')).description,description);
+ });
+ for (const description of ['😀'.repeat(201),42,{},'token=1234567890abc']) test(target+' rejects invalid description '+typeof description+' '+String(description).length,t=>{
+  const f=fixture(t);f.delta[target]=[{task_id:target==='tasks'?'T2':'T',...(target==='tasks'?{project_id:'PR',title:'합성',status:'in_progress'}:{}),description}];
+  a.equal(f.apply().ok,false);a.deepEqual(f.read(),f.data);
+ });
+}

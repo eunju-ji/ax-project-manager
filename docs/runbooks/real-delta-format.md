@@ -71,3 +71,7 @@ stdout은 요약 JSON 한 줄이다. `ok: true`면 exit 0, 거부·입력·I/O �
 ```
 
 worklog_updates는 기존 worklog의 task_id만 변경한다. 대상 worklog는 실행 전 데이터셋에, 대상 task는 병합 후 데이터셋에 존재해야 한다. 같은 실행에서 동일 worklog를 두 번 보내거나 다른 필드를 보내면 전체 delta를 거부한다. 사람이 history에서 교정한 task_id는 덮어쓸 수 없다. 같은 값은 ignored로 집계한다. 변경하면 entity_type=worklogs, change_id=DELTA-<run_id>-<worklog_id>, actor_id=system과 before/after task_id를 history에 남긴다. 재실행 digest와 원자적 검증 규칙도 동일하게 적용된다.
+
+## 업무 설명
+
+신규 tasks와 task_updates의 선택 필드 `description`은 어떤 업무인지 설명하는 문자열(유니코드 코드포인트 200자 이하) 또는 null을 받는다. 생략 시 기존 값을 유지하고 null은 설명을 지운다. delta 전체 비밀값 검사와 사람 교정 보호를 동일하게 적용한다. 산출물·완료 기준과 구분하여 드로어 제목 아래에 표시한다.

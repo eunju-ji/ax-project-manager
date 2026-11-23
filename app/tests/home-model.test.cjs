@@ -50,8 +50,9 @@ test('adapter forwards folder metadata and filters unsafe folder URLs',()=>{
 
 test('adapter forwards WBS plan metadata and defaults activity source',()=>{
  const data=structuredClone(require('./fixtures/ops-synthetic.json'));
- Object.assign(data.tasks[0],{wbs_code:'1.1.1',start_date:'2026-11-01',plan_source:'wbs'});
+ Object.assign(data.tasks[0],{description:'업무 설명',wbs_code:'1.1.1',start_date:'2026-11-01',plan_source:'wbs'});
  const tasks=require('../src/adapter.js').adapt(data).projects.flatMap(p=>p.tasks),t=tasks.find(t=>t.id===data.tasks[0].task_id);
+ assert.equal(t.description,'업무 설명');
  assert.equal(t.wbsCode,'1.1.1');assert.equal(t.startDate,'2026-11-01');assert.equal(t.planSource,'wbs');assert.ok(tasks.filter(x=>x!==t).every(x=>x.planSource==='activity'));
 });
 
@@ -65,4 +66,14 @@ test('unverified tasks are excluded only from delay calculations',()=>{
  assert.equal(M.deadline(unknown,'2026-11-20'),'unverified');
  assert.equal(M.taskState({...unknown,status:'completed'},'2026-11-20'),'completed');
  assert.equal(M.taskState({...unknown,dueDate:'2026-11-20'},'2026-11-20'),'active');
+});
+
+test('open WBS schedules extend to as-of without a false deadline',()=>{
+ const t={planSource:'wbs',startDate:'2026-11-04',subtasks:[]};
+ assert.deepEqual(M.taskSchedule(t,'2026-11-23'),{start:'2026-11-04',end:'2026-11-23',openEnd:true});
+ assert.equal(M.taskState(t,'2026-11-23'),'active');assert.equal(M.deadline(t,'2026-11-23'),'');
+ assert.deepEqual(M.plannedRange({tasks:[t]},'2026-11-23'),{start:'2026-11-04',end:'2026-11-23',openEnd:true});
+ assert.deepEqual(M.taskSchedule({...t,startDate:'2026-12-01'},'2026-11-23'),{start:'2026-12-01',end:'2026-12-01',openEnd:true});
+ assert.deepEqual(M.taskSchedule({...t,dueDate:'2026-11-10'},'2026-11-23'),{start:'2026-11-04',end:'2026-11-10'});
+ assert.equal(M.taskSchedule({...t,startDate:undefined},'2026-11-23'),null);
 });

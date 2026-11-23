@@ -144,6 +144,31 @@ async function nav() {
       await p.locator('[data-gantt-task="wbs-two"]').screenshot({path:path.join(results,'wbs-mobile-row.png')});
       await p.setViewportSize({width:1440,height:900});
     });
+    await check('open-ended WBS and description remain clear',async()=>{
+      await load(p,url);
+      await p.evaluate(()=>{
+        const p=projects[0],base=p.tasks[0];p.tasks=[{...base,id:'open-task',planSource:'wbs',startDate:'2026-11-04',dueDate:undefined,status:'in_progress',description:'어떤 업무인지 설명 <안전>',summary:'산출물: 채용 계획',detail:''}];
+        state.project=p.id;render();
+      });
+      const row=p.locator('[data-gantt-task="open-task"]');
+      await expect(row.locator('.wbs-period')).toHaveText('11/4 ~ 종료일 미정');
+      await expect(row.locator('.gantt-task-copy')).toHaveAttribute('title',/어떤 업무인지 설명/);
+      await expect(row.locator('.is-open-ended .gantt-bar-label')).toContainText('· 종료일 미정');
+      const projectId=await p.evaluate(()=>projects[0].id);
+      await expect(p.locator('.unified-toggle[data-id="'+projectId+'"] .wbs-period')).toHaveText('11/4 ~ 진행 중');
+      expect(await row.locator('.task-gantt-bar').evaluate(e=>parseFloat(e.style.width))).toBeCloseTo(14/30*100);
+      await row.locator('.gantt-task-toggle').click();
+      await expect(p.locator('.task-description')).toHaveText('어떤 업무인지 설명 <안전>');
+      await expect(p.locator('.task-properties')).toContainText('11/4 ~ 종료일 미정');
+      await expect(p.locator('.task-properties')).not.toContainText('산출물:');
+      await expect(p.locator('.task-properties')).toContainText('채용 계획');
+      await expect(p.locator('.drawer-notice')).toHaveCount(0);
+      await p.screenshot({path:path.join(results,'open-ended-description-'+kind+'.png')});
+      await p.keyboard.press('Escape');
+      await p.evaluate(()=>{projects[0].tasks[0].description=undefined;render();});
+      await row.locator('.gantt-task-toggle').click();await expect(p.locator('.task-description')).toHaveCount(0);
+      await p.keyboard.press('Escape');
+    });
     await check('task drawer: document, keyboard, navigation, sources and responsive sheet',async()=>{
       await load(p,url);await opened(p);
       const rows=p.locator('.gantt-task-toggle'),first=rows.first(),task=await first.getAttribute('data-task');

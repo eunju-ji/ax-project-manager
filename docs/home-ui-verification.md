@@ -127,3 +127,11 @@
 - 최종 결과: 시각 재비교 54/54(기준 및 오프라인 차이 모두 0px), 탐색 100/100(개발/오프라인, 1440·834·390px 키보드 순서 포함). 첫 탐색 실행의 새 진척 검사 2건은 정렬된 첫 프로젝트를 잘못 선택한 테스트 문제였으며, 합성 WBS 프로젝트 ID로 한정 후 전체 재실행 통과. 미해결 실패 없음.
 - 최종 기준: Linear 계열 PNG 24개와 manifest만 변경. Notion·Attio 등 다른 테마 PNG는 모두 원본 유지. PNG 해시 manifest 동기화 확인. git diff --check 통과.
 - 스크린샷: `app/test-results/wbs-table-1440-project.png`, `wbs-table-834-project.png`, `wbs-table-390-project.png`(프로젝트 한 개 펼침, 합성 fixture). 로그: 같은 폴더 `wbs-table-{unit,server,compare,navigation-final}.log`, `visual.json`, `navigation.json`.
+# 2026-11-23 ADR-018 §6 지연과 확인 필요 — AX-Builder
+
+- 완료가 아니고 종료일이 지난 태스크는 작업 내역이 있으면 `late`, 없으면 `unverified`로 구분한다. 기존 deadline 사용처인 계획 외 업무 마감 표시도 동일하다.
+- 표시 진척률은 전체 계획 태스크 기준을 유지한다. 지연 판정은 확인 필요를 제외한 완료 비율과 종료일 경과 비율을 비교하며, 종료일 당일은 경과로 세지 않는다. 비교에는 반올림 전 비율을 사용한다.
+- 확인 필요는 호박색 점선 칩과 옅은 호박색 빗금 막대, 프로젝트 진척 열의 `확인 N` 칩으로 표시한다. 지연 칩과 병행하며 간트 하단에 6개 상태 범례를 추가했다.
+- 검증: 설치된 `python3.15.exe build.py` exit 0, `npm.cmd run typecheck` exit 0, `npm.cmd test` 57/57. 모델 경계·확인 필요 제외 계산, UI 칩 병행·계획 외 업무·범례·스타일 회귀 테스트 포함. 브라우저 시각 비교 및 기준 이미지 갱신은 수행하지 않았다.
+- 변경: `app/src/model.js`, `app/src/app.ts`, `app/styles.css`, `app/app.js`, `app/tests/home-model.test.cjs`, `app/tests/ui.test.cjs`, 이 문서와 `tasks/current-state.md`. 오프라인 preview 재생성(Git 제외).
+- `workNarrative` 수정, `app/server/.real/` 접근, 추가 위임, 커밋·푸시 없음. 기존 ADR-018 및 로컬 설정 변경 보존. 다음: AX-Lead 완료 판정 및 통합 검토.

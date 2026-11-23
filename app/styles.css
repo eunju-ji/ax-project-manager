@@ -102,3 +102,9 @@ body[data-keyboard-navigation] .searchbox input:focus-visible{outline:2px solid 
 .unified-timeline .wbs-columns{position:sticky;left:0;z-index:4}.unified-timeline .wbs-column-head{background:var(--surface2);z-index:5}.unified-timeline .gantt-resources .source-cards{height:auto;min-height:0;max-height:none}.unified-timeline .gantt-resources{height:auto;min-height:0}.unified-timeline .gantt-resources .project-review-alert{height:auto;min-height:0}.unified-timeline .wbs-expanded{min-width:0}.unified-timeline .gantt-task-details{position:relative;z-index:4}
 .unified-timeline .timeline-grid{padding-right:72px}
 @media(max-width:600px){.unified-timeline{--wbs-left:230px;--wbs-cols:minmax(0,1fr) 50px}.unified-timeline .wbs-columns>.wbs-owner,.unified-timeline .wbs-columns>.wbs-period,.unified-timeline .wbs-column-head>span:nth-child(2),.unified-timeline .wbs-column-head>span:nth-child(3){display:none}.wbs-project-name strong{font-size:12px}.unified-timeline .gantt-task-copy strong{font-size:11px}.unified-timeline .timeline-grid{min-width:880px}}
+
+/* ADR-018: missing work evidence is distinct from observed delay. */
+.plan-status.unverified,.due-label.unverified{color:#8a5b16;background:#fff5df;border:1px dashed #b88027}
+.unified-timeline .task-gantt-bar.unverified{border:1px dashed #b88027;background:repeating-linear-gradient(135deg,#f9e5b6,#f9e5b6 3px,#fff7e6 3px,#fff7e6 6px)}
+.gantt-status-legend{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px}
+.wbs-progress-chips{display:flex;gap:3px;flex-wrap:nowrap}.wbs-progress-chips:empty{display:none}

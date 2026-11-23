@@ -21,7 +21,7 @@ test('all five theme renderers run and include weekly view, timeline and no life
  for(const theme of ['linear','notion','attio','airtable','clickup']){
   a.run(`state.theme='${theme}';render()`);
   assert.match(a.html(),/한 주의 업무/);assert.match(a.html(),/작업 내역 히트맵/);
-  assert.doesNotMatch(a.html(),/진행 중|진척률|진행률|TO DO|IN PROGRESS|DONE/);
+  assert.doesNotMatch(a.html(),/진척률|진행률|TO DO|IN PROGRESS|DONE/);
  }
 });
 test('project opens inside list; task reveals every explicit subtask and source list persists across tabs',()=>{
@@ -147,8 +147,8 @@ test('WBS tasks sort naturally before activity and show owner dates state and pl
  {id:'t2',title:'두번째',wbsCode:'1.2',planSource:'wbs',owner:'합성',startDate:'2026-11-01',dueDate:'2026-11-16',subtasks:[]}]});`);
  const html=a.run('taskPanel(projects[0])');
  assert.ok(html.indexOf('두번째')<html.indexOf('열번째'));assert.ok(html.indexOf('열번째')<html.indexOf('계획 밖'));
- assert.match(html,/1.2/);assert.ok(html.includes('합성 · 11/1~11/16'));assert.match(html,/>지연</);assert.match(html,/>예정</);assert.match(html,/계획 외 업무/);
- assert.ok(a.run('projectInfo(projects[0])').includes('진척 0% · 완료 0/2 · 계획 50%'));
+ assert.match(html,/1.2/);assert.ok(html.includes('합성 · 11/1~11/16'));assert.match(html,/>확인 필요</);assert.match(html,/>예정</);assert.match(html,/계획 외 업무/);
+ assert.ok(a.run('projectInfo(projects[0])').includes('진척 0% · 완료 0/2 · 계획 0%'));
  assert.match(a.run('projectInfo({id:"x",name:"",desc:"",tasks:[],files:[]})'),/진척 0% · 계획 없음/);
 });
 test('expanded monthly WBS rows share dates, natural order and reusable task details',()=>{
@@ -192,4 +192,17 @@ test('WBS table columns, planned-only project range, depth, progress fill and al
  assert.match(html,/이름 \(WBS\)/);assert.match(html,/진척 \/ 상태/);assert.match(html,/--wbs-depth:2/);assert.match(html,/class="summary-fill" style="width:50%"/);assert.match(html,/class="gantt-bar-label"/);assert.match(html,/11\/2–11\/10/);assert.match(html,/weekend/);assert.doesNotMatch(html,/inline-detail-head|project-properties/);
  a.run("action({dataset:{action:'projects-all'}})");assert.equal(a.run('filtered().every(projectOpen)'),true);
  a.run("action({dataset:{action:'projects-all'}})");assert.equal(a.run('filtered().some(projectOpen)'),false);
+});
+
+test('unverified chips, activity deadlines and six-state Gantt legend are distinct from late',()=>{
+ const a=app();a.run(`projects[0].tasks=[
+ {...projects[0].tasks[0],id:'unknown',planSource:'wbs',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-02',subtasks:[]},
+ {...projects[0].tasks[0],id:'late',planSource:'wbs',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-02'},
+ {...projects[0].tasks[0],id:'activity',planSource:'activity',status:'in_progress',dueDate:'2026-11-02',subtasks:[]}];state.project=projects[0].id;render()`);
+ const html=a.html();assert.match(html,/class="tag plan-status unverified">확인 1</);assert.match(html,/class="tag plan-status late">지연</);
+ assert.match(html,/task-gantt-bar  unverified/);assert.match(html,/task-gantt-bar  late/);
+ assert.match(a.run('taskItem(projects[0].tasks[2],projects[0])'),/확인 필요/);
+ const legend=html.match(/<div class="gantt-status-legend"[^>]*>(.*?)<\/div>/)[1];
+ for(const label of ['완료','진행 중','지연','확인 필요','예정','일정 미정'])assert.ok(legend.includes('>'+label+'<'));
+ const css=fs.readFileSync(path.join(root,'styles.css'),'utf8');assert.match(css,/plan-status.unverified[^}]*dashed/);assert.match(css,/task-gantt-bar.unverified[^}]*repeating-linear-gradient/);
 });

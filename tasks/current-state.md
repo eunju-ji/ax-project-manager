@@ -298,3 +298,9 @@
 - 검증: build.py·typecheck exit 0, 단위 55/55, 서버 105/105, 시각 54/54(기준/오프라인 0px), 탐색 100/100. 1440·834·390px 확인. 첫 시각 실행의 Notion 홈 2px 차이는 재실행에서 0, 새 브라우저 검사의 정렬 대상 선택 오류는 프로젝트 ID 지정 후 통과. 미해결 문제 없음.
 - 변경: app/src/app.ts, app/app.js, app/styles.css, app/tests/ui.test.cjs, app/tests/visual/run.mjs, Linear 계열 baseline PNG 24개 및 manifest, docs/home-ui-verification.md, 이 문서. 오프라인 preview 재생성(Git 제외). 결과 이미지 app/test-results/wbs-table-{1440,834,390}-project.png. 상세 로그·기준 변경 사유는 검증 문서 참고.
 - feat/home-project-timeline 유지. workNarrative 원문 보존, 다른 테마 기준 이미지 원본 유지, 기존 다른 작업 변경 보존. server/.real 접근·추가 에이전트 호출·커밋·푸시 없음. 다음: AX-Lead 완료 판정 및 통합 검토.
+# 2026-11-23 ADR-018 지연·확인 필요 — AX-Builder
+
+- `feat/home-project-timeline`에서 종료일 경과·작업 내역 0건을 `unverified`로 분리. 프로젝트 지연 계산에서 제외하고 전체 계획 기준 표시 진척률은 유지.
+- 호박색 점선 칩·빗금 간트 막대, 진척 열 `확인 N`(지연과 병행), 계획 외 업무 마감 표시, 간트 하단 6개 상태 범례 구현.
+- 검증: 설치된 Python의 `build.py` 및 typecheck exit 0, 단위·UI 테스트 57/57. 최종 미해결 테스트 실패 없음. 브라우저 시각 비교 미실행. 상세: `docs/home-ui-verification.md` 최신 항목.
+- `workNarrative` 수정·실데이터 접근·추가 에이전트·커밋·푸시 없음. 기존 변경 보존. 다음: AX-Lead 완료 판정·통합 검토.

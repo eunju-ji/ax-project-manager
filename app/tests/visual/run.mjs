@@ -209,7 +209,7 @@ async function nav() {
     await check('WBS table columns, row density and expand all',async()=>{
       await load(p,url);await p.locator('[data-action="projects-all"]').click();
       expect(await p.locator('.wbs-project-row .unified-toggle[aria-expanded="true"]').count()).toBe(await p.evaluate(()=>filtered().length));
-      expect(await p.locator('.wbs-column-head>span').allTextContents()).toEqual(['이름 (WBS)','담당','기간','진척 / 상태']);
+      expect(await p.locator('.wbs-column-head>span').allTextContents()).toEqual(['이름','담당','기간','진척 / 상태']);
       expect(await p.locator('.wbs-project-row').first().evaluate(e=>e.getBoundingClientRect().height)).toBe(56);
       await p.locator('[data-action="projects-all"]').click();await expect(p.locator('.wbs-expanded')).toHaveCount(0);
     });

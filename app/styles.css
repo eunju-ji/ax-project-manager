@@ -122,3 +122,7 @@ body[data-keyboard-navigation] .searchbox input:focus-visible{outline:2px solid 
 .unified-timeline .wbs-group-row>.wbs-columns{background:var(--surface2);font-size:11px;font-weight:600}.unified-timeline .wbs-group-row .gantt-task-copy strong{font-weight:650}.wbs-group-summary{position:absolute;top:15px;height:7px;border-top:2px solid var(--muted);border-left:2px solid var(--muted);border-right:2px solid var(--muted);z-index:2}.wbs-group-summary.is-open-ended{border-right:2px dotted var(--muted)}.gantt-group-label small{margin-left:8px;font-size:10px;font-weight:400;color:var(--muted)}.work-record-legend{color:var(--muted);font-size:10px}
 
 .unified-timeline .task-work-tick{pointer-events:auto}
+
+.folder-files button[aria-current=true]{animation:folder-current-pulse 2.5s ease-in-out}
+@keyframes folder-current-pulse{0%,40%,80%{background:var(--accent);color:var(--bg,#fff)}20%,60%,100%{background:var(--soft);color:var(--accent)}}
+@media(prefers-reduced-motion:reduce){.folder-files button[aria-current=true]{animation:none}}

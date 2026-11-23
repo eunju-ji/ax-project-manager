@@ -196,7 +196,7 @@ async function nav() {
       await load(p,url);await opened(p);
       const rows=p.locator('.gantt-task-toggle'),first=rows.first(),task=await first.getAttribute('data-task');
       await first.click();const drawer=p.locator('.task-drawer');await expect(drawer).toBeVisible();await expect(p.locator('#task-drawer-title')).toBeFocused();
-      await expect(p.locator('.gantt-task-details')).toHaveCount(0);await expect(p.locator('.task-properties')).toContainText('\uacc4\ud68d \ucd9c\ucc98');
+      await expect(p.locator('.gantt-task-details')).toHaveCount(0);await expect(p.locator('.task-properties')).not.toContainText('계획 출처');
       await expect(p.locator('.drawer-day').first()).toBeVisible();expect((await drawer.boundingBox()).width).toBe(520);
       const controls=drawer.locator('button:not([disabled]),a[href]');await p.keyboard.press('Shift+Tab');await expect(controls.last()).toBeFocused();await p.keyboard.press('Tab');await expect(controls.first()).toBeFocused();
       const title=await p.locator('#task-drawer-title').textContent();await p.locator('[data-action="drawer-step"][data-step="1"]').click();await expect(p.locator('#task-drawer-title')).not.toHaveText(title);await p.locator('[data-action="drawer-step"][data-step="-1"]').click();await expect(p.locator('#task-drawer-title')).toHaveText(title);
@@ -237,17 +237,29 @@ async function nav() {
       await p.evaluate(()=>{const p=projects.find(p=>p.id===state.project);p.files.slice(0,2).forEach((f,i)=>Object.assign(f,{name:'합성 폴더 자료 '+i+' & #',folderId:'synthetic-folder',folderPath:['AX_TF','합성 자료'],folderUrl:'https://drive.google.com/drive/folders/synthetic',url:'https://docs.google.com/document/d/synthetic-'+i}));AX_DATA.folders={'synthetic-folder':[...p.files.slice(0,2).map(f=>({id:f.id,name:f.name,url:f.url,kind:'document',linked:true})),{id:'unlinked',name:'미연결 합성 파일',url:'https://drive.google.com/file/d/unlinked',kind:'document',linked:false}]};render();});
       const ids=await p.evaluate(()=>projects.find(p=>p.id===state.project).files.slice(0,2).map(f=>f.id));
       const launcher=p.locator('[data-action="file"][data-file="'+ids[0]+'"]').last();await launcher.click();
-      await expect(p.locator('.folder-breadcrumb')).toContainText('합성 자료');await expect(p.locator('.folder-open')).toHaveAttribute('rel','noopener noreferrer');
+      await expect(p.locator('.folder-breadcrumb')).toContainText('합성 자료');await expect(p.locator('.file-dialog footer a')).toHaveAttribute('href','https://drive.google.com/drive/folders/synthetic');
       await expect(p.locator('.folder-browser>p')).toHaveText('이 폴더의 파일 3개 · 연결된 자료 2개');
       await expect(p.locator('.folder-files .unlinked a')).toHaveAttribute('href','https://drive.google.com/file/d/unlinked');
       await expect(p.locator('.folder-files .unlinked a')).toHaveAttribute('target','_blank');
       await expect(p.locator('.folder-files small').filter({hasText:'연결됨'})).toHaveCount(2);
       await expect(p.locator('.folder-files [aria-current=true]')).toContainText('현재 자료');
-      await expect(p.locator('.folder-search')).toHaveAttribute('href','https://drive.google.com/drive/search?q='+encodeURIComponent('합성 폴더 자료 0 & #'));
+      await expect(p.locator('.file-dialog footer a')).toHaveCount(1);await expect(p.locator('.folder-search,.folder-open')).toHaveCount(0);
       const next=p.locator('[data-action="folder-file"][data-file="'+ids[1]+'"]');await next.click();await expect(next).toHaveAttribute('aria-current','true');await expect(next).toBeFocused();
       await expect(p.locator('.file-dialog')).toHaveCount(1);
       const controls=p.locator('.file-dialog a,.file-dialog button');await controls.last().focus();await p.keyboard.press('Tab');await expect(controls.first()).toBeFocused();await p.keyboard.press('Shift+Tab');await expect(controls.last()).toBeFocused();
       await p.keyboard.press('Escape');await expect(p.locator('.file-dialog')).toHaveCount(0);await expect(launcher).toBeFocused();
+    });
+    await check('current folder file scrolls into view and respects reduced motion', async () => {
+      await load(p,url);await opened(p);
+      await p.evaluate(()=>{const project=projects.find(p=>p.id===state.project),f=project.files[0];Object.assign(f,{name:'ZZ current',folderId:'scroll-test',folderPath:['합성'],folderUrl:'https://drive.google.com/drive/folders/test'});AX_DATA.folders={'scroll-test':[...Array.from({length:40},(_,i)=>({id:'extra-'+i,name:'AA '+i,linked:false})),{id:f.id,name:f.name,linked:true}]};state.modal={project:project.id,file:f.id};render();});
+      const row=p.locator('.folder-files [aria-current=true]');
+      expect(await row.evaluate(e=>{const list=e.closest('.folder-files'),a=e.getBoundingClientRect(),b=list.getBoundingClientRect();return list.scrollTop>0&&a.top>=b.top&&a.bottom<=b.bottom+1})).toBe(true);
+      // load() suppresses animations for screenshots; remove that override for this motion check.
+      await p.evaluate(()=>document.querySelectorAll('style').forEach(n=>{if(n.textContent.includes('caret-color:transparent!important'))n.remove();}));
+      await p.emulateMedia({reducedMotion:'no-preference'});await p.evaluate(()=>render());
+      await expect.poll(()=>row.evaluate(e=>getComputedStyle(e).animationDuration)).toBe('2.5s');
+      await p.emulateMedia({reducedMotion:'reduce'});await expect.poll(()=>row.evaluate(e=>getComputedStyle(e).animationName)).toBe('none');
+      await p.emulateMedia({reducedMotion:'no-preference'});
     });
     await check('/ search focus', async () => {
       await load(p,url); await p.keyboard.press('/'); await expect(p.locator('#homeSearch')).toBeFocused();

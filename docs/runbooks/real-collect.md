@@ -26,7 +26,7 @@
 - 말단 행(하위 번호 없는 행)만 태스크다. `wbs_code`로 기존 태스크와 맞춘다.
   - 새 행 → 새 태스크(`task_id: WBS-<번호의 .을 ->`, `plan_source:"wbs"`, `plan_ref`, `start_date`, `due_date`, 산출물은 `summary`·`completion_criteria`).
   - 계획 태스크에는 `wbs_groups`: 상위 묶음 행 이름 배열(바깥부터, 예 ["3 Moncoti 개발·테스트","3.1 …"]), 최상위 말단은 [].
-  - 모든 새 태스크(계획·계획 외)에 `description`: 무슨 업무인지 한두 문장(200자 이하). WBS는 업무 내용 칸을 요약하고 세부 일정·수치는 넣지 않는다.
+  - 모든 새 태스크(WBS 유무와 무관)에 `description`: 무슨 업무인지 한두 문장(200자 이하). WBS는 업무 내용 칸을 요약하고 세부 일정·수치는 넣지 않는다.
   - 업무명·담당·시작일·종료일이 바뀐 행 → `task_updates`.
   - 상태 칸 `완료` → `status:"completed"`, `completion_basis:"WBS 상태 칸 완료 표시"`. 빈칸·진행중·대기는 상태를 바꾸지 않는다(완료 판단은 3항 근거로).
   - 사라진 행은 지우지 않고 `notes`에 남긴다.

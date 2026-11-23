@@ -5,9 +5,9 @@ test('people include task-only owners and rank by worklog count then name',()=>{
  const rows=[{tasks:[{owner:'다',subtasks:[{owner:'나'},{owner:'가'},{owner:'나'}]}]}];
  assert.deepEqual(M.owners(rows),['나','가','다']);
 });
-test('progress counts only WBS tasks and dated plan deadlines',()=>{
+test('progress counts all tasks and dated deadlines',()=>{
  const p={tasks:[{planSource:'wbs',status:'completed',dueDate:'2026-11-07'},{planSource:'wbs',dueDate:'2026-11-08'},{planSource:'wbs'},{status:'completed'}]};
- assert.deepEqual(M.progress(p,'2026-11-07'),{percent:33,schedule:0,behind:false,planned:true,done:1,total:3,unverified:0});
+ assert.deepEqual(M.progress(p,'2026-11-07'),{percent:50,schedule:0,behind:false,planned:true,done:2,total:4,unverified:0});
  assert.equal(M.progress(p,'2026-11-08').schedule,50);
  assert.equal(M.progress(p,'2026-11-06').schedule,0);
  assert.deepEqual(M.progress({tasks:[]},'2026-11-01'),{percent:0,schedule:null,behind:false,planned:false,done:0,total:0,unverified:0});
@@ -76,4 +76,12 @@ test('open WBS schedules extend to as-of without a false deadline',()=>{
  assert.deepEqual(M.taskSchedule({...t,startDate:'2026-12-01'},'2026-11-23'),{start:'2026-12-01',end:'2026-12-01',openEnd:true});
  assert.deepEqual(M.taskSchedule({...t,dueDate:'2026-11-10'},'2026-11-23'),{start:'2026-11-04',end:'2026-11-10'});
  assert.equal(M.taskSchedule({...t,startDate:undefined},'2026-11-23'),null);
+});
+
+test('all tasks share progress and schedule rules and references are excluded',()=>{
+ const tasks=[{status:'completed',dueDate:'2026-11-01'},{dueDate:'2026-11-02',subtasks:[{}]},{dueDate:'2026-11-03'},{}];
+ const result=M.progress({tasks},'2026-11-20');assert.equal(result.percent,25);assert.equal(result.schedule,100);assert.equal(result.behind,true);assert.equal(result.unverified,1);
+ assert.deepEqual(result,M.progress({tasks:tasks.map(t=>({...t,planSource:'wbs'}))},'2026-11-20'));
+ assert.deepEqual(result,M.progress({tasks:[...tasks,{planSource:'reference',status:'completed'}]},'2026-11-20'));
+ assert.deepEqual(M.taskSchedule({startDate:'2026-11-04',dueDate:'2026-11-08'},'2026-11-20'),{start:'2026-11-04',end:'2026-11-08'});
 });

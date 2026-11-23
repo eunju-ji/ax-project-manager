@@ -23,7 +23,7 @@ function validPlan(row, nullable=false) {
   if (!(k in row)) return true;
   const v=row[k];if(v===null)return nullable;
   if(k==='start_date'||k==='due_date')return dateOnly(v);
-  if(k==='plan_source')return ['wbs','activity'].includes(v);
+  if(k==='plan_source')return ['wbs','activity','reference'].includes(v);
   return typeof v==='string' && (k!=='wbs_code'||[...v].length<=16);
  });
 }

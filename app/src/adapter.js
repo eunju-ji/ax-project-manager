@@ -17,7 +17,8 @@
     const sources=new Map(unique(data.sources,'source_key').filter(s=>s.kind!=='message').map(s=>[s.source_key,s]));
     const events=new Map(unique(data.sourceEvents,'event_key').map(e=>[e.event_key,e]));
     const logs=unique(data.worklogs,'worklog_id').filter(w=>runs.get(w.run_id)==='complete');
-    const tasks=unique(data.tasks,'task_id');
+    const allTasks=unique(data.tasks,'task_id');
+    const tasks=allTasks.filter(t=>t.plan_source!=='reference');
     const logMap=new Map(logs.map(w=>[w.worklog_id,w]));
     const taskMap=new Map(tasks.map(t=>[t.task_id,t]));
     const links=unique(data.links,'link_id').filter(l=>l.status==='confirmed').flatMap(l=>{
@@ -27,7 +28,7 @@
     });
     const role=l=>roles.includes(l.role)?roles.indexOf(l.role):roles.length;
     const representative=(a,b)=>role(a)-role(b)||time(b.decided_at)-time(a.decided_at)||lexical(a.link_id,b.link_id);
-    const projects=unique(data.projects,'project_id').map(p=>{
+    const projects=unique(data.projects,'project_id').filter(p=>!allTasks.some(t=>t.project_id===p.project_id)||tasks.some(t=>t.project_id===p.project_id)).map(p=>{
       const projectTasks=tasks.filter(t=>t.project_id===p.project_id);
       const projectLinks=links.filter(l=>projectTasks.some(t=>t.task_id===l.taskId));
       const files=[...new Set(projectLinks.map(l=>l.sourceKey))].sort(lexical).map(key=>{
@@ -43,7 +44,13 @@
       })}))};
     });
     const reviews=unique(data.reviews,'review_id').filter(r=>r.kind==='completion'&&r.status==='open'&&r.subject_type==='task'&&taskMap.has(r.subject_id)&&projects.some(p=>p.id===taskMap.get(r.subject_id).project_id)).map(r=>({id:r.review_id,kind:r.kind,taskId:r.subject_id,project:taskMap.get(r.subject_id).project_id,title:taskMap.get(r.subject_id).title,desc:typeof r.proposal==='string'?r.proposal:'',source:''}));
-    return {projects,reviews,demoAsOf:data.demoAsOf||'',demoNotice:data.demoNotice||''};
+    const linkedSources=new Set(links.map(l=>l.sourceKey));
+    const folders=Object.create(null);
+    for(const s of sources.values())if(s.folder_id){
+      (folders[s.folder_id]||=[]).push({id:s.source_key,name:s.title||'',kind:s.kind,modifiedAt:s.modified_at||'',linked:linkedSources.has(s.source_key),...(safeUrl(s.uri)?{url:safeUrl(s.uri)}:{})});
+    }
+    for(const rows of Object.values(folders))rows.sort((a,b)=>a.name.localeCompare(b.name,'ko')||lexical(a.id,b.id));
+    return {projects,reviews,folders,demoAsOf:data.demoAsOf||'',demoNotice:data.demoNotice||''};
   }
   const api={adapt};if(typeof module!=='undefined')module.exports=api;else root.AXAdapter=api;
 })(globalThis);

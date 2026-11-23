@@ -76,6 +76,7 @@ interface DateRange {
     end: string;
 }
 declare const AX_DATA: {
+    folders?: Record<string, {id: string; name: string; url?: string; kind: string; modifiedAt?: string; linked: boolean}[]>;
     projects: Project[];
     reviews: Review[];
     demoAsOf: string;
@@ -112,7 +113,7 @@ let saveStatus = '';
 let saving = false;
 const localVersions = new Map<string, number>();
 const pendingDecisions = new Map<string, string>();
-const M = AXModel, projects = AX_DATA.projects;
+const M = AXModel, projects = AX_DATA.projects.filter(p => !p.tasks.length || p.tasks.some(t => t.planSource !== 'reference')).map(p => ({...p, tasks: p.tasks.filter(t => t.planSource !== 'reference'), files: p.files.filter(f => !p.tasks.some(t => t.id === f.taskId && t.planSource === 'reference'))}));
 const THEMES: {
     id: Theme;
     name: string;
@@ -295,8 +296,13 @@ function projectArea() { const list = filtered(); return `<div class="section-to
 function themePicker() { const mini = (id: string) => `<span class="theme-mini mini-${id}"><i></i><b></b><b></b><b></b></span>`; return `<div class="theme-picker-anchor">${state.themeOpen ? `<div class="theme-menu" role="dialog" aria-modal="true" aria-label="UI 테마 선택"><header><strong>화면 테마</strong><small>업무에 맞는 화면으로 살펴보세요</small></header>${THEMES.map(t => `<button class="theme-choice ${t.id === state.theme ? 'selected' : ''}" data-action="theme" data-value="${t.id}">${mini(t.id)}<span><strong>${t.name}</strong><small>${t.hint}</small></span>${t.id === state.theme ? icon('check', 15) : ''}</button>`).join('')}</div>` : ''}<button class="theme-launcher" data-action="themes" aria-expanded="${state.themeOpen}">${mini(state.theme)}<span><strong>${THEMES.find(t => t.id === state.theme)!.name}</strong><small>화면 테마</small></span>${icon('chevron', 14)}</button></div>`; }
 function reviewDrawer() { return state.reviews ? `<div class="overlay-backdrop" data-action="close"></div><aside class="review-drawer" role="dialog" aria-modal="true" aria-label="검토함"><header><div><span class="eyebrow">REVIEW INBOX</span><h2>확인할 일 <span>${reviewCount()}</span></h2></div><button class="icon-button" data-action="close" aria-label="검토함 닫기">${icon('x', 18)}</button></header><p class="drawer-caption">각 태스크에서 근거를 보고, 끝난 일이 맞는지 확인해 주세요.</p><div class="drawer-scroll">${pilotReviewCards()}${completionReviews().filter(r => !state.reviewed.has(r.id)).map(r => `<article class="review-record">${tag(projects.find(p => p.id === r.project)?.name || '')}<h3>${esc(r.title)}</h3><p>${esc(r.desc)}</p><small>${esc(r.source)}</small><div><button class="primary" data-action="review-task" data-id="${r.id}">태스크에서 확인 ${icon('arrow', 13)}</button></div></article>`).join('') || empty('모두 확인했습니다.', '현재 남아 있는 확인 요청이 없습니다.')}</div><footer>${localPoc ? '저장된 판단을 다시 불러옵니다.' : '판단 결과는 이 화면에서만 유지됩니다.'}<button data-action="reset-reviews">초기화</button></footer></aside>` : ''; }
 function folderBrowser(f: SourceFile) {
- const entries = f.folderId ? [...new Map(projects.flatMap(p=>p.files.filter(file=>file.folderId===f.folderId).map(file=>({p,file}))).map(entry=>[entry.file.id,entry])).values()].sort((a,b)=>a.file.name.localeCompare(b.file.name,'ko')) : projects.flatMap(p=>p.files.filter(file=>file===f).map(file=>({p,file})));
- return `<div class="folder-browser"><nav class="folder-breadcrumb" aria-label="자료 폴더 경로">${f.folderPath!.map(part=>`<span>${esc(part)}</span>`).join('<span aria-hidden="true"> / </span>')}</nav><p>관리장에 연결된 자료만</p><ul class="folder-files" aria-label="같은 폴더의 자료">${entries.map(({p,file})=>`<li><button data-action="folder-file" data-id="${esc(p.id)}" data-file="${esc(file.id)}" ${file.id===f.id?'aria-current="true"':''} ${file.previewable===false?'disabled':''}>${icon('file',16)}<span>${esc(file.name)}</span>${file.id===f.id?'<small>현재 자료</small>':''}</button></li>`).join('')}</ul>${f.folderUrl?`<a class="folder-open primary" href="${esc(f.folderUrl)}" target="_blank" rel="noopener noreferrer">폴더 열기 ${icon('external',13)}</a>`:''}</div>`;
+ const linked = [...new Map(projects.flatMap(p=>p.files.filter(file=>f.folderId?file.folderId===f.folderId:file===f).map(file=>({p,file}))).map(entry=>[entry.file.id,entry])).values()];
+ const entries = (f.folderId && AX_DATA.folders?.[f.folderId] || linked.map(({file})=>({id:file.id,name:file.name,url:file.url,kind:'',linked:true}))).slice().sort((a,b)=>a.name.localeCompare(b.name,'ko')||a.id.localeCompare(b.id));
+ const searchUrl = `https://drive.google.com/drive/search?q=${encodeURIComponent(f.name)}`;
+ return `<div class="folder-browser"><nav class="folder-breadcrumb" aria-label="자료 폴더 경로">${(f.folderPath||[]).map(part=>`<span>${esc(part)}</span>`).join('<span aria-hidden="true"> / </span>')}</nav><p>이 폴더의 파일 ${entries.length}개 · 연결된 자료 ${entries.filter(e=>e.linked).length}개</p><ul class="folder-files" aria-label="같은 폴더의 자료">${entries.map(file=>{
+   const target=linked.find(e=>e.file.id===file.id),current=file.id===f.id,content=`${icon('file',16)}<span>${esc(file.name)}</span>${current?'<small>현재 자료</small>':''}${file.linked?'<small>연결됨</small>':''}`;
+   return `<li class="${file.linked?'linked':'unlinked'}">${target?`<button data-action="folder-file" data-id="${esc(target.p.id)}" data-file="${esc(file.id)}" ${current?'aria-current="true"':''} ${target.file.previewable===false?'disabled':''}>${content}</button>`:file.url?`<a href="${esc(file.url)}" target="_blank" rel="noopener noreferrer">${content}</a>`:`<span class="folder-unavailable">${content}</span>`}</li>`;
+ }).join('')}</ul>${f.folderUrl?`<a class="folder-open primary" href="${esc(f.folderUrl)}" target="_blank" rel="noopener noreferrer">폴더 열기 ${icon('external',13)}</a>`:''}<a class="folder-search" href="${esc(searchUrl)}" target="_blank" rel="noopener noreferrer" title="검색 결과에서 마우스 오른쪽 → 파일 위치 보기">Drive에서 이 파일 찾기 ${icon('external',13)}</a></div>`;
 }
 function modal() {
     if (!state.modal)
@@ -308,7 +314,7 @@ function modal() {
     const m = state.modal, p = projects.find(p => p.id === m.project)!;
     const f = p.files.find(f => f.id === m.file), t = p.tasks.find(t => t.id === m.task), s = t?.subtasks.find(s => s.id === m.subtask);
     const title = f?.name || s?.artifact || t?.title || p.name;
-    return `<div class="modal-wrap"><div class="overlay-backdrop" data-action="close"></div><section class="file-dialog" role="dialog" aria-modal="true" aria-label="${esc(title)} 미리보기"><header><div><strong>${esc(title)}</strong><small>${s ? `${s.owner} · ${fullDate(s.performedAt)}` : f ? `${f.source} · ${f.topic}` : p.name}</small></div><button class="icon-button" data-action="close" aria-label="미리보기 닫기">${icon('x', 18)}</button></header>${f?.folderPath?.length ? folderBrowser(f) : f?.url ? '' : `<img src="${asset(f ? fileThumb(f, p) : thumb(p))}" alt="${esc(title)} 관련 예시 이미지">`}<footer><p>${esc(s?.summary || f?.summary || t?.summary)}</p>${f?.url ? `<a class="primary" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${esc(f.source)}에서 원본 열기 ${icon('arrow', 13)}</a>` : '<small>관련 내용을 보여 주는 예시 이미지입니다. 원본 서비스는 연결되지 않았습니다.</small>'}</footer></section></div>`;
+    return `<div class="modal-wrap"><div class="overlay-backdrop" data-action="close"></div><section class="file-dialog" role="dialog" aria-modal="true" aria-label="${esc(title)} 미리보기"><header><div><strong>${esc(title)}</strong><small>${s ? `${s.owner} · ${fullDate(s.performedAt)}` : f ? `${f.source} · ${f.topic}` : p.name}</small></div><button class="icon-button" data-action="close" aria-label="미리보기 닫기">${icon('x', 18)}</button></header>${f && (f.folderId || f.folderPath?.length) ? folderBrowser(f) : f?.url ? '' : `<img src="${asset(f ? fileThumb(f, p) : thumb(p))}" alt="${esc(title)} 관련 예시 이미지">`}<footer><p>${esc(s?.summary || f?.summary || t?.summary)}</p>${f?.url ? `<a class="primary" href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">${esc(f.source)}에서 원본 열기 ${icon('arrow', 13)}</a>` : '<small>관련 내용을 보여 주는 예시 이미지입니다. 원본 서비스는 연결되지 않았습니다.</small>'}</footer></section></div>`;
 }
 function clockTime(value: string) { if (!value || !Number.isFinite(Date.parse(value))) return '시각 미상'; if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return ''; return new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(value)); }
 function weekLabel(range: DateRange) { const [y, m, d] = range.start.split('-').map(Number); return `${y}년 ${m}월 ${d}일 – ${Number(range.end.slice(5, 7)) !== m ? `${Number(range.end.slice(5, 7))}월 ` : ''}${Number(range.end.slice(8))}일`; }
@@ -659,6 +665,7 @@ async function loadLocal() {
     const data = await response.json();
     projects.splice(0, projects.length, ...data.projects);
     AX_DATA.reviews = data.reviews;
+    AX_DATA.folders = data.folders || {};
     pilotReviews = data.pilotReviews || [];
     if (data.demoAsOf) AX_DATA.demoAsOf = data.demoAsOf;
     if (data.demoNotice) AX_DATA.demoNotice = data.demoNotice;

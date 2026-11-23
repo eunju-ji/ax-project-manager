@@ -4,12 +4,33 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 const root=path.resolve(__dirname,'..');
-function app(){
+function app(setup=''){
  const container={innerHTML:'',scrollIntoView(){}};
  const ctx=vm.createContext({Intl,Date,Set,Map,console,location:{hash:''},history:{pushState(){}},localStorage:{getItem(){return null},setItem(){}},window:{addEventListener(){},scrollTo(){}},document:{activeElement:null,body:{dataset:{},classList:{toggle(){}}},getElementById(){return container},querySelector(){return null},addEventListener(){}}});
- for(const file of ['data.js','src/model.js','app.js'])vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx,{filename:file});
+ for(const file of ['data.js','src/model.js','app.js']){vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),ctx,{filename:file});if(file==='data.js'&&setup)vm.runInContext(setup,ctx);}
  return {ctx,html:()=>container.innerHTML,run:code=>vm.runInContext(code,ctx)};
 }
+test('reference tasks are absent from counts, progress, timeline, heatmap, summaries and people',()=>{
+ const a=app(`AX_DATA.projects.push({id:'reference-only',name:'참考専用',tasks:[{id:'ref',planSource:'reference',title:'参考作業',owner:'参考担当',subtasks:[{id:'ref-log',owner:'参考担当',performedAt:'2026-11-17',title:'参考記録'}]}],files:[]});AX_DATA.projects[0].tasks.push({id:'ref-mixed',planSource:'reference',title:'参考混合',owner:'参考担当',subtasks:[{id:'ref-log2',owner:'参考担当',performedAt:'2026-11-17',title:'参考記録'}]});`);
+ assert.ok(!a.run("projects.some(p=>p.id==='reference-only')"));assert.ok(!a.run("M.owners(projects).includes('参考担当')"));
+ const baseline=app();
+ for(const unit of ['day','week','month']){a.run(`state.summaryUnit='${unit}';render()`);baseline.run(`state.summaryUnit='${unit}';render()`);assert.doesNotMatch(a.html(),/参考/);assert.equal(a.html(),baseline.html());}
+ for(const theme of ['linear','notion','attio','airtable','clickup']){const setup=`state.theme='${theme}';state.project=projects[0].id;render()`;a.run(setup);baseline.run(setup);assert.equal(a.html(),baseline.html());}
+ assert.ok(!a.run("projects.flatMap(p=>p.tasks).some(t=>t.planSource==='reference')"));
+});
+test('folder preview shows unlinked files, current and linked badges, safe encoded Drive search',()=>{
+ const a=app();a.run(`const f=projects[0].files[0];Object.assign(f,{folderId:'folder',folderPath:['合成'],folderUrl:'https://drive.google.com/drive/folders/f',name:'A & #한글'});AX_DATA.folders={folder:[{id:f.id,name:f.name,url:f.url,kind:'document',linked:true},{id:'unlinked',name:'B 未接続',url:'https://drive.google.com/file/d/b',kind:'document',linked:false}]};`);
+ const html=a.run('folderBrowser(projects[0].files[0])');assert.match(html,/이 폴더의 파일 2개 · 연결된 자료 1개/);assert.match(html,/현재 자료/);assert.match(html,/연결됨/);assert.match(html,/B 未接続/);
+ assert.ok(html.includes('https://drive.google.com/drive/search?q='+encodeURIComponent('A & #한글')));assert.match(html,/검색 결과에서 마우스 오른쪽 → 파일 위치 보기/);
+ assert.match(html,/<a href="https:\/\/drive.google.com\/file\/d\/b" target="_blank" rel="noopener noreferrer">/);assert.ok(html.indexOf('A &amp;')<html.indexOf('B 未接続'));
+ assert.match(html,/https:\/\/drive.google.com\/drive\/search\?q=A%20%26%20%23%ED%95%9C%EA%B8%80/);assert.match(html,/검색 결과에서 마우스 오른쪽 → 파일 위치 보기/);
+ assert.match(html,/href="https:\/\/drive.google.com\/file\/d\/b" target="_blank" rel="noopener noreferrer"/);
+});
+test('API view reload refreshes folder files and clears stale folders',async()=>{
+ const a=app();a.run(`globalThis.fetch=async()=>({ok:true,json:async()=>({projects,reviews:[],taskStates:[],decisions:[],folders:{api:[{id:'unlinked',name:'API 미연결',kind:'document',linked:false}]}})});`);
+ await a.run('loadLocal()');assert.equal(a.run('AX_DATA.folders.api[0].name'),'API 미연결');
+ a.run(`globalThis.fetch=async()=>({ok:true,json:async()=>({projects,reviews:[],taskStates:[],decisions:[]})});`);await a.run('loadLocal()');assert.equal(a.run('Object.keys(AX_DATA.folders).length'),0);
+});
 test('Linear with Notion palette keeps identical project structure and uses Linear layout selectors',()=>{
  const a=app();a.run("state.theme='linear';state.project='ax';state.expanded.add('AX-07');render()");const original=a.run('projectArea()');
  a.run("state.theme='linear-notion';render()");assert.equal(a.run('projectArea()'),original);

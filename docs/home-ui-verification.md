@@ -162,3 +162,10 @@
 - 최종 검증: python3.15.exe build.py·typecheck exit 0, 단위/UI 62/62, 서버 130/130, 탐색 106/106, 시각 54/54(기준·오프라인 차이 모두 0). 합성 묶음 행·요약 범위·깊이·접기/펼치기·최상위 말단 순서·breadcrumb·용어·점 설명 테스트 포함.
 - 최초 시각 비교의 의도한 문구·범례 차이 18개를 검토하고 `--update` 후 재비교했다. baseline PNG 18개와 manifest 갱신. 기존 다른 테마 화면 유지. 증거: `app/test-results/wbs-groups-{unit,server,navigation,visual-final}.log`, `wbs-groups-{dev,offline}.png`(묶음 합성 화면), `wbs-table-{1440,834,390}-project.png`.
 - `workNarrative` 원문 동일 확인. 실데이터 접근·추가 위임·커밋·푸시 없음. 기존 다른 작업 변경 보존. 미해결 오류 없음.
+
+## 2026-11-23 참고 기록 제외·폴더 전체 파일 — AX-Builder
+
+- ADR-018 §8: 신규/갱신 delta의 `plan_source: reference` 허용. adapter·앱에서 참고 태스크와 내역·완료 검토, 참고 태스크만 있는 프로젝트를 제외한다. 데이터는 보존하며 태스크/기록 수·진척·간트·히트맵·일/주/월 요약·담당자/사람 집계에서 제외됨을 합성 데이터로 검증했다.
+- adapter의 `folders`는 연결 여부와 별개로 같은 folder_id의 모든 파일형 source를 제공한다. 기존 safeUrl 규칙 유지. 미리보기는 이름순 전체 파일, 현재 자료·연결됨 표시, 회색 미연결 파일 새 탭, 전체/연결 건수 및 인코딩된 Drive 검색 링크를 제공한다. API 재조회 시 폴더 목록도 갱신한다.
+- 최종 검증: 설치된 python3.15.exe build.py·typecheck exit 0, 단위/UI 67/67, 서버 131/131, 시각 54/54(기준·오프라인 픽셀 차이 0), 탐색 106/106. baseline 갱신 없음. 미해결 오류 없음.
+- workNarrative 원문 동일 확인. server/.real 접근·추가 위임·커밋·푸시 없음. 기존 ADR-018·real-collect.md·로컬 설정 변경 보존. 다음: AX-Lead 완료 판정·독립 검토.

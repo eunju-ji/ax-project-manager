@@ -16,6 +16,11 @@ function fixture(t) {
  delta.links[0].status='confirmed';
  return {dir,file,data,delta,setServer:s=>server=s,read:()=>JSON.parse(fs.readFileSync(file,'utf8')),apply:(d=delta,opts={})=>applyDelta(d,{dataset:file,...opts})};
 }
+test('reference plan source is retained on new tasks and task updates',t=>{
+ const f=fixture(t);f.delta.tasks=[{task_id:'REF',project_id:'PR',title:'참고',status:'in_progress',plan_source:'reference'}];
+ f.delta.task_updates=[{task_id:'T',plan_source:'reference'}];a.equal(f.apply().ok,true);
+ a.equal(f.read().tasks.find(t=>t.task_id==='REF').plan_source,'reference');a.equal(f.read().tasks.find(t=>t.task_id==='T').plan_source,'reference');
+});
 test('merge stamps provenance, Seoul date, state and audit; replay is idempotent', t => {
  const f=fixture(t); const r=f.apply(); a.equal(r.ok,true); a.equal(r.added,3);
  const d=f.read(); a.equal(d.demoAsOf,'2026-11-21'); a.equal(d.demoNotice,'마지막 수집 2026-11-21'); a.equal(d.worklogs[0].created_run_id,'R1'); a.equal(d.runs.length,1);

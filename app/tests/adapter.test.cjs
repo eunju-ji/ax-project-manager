@@ -1,5 +1,20 @@
 ﻿const {test}=require('node:test');const assert=require('node:assert/strict');const fixture=require('./fixtures/ops-synthetic.json');const M=require('../src/model.js');
 const adapt=d=>require('../src/adapter.js').adapt(d);const clone=()=>structuredClone(fixture);const all=v=>v.projects.flatMap(p=>p.tasks.flatMap(t=>t.subtasks));
+test('reference tasks, records, reviews and reference-only projects are excluded without deleting data',()=>{
+ const d=clone();d.tasks[0].plan_source='reference';const before=JSON.stringify(d),v=adapt(d);
+ assert.ok(!v.projects.flatMap(p=>p.tasks).some(t=>t.id===d.tasks[0].task_id));
+ assert.ok(!all(v).some(w=>d.worklogs.some(raw=>raw.task_id===d.tasks[0].task_id&&raw.worklog_id===w.id)));
+ assert.ok(!v.reviews.some(r=>r.taskId===d.tasks[0].task_id));assert.equal(JSON.stringify(d),before);
+ d.tasks.forEach(t=>t.plan_source='reference');assert.equal(adapt(d).projects.length,0);
+});
+test('folders include unlinked files, exclude messages and sanitize URLs, with deterministic name order',()=>{
+ const d=clone(),s=d.sources.find(s=>s.source_key==='drive:synthetic:doc');s.folder_id='folder';
+ d.sources.push({...s,source_key:'unlinked',title:'A & 합성',uri:'https://drive.google.com/file/d/unlinked',modified_at:'2026-11-18'},
+ {...s,source_key:'unsafe',title:'B',uri:'javascript:alert(1)'},{...s,source_key:'message',kind:'message'});
+ const v=adapt(d),rows=v.folders.folder;assert.equal(rows.length,3);assert.deepEqual(rows.map(r=>r.name),rows.map(r=>r.name).sort((a,b)=>a.localeCompare(b,'ko')));
+ assert.equal(rows.find(r=>r.id==='unlinked').linked,false);assert.equal(rows.find(r=>r.id==='unlinked').modifiedAt,'2026-11-18');assert.equal(rows.find(r=>r.id===s.source_key).linked,true);
+ assert.ok(!rows.find(r=>r.id==='unsafe').url);assert.ok(!v.projects.flatMap(p=>p.files).some(f=>f.id==='unlinked'));
+});
 test('invariant 1: complete Run unique WorkLogs only, duplicate input IDs do not inflate totals',()=>{const d=clone();d.worklogs.push(structuredClone(d.worklogs[0]));const v=adapt(d);assert.deepEqual(all(v).map(s=>s.id).sort(),['WL-1','WL-2','WL-3','WL-4','WL-5','WL-6']);});
 test('invariant 2: each sourceId resolves within its project; event links resolve to Source',()=>{const v=adapt(fixture);for(const p of v.projects)for(const t of p.tasks)for(const s of t.subtasks)if(s.sourceId)assert.ok(p.files.some(f=>f.id===s.sourceId));assert.equal(all(v)[0].sourceId,'drive:synthetic:doc');});
 test('invariant 3: weekly counts use performed time in Seoul, include dates, exclude unknown',()=>{const v=adapt(fixture),rows=M.weekRecords(v.projects,M.weekRange(v.demoAsOf));assert.equal(rows.length,5);assert.ok(!rows.some(r=>r.subtask.id==='WL-3'));assert.ok(rows.some(r=>r.subtask.id==='WL-4'));});

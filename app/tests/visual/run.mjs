@@ -234,10 +234,16 @@ async function nav() {
     });
     await check('folder preview switches files, traps focus and returns to launcher', async () => {
       await load(p,url); await opened(p);
-      await p.evaluate(()=>{const p=projects.find(p=>p.id===state.project);p.files.slice(0,2).forEach((f,i)=>Object.assign(f,{name:'합성 폴더 자료 '+i,folderId:'synthetic-folder',folderPath:['AX_TF','합성 자료'],folderUrl:'https://drive.google.com/drive/folders/synthetic',url:'https://docs.google.com/document/d/synthetic-'+i}));render();});
+      await p.evaluate(()=>{const p=projects.find(p=>p.id===state.project);p.files.slice(0,2).forEach((f,i)=>Object.assign(f,{name:'합성 폴더 자료 '+i+' & #',folderId:'synthetic-folder',folderPath:['AX_TF','합성 자료'],folderUrl:'https://drive.google.com/drive/folders/synthetic',url:'https://docs.google.com/document/d/synthetic-'+i}));AX_DATA.folders={'synthetic-folder':[...p.files.slice(0,2).map(f=>({id:f.id,name:f.name,url:f.url,kind:'document',linked:true})),{id:'unlinked',name:'미연결 합성 파일',url:'https://drive.google.com/file/d/unlinked',kind:'document',linked:false}]};render();});
       const ids=await p.evaluate(()=>projects.find(p=>p.id===state.project).files.slice(0,2).map(f=>f.id));
       const launcher=p.locator('[data-action="file"][data-file="'+ids[0]+'"]').last();await launcher.click();
       await expect(p.locator('.folder-breadcrumb')).toContainText('합성 자료');await expect(p.locator('.folder-open')).toHaveAttribute('rel','noopener noreferrer');
+      await expect(p.locator('.folder-browser>p')).toHaveText('이 폴더의 파일 3개 · 연결된 자료 2개');
+      await expect(p.locator('.folder-files .unlinked a')).toHaveAttribute('href','https://drive.google.com/file/d/unlinked');
+      await expect(p.locator('.folder-files .unlinked a')).toHaveAttribute('target','_blank');
+      await expect(p.locator('.folder-files small').filter({hasText:'연결됨'})).toHaveCount(2);
+      await expect(p.locator('.folder-files [aria-current=true]')).toContainText('현재 자료');
+      await expect(p.locator('.folder-search')).toHaveAttribute('href','https://drive.google.com/drive/search?q='+encodeURIComponent('합성 폴더 자료 0 & #'));
       const next=p.locator('[data-action="folder-file"][data-file="'+ids[1]+'"]');await next.click();await expect(next).toHaveAttribute('aria-current','true');await expect(next).toBeFocused();
       await expect(p.locator('.file-dialog')).toHaveCount(1);
       const controls=p.locator('.file-dialog a,.file-dialog button');await controls.last().focus();await p.keyboard.press('Tab');await expect(controls.first()).toBeFocused();await p.keyboard.press('Shift+Tab');await expect(controls.last()).toBeFocused();

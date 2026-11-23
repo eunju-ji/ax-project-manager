@@ -328,3 +328,10 @@
 - 최종 검증: build.py·typecheck exit 0, 단위/UI 62/62, 서버 130/130, 탐색 106/106, 시각 54/54(기준·오프라인 0px). 문구·범례 차이 18개 확인 후 baseline PNG 18개·manifest 갱신 및 재비교. 상세: docs/home-ui-verification.md 최신 항목.
 - 변경: app/src/{app.ts,adapter.js}, app/app.js, app/styles.css, app/server/{real/apply-delta.cjs,tests/real-delta.test.cjs}, app/tests/{adapter.test.cjs,ui.test.cjs,visual/run.mjs,visual/baseline}, docs/runbooks/real-delta-format.md, 검증 문서, 본 문서. 오프라인 preview 재생성(Git 제외).
 - 합성 데이터만 사용. workNarrative 원문 보존, server/.real 접근·추가 에이전트 호출·커밋·푸시 없음. 기존 real-collect.md·로컬 설정 변경 보존. 미해결 문제 없음. 다음: AX-Lead 완료 판정·독립 검토 및 승인된 실데이터의 묶음 메타데이터 반영.
+
+## 2026-11-23 참고 기록 제외·폴더 전체 파일 — AX-Builder
+
+- ADR-018 §8: 신규/갱신 delta의 `plan_source: reference` 허용. adapter·앱에서 참고 태스크와 내역·완료 검토, 참고 태스크만 있는 프로젝트를 제외한다. 데이터는 보존하며 태스크/기록 수·진척·간트·히트맵·일/주/월 요약·담당자/사람 집계에서 제외됨을 합성 데이터로 검증했다.
+- adapter의 `folders`는 연결 여부와 별개로 같은 folder_id의 모든 파일형 source를 제공한다. 기존 safeUrl 규칙 유지. 미리보기는 이름순 전체 파일, 현재 자료·연결됨 표시, 회색 미연결 파일 새 탭, 전체/연결 건수 및 인코딩된 Drive 검색 링크를 제공한다. API 재조회 시 폴더 목록도 갱신한다.
+- 최종 검증: 설치된 python3.15.exe build.py·typecheck exit 0, 단위/UI 67/67, 서버 131/131, 시각 54/54(기준·오프라인 픽셀 차이 0), 탐색 106/106. baseline 갱신 없음. 미해결 오류 없음.
+- workNarrative 원문 동일 확인. server/.real 접근·추가 위임·커밋·푸시 없음. 기존 ADR-018·real-collect.md·로컬 설정 변경 보존. 다음: AX-Lead 완료 판정·독립 검토.

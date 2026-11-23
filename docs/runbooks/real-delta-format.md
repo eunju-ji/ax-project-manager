@@ -64,7 +64,9 @@ stdout은 요약 JSON 한 줄이다. `ok: true`면 exit 0, 거부·입력·I/O �
 
 ## WBS 계획 필드와 작업 내역 재연결 (ADR-018)
 
-신규 tasks와 task_updates는 선택 필드 wbs_code(문자열, 16자 이하), start_date 및 due_date(실제 존재하는 YYYY-MM-DD), plan_source(wbs 또는 activity), plan_ref(source_key 문자열)를 받는다. task_updates에서는 이 필드들을 null로 지울 수 있다. 신규 projects도 기존 추가 계약에 따라 지원한다.
+신규 tasks와 task_updates는 선택 필드 wbs_code(문자열, 16자 이하), start_date 및 due_date(실제 존재하는 YYYY-MM-DD), plan_source(wbs, activity 또는 reference), plan_ref(source_key 문자열)를 받는다. task_updates에서는 이 필드들을 null로 지울 수 있다. 신규 projects도 기존 추가 계약에 따라 지원한다.
+
+`plan_source: "reference"`는 태스크가 아닌 참고 기록이다(ADR-018 §8). 원본 데이터와 판별 근거는 유지하지만 화면의 태스크·작업 내역·진척률·히트맵·일/주/월 요약·담당자 집계에서 제외하며, 모든 태스크가 참고 기록인 프로젝트도 숨긴다. 폴더 맥락은 완료 Run의 파일형 source 전체를 `folder_id`로 묶어 제공하고 메시지는 제외한다. 연결되지 않은 파일도 표시하며 URL은 기존 허용 호스트 검증을 통과한 경우에만 제공한다.
 
 ```json
 {"run_id":"WBS-DEMO","collected_at":"2026-11-20T21:00:00+09:00","tasks":[{"task_id":"DEMO-T2","project_id":"DEMO-PR","title":"계획 태스크","status":"in_progress","wbs_code":"1.1.1","start_date":"2026-11-01","due_date":"2026-11-30","plan_source":"wbs","plan_ref":"drive:demo-wbs"}],"worklog_updates":[{"worklog_id":"DEMO-W","task_id":"DEMO-T2"}]}

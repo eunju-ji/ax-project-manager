@@ -123,7 +123,7 @@ async function nav() {
       await p.evaluate(()=>{
         const p=projects[0], base=p.tasks[0];
         p.tasks=[{...base,id:'wbs-ten',planSource:'wbs',wbsCode:'1.10',status:'completed',startDate:'2026-11-10',dueDate:'2026-11-12'},
-          {...base,id:'wbs-two',planSource:'wbs',wbsCode:'1.2.1',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-03'}];
+          {...base,id:'wbs-two',planSource:'wbs',wbsCode:'1.2.1',wbsGroups:['1 플랫폼','1.2 비교평가'],status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-03'}];
         state.project=p.id;state.expanded.clear();render();
       });
       expect(await p.locator('[data-gantt-task]').evaluateAll(rows=>rows.map(r=>r.dataset.ganttTask))).toEqual(['wbs-two','wbs-ten']);
@@ -143,6 +143,29 @@ async function nav() {
       await p.keyboard.press('Escape');await expect(p.locator('.task-drawer')).toHaveCount(0);
       await p.locator('[data-gantt-task="wbs-two"]').screenshot({path:path.join(results,'wbs-mobile-row.png')});
       await p.setViewportSize({width:1440,height:900});
+    });
+    await check('WBS groups summarize, collapse and retain root leaves',async()=>{
+      await load(p,url);
+      await p.evaluate(()=>{
+        const p=projects[0],base=p.tasks[0];p.tasks=[
+          {...base,id:'root-nine',planSource:'wbs',wbsCode:'9',wbsGroups:[],title:'최상위 말단'},
+          {...base,id:'leaf',planSource:'wbs',wbsCode:'2.1.1',wbsGroups:['2 플랫폼','2.1 비교'],startDate:'2026-11-01',dueDate:undefined,status:'completed'}
+        ];state.project=p.id;render();
+      });
+      await expect(p.locator('[data-gantt-group]')).toHaveCount(2);
+      await expect(p.locator('[data-gantt-group]').first()).toContainText('완료 1/1');
+      await expect(p.locator('[data-gantt-group]').first().locator('.wbs-period')).toHaveText('11/1 ~ 종료일 미정');
+      expect(await p.locator('[data-gantt-group]').first().locator('.wbs-group-summary').evaluate(e=>e.style.left)).toBe('0%');
+      await p.locator('.timeline-grid').screenshot({path:path.join(results,`wbs-groups-${kind}.png`)});
+      await p.locator('[data-action="wbs-group"]').first().click();
+      await expect(p.locator('[data-gantt-group]')).toHaveCount(1);
+      await expect(p.locator('[data-gantt-task="leaf"]')).toHaveCount(0);
+      await expect(p.locator('[data-gantt-task="root-nine"]')).toBeVisible();
+      await p.locator('[data-action="wbs-group"]').first().click();
+      await expect(p.locator('[data-gantt-task="leaf"]')).toBeVisible();
+      await p.locator('[data-gantt-task="leaf"] .gantt-task-toggle').click();
+      await expect(p.locator('.task-drawer-toolbar small')).toContainText('2 플랫폼 / 2.1 비교 / 2.1.1');
+      await p.keyboard.press('Escape');
     });
     await check('open-ended WBS and description remain clear',async()=>{
       await load(p,url);

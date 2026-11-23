@@ -153,3 +153,12 @@
 - 최종 검증: 설치된 python3.15.exe build.py 및 typecheck exit 0, 단위/UI 59/59, 서버 117/117, 탐색 104/104, 시각 54/54(기준·오프라인 차이 모두 0). 최초 탐색에서 발견한 태스크 행 문구 누락 수정 후 전체 재검증. 기존 Notion 834px 홈 2px 흔들림은 기준·허용치 변경 없이 동일 명령 재실행에서 0으로 확인. 기준 이미지 원본 유지.
 - 합성 데이터만 사용. workNarrative 원문 동일 확인. server/.real 접근·추가 에이전트·커밋·푸시 없음. 동시 작업자의 real-collect.md 및 로컬 설정 보존. 미해결 기능 오류 없음. 다음: AX-Lead 완료 판정 및 독립 검토.
 - 증거: `app/test-results/open-ended-description-{dev,offline}.png`, `navigation.json`(104건), `visual.json`(54건). 로그: `description-open-ended-{unit-tests,server-tests,navigation-final,visual-recheck}.log`. 초기 실패·2px 흔들림 로그도 같은 접두어로 보존.
+
+## 2026-11-23 WBS 상위 묶음·용어 명확화 — AX-Builder
+
+- `wbs_groups`를 tasks/task_updates에 추가(문자열 배열 0~4개, 각 120 코드포인트 이하, null 허용). 배열 비밀값 검사·사람 교정 보호·이력 기록은 기존 delta 경로를 재사용하며 adapter는 누락/null을 `[]`로 전달한다.
+- 간트는 WBS 자연 정렬 순서에서 묶음 머리 행을 삽입한다. 묶음 깊이 기반 들여쓰기, 자식 기간 최소~최대와 열린 끝, 완료 n/m, 얇은 요약 괄호선, 메모리 접기 상태를 적용했다. 묶음 없는 최상위 말단은 깊이 0으로 유지하고 드로어에는 프로젝트/묶음/WBS 경로를 표시한다.
+- `WBS에 없는 업무 N`과 회색 설명으로 의미를 명확히 하고, 계획 출처는 `팀 WBS (11월)` / `WBS에 없음 · 수집 기록에서 판별`로 표시한다. 작업 기록 점에는 날짜·기록 건수 title/aria-label과 범례를 추가했다.
+- 최종 검증: python3.15.exe build.py·typecheck exit 0, 단위/UI 62/62, 서버 130/130, 탐색 106/106, 시각 54/54(기준·오프라인 차이 모두 0). 합성 묶음 행·요약 범위·깊이·접기/펼치기·최상위 말단 순서·breadcrumb·용어·점 설명 테스트 포함.
+- 최초 시각 비교의 의도한 문구·범례 차이 18개를 검토하고 `--update` 후 재비교했다. baseline PNG 18개와 manifest 갱신. 기존 다른 테마 화면 유지. 증거: `app/test-results/wbs-groups-{unit,server,navigation,visual-final}.log`, `wbs-groups-{dev,offline}.png`(묶음 합성 화면), `wbs-table-{1440,834,390}-project.png`.
+- `workNarrative` 원문 동일 확인. 실데이터 접근·추가 위임·커밋·푸시 없음. 기존 다른 작업 변경 보존. 미해결 오류 없음.

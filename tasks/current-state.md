@@ -321,3 +321,10 @@
 - 시작일만 있는 WBS 태스크는 기준일까지 열린 막대(오른쪽 점선), `종료일 미정` 기간·라벨로 표시. 프로젝트 범위는 열린 태스크를 기준일까지 포함하고 `진행 중`으로 표시. 상태·지연 판정 유지. 계산을 model의 순수 함수로 이동.
 - 최종 검증: 설치된 python3.15.exe build.py 및 typecheck exit 0, 단위/UI 59/59, 서버 117/117, 탐색 104/104, 시각 54/54(기준·오프라인 차이 모두 0). 최초 탐색에서 발견한 태스크 행 문구 누락 수정 후 전체 재검증. 기존 Notion 834px 홈 2px 흔들림은 기준·허용치 변경 없이 동일 명령 재실행에서 0으로 확인. 기준 이미지 원본 유지.
 - 합성 데이터만 사용. workNarrative 원문 동일 확인. server/.real 접근·추가 에이전트·커밋·푸시 없음. 동시 작업자의 real-collect.md 및 로컬 설정 보존. 미해결 기능 오류 없음. 다음: AX-Lead 완료 판정 및 독립 검토.
+
+## 2026-11-23 WBS 상위 묶음·용어 명확화 — AX-Builder
+
+- `feat/home-project-timeline`: tasks/task_updates `wbs_groups` 검증·adapter 전달, 간트 묶음 머리 행·깊이·자식 기간 요약·완료 n/m·메모리 접기, 최상위 말단 자연 정렬, 드로어 경로를 구현했다. WBS에 없는 업무 설명·계획 출처와 작업 기록 점 범례/title/aria를 명확히 했다.
+- 최종 검증: build.py·typecheck exit 0, 단위/UI 62/62, 서버 130/130, 탐색 106/106, 시각 54/54(기준·오프라인 0px). 문구·범례 차이 18개 확인 후 baseline PNG 18개·manifest 갱신 및 재비교. 상세: docs/home-ui-verification.md 최신 항목.
+- 변경: app/src/{app.ts,adapter.js}, app/app.js, app/styles.css, app/server/{real/apply-delta.cjs,tests/real-delta.test.cjs}, app/tests/{adapter.test.cjs,ui.test.cjs,visual/run.mjs,visual/baseline}, docs/runbooks/real-delta-format.md, 검증 문서, 본 문서. 오프라인 preview 재생성(Git 제외).
+- 합성 데이터만 사용. workNarrative 원문 보존, server/.real 접근·추가 에이전트 호출·커밋·푸시 없음. 기존 real-collect.md·로컬 설정 변경 보존. 미해결 문제 없음. 다음: AX-Lead 완료 판정·독립 검토 및 승인된 실데이터의 묶음 메타데이터 반영.

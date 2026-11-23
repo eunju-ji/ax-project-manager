@@ -5,7 +5,7 @@ const { isDeepStrictEqual: equal } = require('node:util');
 
 const DEFAULT_DATASET = path.join(__dirname, '../.real/real-dataset.json');
 const KEYS = { persons:'person_id', projects:'project_id', tasks:'task_id', worklogs:'worklog_id', sources:'source_key', links:'link_id' };
-const UPDATE_FIELDS = new Set(['description','status','completed_at','completion_basis','due_date','due_basis','title','summary','category','assignee_id','project_id','wbs_code','start_date','plan_source','plan_ref']);
+const UPDATE_FIELDS = new Set(['wbs_groups','description','status','completed_at','completion_basis','due_date','due_basis','title','summary','category','assignee_id','project_id','wbs_code','start_date','plan_source','plan_ref']);
 const SECRET = /AIza[0-9A-Za-z_-]{20,}|token=[A-Za-z0-9_-]{10,}|SMTP_PASSWORD=|KEY_JSON=|-----BEGIN/;
 const object = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 const iso = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(v) && Number.isFinite(Date.parse(v));
@@ -17,6 +17,7 @@ function canonical(v) {
 const digest = v => crypto.createHash('sha256').update(JSON.stringify(canonical(v))).digest('hex');
 const dateOnly = v => typeof v==='string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(Date.parse(v)) && new Date(v).toISOString().slice(0,10)===v;
 const validDescription = row => !('description' in row) || row.description === null || (typeof row.description === 'string' && [...row.description].length <= 200);
+const validGroups = row => !('wbs_groups' in row) || row.wbs_groups === null || (Array.isArray(row.wbs_groups) && row.wbs_groups.length <= 4 && row.wbs_groups.every(v=>typeof v==='string' && [...v].length<=120));
 function validPlan(row, nullable=false) {
  return ['wbs_code','start_date','due_date','plan_source','plan_ref'].every(k=>{
   if (!(k in row)) return true;
@@ -68,6 +69,7 @@ function merge(dataset, state, delta) {
    const loc = `${table}[${i}]`;
    if (typeof row[key] !== 'string' || !row[key].length) { reject('missing_key',loc); continue; }
    if (['projects','tasks'].includes(table) && !/^[A-Za-z0-9_-]{1,64}$/.test(row[key])) reject('invalid_key',loc);
+   if (table==='tasks' && !validGroups(row)) reject('invalid_wbs_groups',loc);
    if (table==='tasks' && !validDescription(row)) reject('description_limit',loc);
    if (table==='tasks' && !validPlan(row)) reject('invalid_plan_field',loc);
    if (table==='worklogs' && (typeof row.summary!=='string' || [...row.summary].length>160)) reject('summary_limit',loc);
@@ -94,7 +96,8 @@ function merge(dataset, state, delta) {
   seenUpdates.add(update.task_id);
   const fields = Object.keys(update).filter(k=>k!=='task_id');
   if (fields.some(k=>!UPDATE_FIELDS.has(k))) { reject('invalid_update_field',loc); continue; }
-  if (fields.some(k=>update[k]!==null && typeof update[k]!=='string')) { reject('invalid_update_value',loc); continue; }
+  if (fields.some(k=>k!=='wbs_groups' && update[k]!==null && typeof update[k]!=='string')) { reject('invalid_update_value',loc); continue; }
+  if (!validGroups(update)) { reject('invalid_wbs_groups',loc); continue; }
   if (!validDescription(update)) { reject('description_limit',loc); continue; }
   if (!validPlan(update,true)) { reject('invalid_plan_field',loc); continue; }
   const changed = fields.filter(k=>!equal(task[k],update[k]));

@@ -119,3 +119,6 @@ body[data-keyboard-navigation] .searchbox input:focus-visible{outline:2px solid 
 
 .task-drawer .task-description{font-size:14px;line-height:1.6;color:var(--ink);margin:12px 0 0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
 .task-gantt-bar.is-open-ended{border-right:2px dashed currentColor;border-radius:3px 0 0 3px}
+.unified-timeline .wbs-group-row>.wbs-columns{background:var(--surface2);font-size:11px;font-weight:600}.unified-timeline .wbs-group-row .gantt-task-copy strong{font-weight:650}.wbs-group-summary{position:absolute;top:15px;height:7px;border-top:2px solid var(--muted);border-left:2px solid var(--muted);border-right:2px solid var(--muted);z-index:2}.wbs-group-summary.is-open-ended{border-right:2px dotted var(--muted)}.gantt-group-label small{margin-left:8px;font-size:10px;font-weight:400;color:var(--muted)}.work-record-legend{color:var(--muted);font-size:10px}
+
+.unified-timeline .task-work-tick{pointer-events:auto}

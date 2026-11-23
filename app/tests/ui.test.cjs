@@ -21,7 +21,7 @@ test('all five theme renderers run and include weekly view, timeline and no life
  for(const theme of ['linear','notion','attio','airtable','clickup']){
   a.run(`state.theme='${theme}';render()`);
   assert.match(a.html(),/한 주의 업무/);assert.match(a.html(),/작업 내역 히트맵/);
-  assert.doesNotMatch(a.html(),/진척률|진행률|TO DO|IN PROGRESS|DONE/);
+  assert.doesNotMatch(a.html(),/진행률|TO DO|IN PROGRESS|DONE/);
  }
 });
 test('project opens inside list; task reveals every explicit subtask and source list persists across tabs',()=>{
@@ -147,7 +147,7 @@ test('WBS tasks sort naturally before activity and show owner dates state and pl
  {id:'t2',title:'두번째',wbsCode:'1.2',planSource:'wbs',owner:'합성',startDate:'2026-11-01',dueDate:'2026-11-16',subtasks:[]}]});`);
  const html=a.run('taskPanel(projects[0])');
  assert.ok(html.indexOf('두번째')<html.indexOf('열번째'));assert.ok(html.indexOf('열번째')<html.indexOf('계획 밖'));
- assert.match(html,/1.2/);assert.ok(html.includes('합성 · 11/1~11/16'));assert.match(html,/>확인 필요</);assert.match(html,/>예정</);assert.match(html,/계획 외 업무/);
+ assert.match(html,/1.2/);assert.ok(html.includes('합성 · 11/1~11/16'));assert.match(html,/>확인 필요</);assert.match(html,/>예정</);assert.match(html,/WBS에 없는 업무/);
  assert.ok(a.run('projectInfo(projects[0])').includes('진척 0% · 완료 0/2 · 계획 0%'));
  assert.match(a.run('projectInfo({id:"x",name:"",desc:"",tasks:[],files:[]})'),/진척 0% · 계획 없음/);
 });
@@ -161,7 +161,7 @@ test('expanded monthly WBS rows share dates, natural order and reusable task det
  {...projects[0].tasks[0],id:'activity',planSource:'activity'}];state.project=projects[0].id;`);
  const html=a.run('timeline([projects[0]],false,true)');
  assert.ok(html.indexOf('data-gantt-task="two"')<html.indexOf('data-gantt-task="ten"'));
- assert.match(html,/class="timeline-summary/);assert.match(html,/계획外|계획 외 업무/);
+ assert.match(html,/class="timeline-summary/);assert.match(html,/WBS에 없는 업무/);
  assert.match(html,/left:30%;width:10%/);assert.match(html,/left:0%;width:10%/);
  assert.match(html,/left:96.66666666666667%;width:3.3333333333333286%/);
  assert.match(html,/일정 미정/);assert.match(html,/12\/1 — 12\/3/);
@@ -186,7 +186,7 @@ test('heatmap counts unique owner task pairs by KST with fixed levels and record
 });
 
 test('WBS table columns, planned-only project range, depth, progress fill and all expand',()=>{
- const a=app();a.run(`projects[0].tasks=[{...projects[0].tasks[0],id:'deep',planSource:'wbs',wbsCode:'1.1.1',startDate:'2026-11-02',dueDate:'2026-11-06',status:'completed'},{...projects[0].tasks[0],id:'later',planSource:'wbs',wbsCode:'1.2',startDate:'2026-11-09',dueDate:'2026-11-10',status:'in_progress'}];state.project=projects[0].id;`);
+ const a=app();a.run(`projects[0].tasks=[{...projects[0].tasks[0],id:'deep',planSource:'wbs',wbsCode:'1.1.1',wbsGroups:['1 상위','1.1 하위'],startDate:'2026-11-02',dueDate:'2026-11-06',status:'completed'},{...projects[0].tasks[0],id:'later',planSource:'wbs',wbsCode:'1.2',startDate:'2026-11-09',dueDate:'2026-11-10',status:'in_progress'}];state.project=projects[0].id;`);
  const html=a.run('timeline([projects[0]],false,true)');
  assert.match(html,/이름 \(WBS\)/);assert.match(html,/진척 \/ 상태/);assert.match(html,/--wbs-depth:2/);assert.match(html,/class="summary-fill" style="width:50%"/);assert.match(html,/class="gantt-bar-label"/);assert.match(html,/11\/2–11\/10/);assert.match(html,/weekend/);assert.doesNotMatch(html,/inline-detail-head|project-properties/);
  a.run("action({dataset:{action:'projects-all'}})");assert.equal(a.run('filtered().every(projectOpen)'),true);
@@ -212,3 +212,25 @@ test('unverified chips, activity deadlines and six-state Gantt legend are distin
  assert.equal((html.match(/class="drawer-entry"/g)||[]).length,a.run('projects[0].tasks[0].subtasks.length'));
  assert.equal((html.match(/class="drawer-files"/g)||[]).length,1);a.run("state.theme='notion'");assert.equal(a.run('taskDrawer()'),'');
  });
+test('WBS group rows summarize children, preserve root ordering and collapse nested tasks',()=>{
+ const a=app();a.run(`projects[0].tasks=[
+ {id:'nine',title:'최상위 아홉',wbsCode:'9',planSource:'wbs',subtasks:[]},
+ {id:'b',title:'두번째 말단',wbsCode:'2.1.2',wbsGroups:['2 플랫폼 비교평가','2.1 비교평가'],planSource:'wbs',startDate:'2026-11-05',subtasks:[]},
+ {id:'a',title:'첫번째 말단',wbsCode:'2.1.1',wbsGroups:['2 플랫폼 비교평가','2.1 비교평가'],planSource:'wbs',status:'completed',startDate:'2026-11-01',dueDate:'2026-11-03',subtasks:[]}
+ ];state.project=projects[0].id;`);
+ let html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');
+ assert.equal((html.match(/data-gantt-group=/g)||[]).length,2);assert.match(html,/완료 1\/2/);assert.match(html,/11\/1 ~ 종료일 미정/);assert.match(html,/wbs-group-summary/);
+ assert.ok(html.indexOf('2 플랫폼')<html.indexOf('2.1 비교'));assert.ok(html.indexOf('첫번째 말단')<html.indexOf('두번째 말단'));assert.ok(html.indexOf('두번째 말단')<html.indexOf('최상위 아홉'));
+ assert.match(html,/--wbs-depth:2/);assert.match(html,/--wbs-depth:0/);
+ a.run(`action({dataset:{action:'wbs-group',group:JSON.stringify([projects[0].id,'2 플랫폼 비교평가'])}})`);
+ html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');assert.doesNotMatch(html,/첫번째 말단|두번째 말단|2.1 비교평가/);assert.match(html,/최상위 아홉/);assert.equal((html.match(/data-gantt-group=/g)||[]).length,1);
+ a.run(`action({dataset:{action:'wbs-group',group:JSON.stringify([projects[0].id,'2 플랫폼 비교평가'])}})`);
+ assert.match(a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))'),/첫번째 말단/);
+ a.run("state.drawerTask='a'");assert.match(a.run('taskDrawer()'),/2 플랫폼 비교평가 \/ 2.1 비교평가 \/ 2.1.1/);assert.match(a.run('taskDrawer()'),/팀 WBS \(11월\)/);
+});
+test('activity copy and work dots explain their meaning and daily record count',()=>{
+ const a=app();a.run(`projects[0].tasks=[{id:'x',title:'합성',subtasks:[{performedAt:'2026-11-04',owner:'합성'},{performedAt:'2026-11-04',owner:'합성'}]}];state.drawerTask='x'`);
+ const html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');
+ assert.match(html,/WBS에 없는 업무 1/);assert.match(html,/수집한 기록에서 찾았지만 팀 WBS에는 없는 일 · 진척률에 포함 안 됨/);assert.match(html,/title="11월 4일 · 기록 2건" aria-label="11월 4일 · 기록 2건"/);
+ assert.match(a.run('statusLegend()'),/● 작업 기록\(그날 기록이 있음\)/);assert.match(a.run('taskDrawer()'),/WBS에 없음 · 수집 기록에서 판별/);
+});

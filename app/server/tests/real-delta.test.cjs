@@ -124,3 +124,14 @@ for (const target of ['tasks','task_updates']) {
   a.equal(f.apply().ok,false);a.deepEqual(f.read(),f.data);
  });
 }
+const testGroups = ['2 플랫폼 비교평가','2.1 비교평가'];
+for (const value of [[],testGroups,null,['가'.repeat(120)]]) test('wbs_groups accepts '+JSON.stringify(value),t=>{
+ const f=fixture(t);f.delta.tasks=[{task_id:'N',project_id:'PR',title:'합성',status:'in_progress',wbs_groups:value}];
+ f.delta.task_updates=[{task_id:'T',wbs_groups:value}];a.equal(f.apply().ok,true);a.deepEqual(f.read().tasks[0].wbs_groups,value);
+});
+for (const value of ['bad',[1],Array(5).fill('가'),['가'.repeat(121)]]) for(const mode of ['tasks','task_updates']) test('wbs_groups rejects '+mode+' '+JSON.stringify(value),t=>{
+ const f=fixture(t);f.delta[mode]=[mode==='tasks'?{task_id:'N',project_id:'PR',title:'합성',status:'in_progress',wbs_groups:value}:{task_id:'T',wbs_groups:value}];a.equal(f.apply().ok,false);
+});
+test('wbs_groups secrets are rejected without exposing input',t=>{
+ const f=fixture(t);f.delta.task_updates=[{task_id:'T',wbs_groups:['token=1234567890abc']}];const r=f.apply();a.equal(r.ok,false);a.ok(!JSON.stringify(r.errors).includes('1234567890abc'));
+});

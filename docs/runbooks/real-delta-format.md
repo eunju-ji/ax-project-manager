@@ -43,7 +43,7 @@ stdout은 요약 JSON 한 줄이다. `ok: true`면 exit 0, 거부·입력·I/O �
 - 최상위 필수값: `run_id`(영숫자·하이픈·밑줄, 1~64자), `collected_at`(시간대 포함 ISO). 선택값: `checkpoints`, 위 6개 레코드 배열, `task_updates`, `worklog_updates`, `notes`. 그 밖의 최상위 필드는 거부한다.
 - 각 배열의 키: `person_id`, `project_id`, `task_id`, `worklog_id`, `source_key`, `link_id`. 새 레코드의 `run_id`와 `created_run_id`는 실행 ID로 강제한다. 기존 키는 두 provenance 필드를 제외한 내용이 같으면 무시하고, 다르면 전체 delta를 거부한다. JSON 객체 속성 순서는 무관하다.
 - 동일 run의 입력 digest를 `state.applied_runs`에 보관한다. 같은 run·같은 입력은 재적용하지 않는다. 같은 run·다른 입력은 거부한다. 최초 데이터셋에 이미 존재하지만 state에 추적되지 않은 run ID도 재사용할 수 없다.
-- `task_updates`: `task_id`와 `status`, `completed_at`, `completion_basis`, `due_date`, `due_basis`, `title`, `summary`, `category`, `assignee_id`, `project_id`, `wbs_code`, `start_date`, `plan_source`, `plan_ref`만 허용한다. 값은 문자열 또는 null이며 상태는 `in_progress`, `completion_proposed`, `completed`만 허용한다. 한 실행에서 같은 태스크를 두 번 갱신할 수 없다.
+- `task_updates`: `wbs_groups`, `description`, `task_id`와 `status`, `completed_at`, `completion_basis`, `due_date`, `due_basis`, `title`, `summary`, `category`, `assignee_id`, `project_id`, `wbs_code`, `start_date`, `plan_source`, `plan_ref`만 허용한다. `wbs_groups` 외 값은 문자열 또는 null이며 상태는 `in_progress`, `completion_proposed`, `completed`만 허용한다. 한 실행에서 같은 태스크를 두 번 갱신할 수 없다.
 - 변경 시 전체 태스크의 before/after와 `DELTA-<run_id>-<task_id>` history를 남긴다. 시각은 `collected_at`, actor는 `system`, reason은 `scheduled-collect task update`다. 기존 dataset history에서 actor가 system이 아닌 기록의 before/after 차이 필드는 보호한다. 보호 필드 변경 한 건이라도 있으면 전체 delta를 거부한다. 이미 같은 값인 필드는 수정으로 보지 않는다.
 - 병합 후 모든 태스크의 프로젝트, worklog의 태스크·수행자(`unknown` 예외), link의 target(`task`/`worklog`)·evidence(`source`/`event`)가 존재해야 한다. 기존 sourceEvents도 event 참조에 사용할 수 있다. assignee 참조도 검사한다.
 - worklog는 160자 이하 summary와 유효한 수행 시각 정밀도(`exact`/`date`/`unknown`)를 사용한다. source.title은 200자 이하, 파일 source.folder_path는 문자열 배열 필수(최상위면 빈 배열). `kind: message`는 folder_path가 없어도 된다. 길이는 유니코드 코드포인트로 센다.
@@ -75,3 +75,6 @@ worklog_updates는 기존 worklog의 task_id만 변경한다. 대상 worklog는 
 ## 업무 설명
 
 신규 tasks와 task_updates의 선택 필드 `description`은 어떤 업무인지 설명하는 문자열(유니코드 코드포인트 200자 이하) 또는 null을 받는다. 생략 시 기존 값을 유지하고 null은 설명을 지운다. delta 전체 비밀값 검사와 사람 교정 보호를 동일하게 적용한다. 산출물·완료 기준과 구분하여 드로어 제목 아래에 표시한다.
+
+### WBS 상위 묶음
+`tasks`·`task_updates`의 선택 필드 `wbs_groups`는 바깥부터 안쪽 순서의 문자열 배열(0~4개, 각 유니코드 코드포인트 120자 이하) 또는 null이다. 예: `3.1.1`의 `["3 Moncoti 개발·테스트", "3.1 Computer·Browser Use 점검 및 OFF 기능 검증"]`, 최상위 말단 `9`는 `[]`. 생략은 기존 값 유지, null은 묶음 해제이며 UI에서는 빈 배열로 취급한다. 비밀값 검사·사람 교정 보호·이력 기록을 동일하게 적용한다. 상위 묶음은 태스크·진척률 분모에 추가하지 않으며, 화면에서 자식 일정 범위와 완료 n/m을 요약한다. 묶음 접기 상태는 메모리에만 보관한다.

@@ -244,7 +244,7 @@ async function nav() {
       await expect(p.locator('.folder-files small').filter({hasText:'연결됨'})).toHaveCount(2);
       await expect(p.locator('.folder-files [aria-current=true]')).toContainText('현재 자료');
       await expect(p.locator('.file-dialog footer a')).toHaveCount(1);await expect(p.locator('.folder-search,.folder-open')).toHaveCount(0);
-      const next=p.locator('[data-action="folder-file"][data-file="'+ids[1]+'"]');await next.click();await expect(next).toHaveAttribute('aria-current','true');await expect(next).toBeFocused();
+      const next=p.locator('.folder-files a').filter({hasText:'합성 폴더 자료 1'});await expect(next).toHaveAttribute('href','https://docs.google.com/document/d/synthetic-1');await expect(next).toHaveAttribute('target','_blank');
       await expect(p.locator('.file-dialog')).toHaveCount(1);
       const controls=p.locator('.file-dialog a,.file-dialog button');await controls.last().focus();await p.keyboard.press('Tab');await expect(controls.first()).toBeFocused();await p.keyboard.press('Shift+Tab');await expect(controls.last()).toBeFocused();
       await p.keyboard.press('Escape');await expect(p.locator('.file-dialog')).toHaveCount(0);await expect(launcher).toBeFocused();
@@ -257,7 +257,7 @@ async function nav() {
       // load() suppresses animations for screenshots; remove that override for this motion check.
       await p.evaluate(()=>document.querySelectorAll('style').forEach(n=>{if(n.textContent.includes('caret-color:transparent!important'))n.remove();}));
       await p.emulateMedia({reducedMotion:'no-preference'});await p.evaluate(()=>render());
-      await expect.poll(()=>row.evaluate(e=>getComputedStyle(e).animationDuration)).toBe('2.5s');
+      await expect.poll(()=>row.evaluate(e=>getComputedStyle(e).animationDuration)).toBe('2s');
       await p.emulateMedia({reducedMotion:'reduce'});await expect.poll(()=>row.evaluate(e=>getComputedStyle(e).animationName)).toBe('none');
       await p.emulateMedia({reducedMotion:'no-preference'});
     });

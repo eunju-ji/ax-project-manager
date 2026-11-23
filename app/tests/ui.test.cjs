@@ -257,7 +257,7 @@ test('activity copy and work dots explain their meaning and daily record count',
 test('source and build omit task classification copy',()=>{for(const f of ['src/app.ts','app.js'])assert.doesNotMatch(fs.readFileSync(path.join(root,f),'utf8'),/계획 외|WBS에 없|계획 출처|계획 없음/)});
 test('preview opens original folder with file fallback',()=>{
  const a=app();a.run("const f=projects[0].files[0];f.url='https://docs.google.com/document/d/test';f.folderUrl='https://drive.google.com/drive/folders/f';state.modal={project:projects[0].id,file:f.id}");
- let html=a.run('modal()');assert.ok(html.includes('href="https://drive.google.com/drive/folders/f"'));assert.match(html,/Google Drive에서 원본 열기/);assert.doesNotMatch(html,/폴더 열기|Drive에서 이 파일 찾기/);
+ let html=a.run('modal()');assert.ok(html.includes('href="https://drive.google.com/drive/folders/f"'));assert.match(html,/Google Drive에서 폴더 열기/);assert.doesNotMatch(html,/원본 열기|Drive에서 이 파일 찾기/);
  a.run('delete projects[0].files[0].folderUrl');html=a.run('modal()');assert.ok(html.includes('href="'+a.run('projects[0].files[0].url')+'"'));
 });
 

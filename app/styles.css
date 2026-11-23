@@ -126,3 +126,8 @@ body[data-keyboard-navigation] .searchbox input:focus-visible{outline:2px solid 
 .folder-files button[aria-current=true]{animation:folder-current-pulse 2.5s ease-in-out}
 @keyframes folder-current-pulse{0%,40%,80%{background:var(--accent);color:var(--bg,#fff)}20%,60%,100%{background:var(--soft);color:var(--accent)}}
 @media(prefers-reduced-motion:reduce){.folder-files button[aria-current=true]{animation:none}}
+.folder-files button[aria-current=true]{background:transparent;color:inherit;animation:folder-current-fade 2s ease-out}
+@keyframes folder-current-fade{0%,60%{background:var(--soft)}100%{background:transparent}}
+@media(prefers-reduced-motion:reduce){.folder-files button[aria-current=true]{animation:none}}
+.folder-files a[aria-current=true]{background:transparent;color:inherit;animation:folder-current-fade 2s ease-out}
+@media(prefers-reduced-motion:reduce){.folder-files a[aria-current=true]{animation:none}}

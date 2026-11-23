@@ -106,7 +106,7 @@ Discovery → Design → Build → Review → Iterate
 - Git diff를 기반으로 자연스러운 한국어 커밋 메시지를 작성한다.
 - 작업 브랜치에 Commit 및 Push한다.
 - 주요 기능은 Pull Request를 생성한다.
-- main 브랜치 병합은 사용자 승인 후 수행한다.
+- main 브랜치 병합은 테스트 통과 후 AX-Lead가 직접 수행한다(2026-11-23 사용자 위임). 병합 후에는 main에서 새 작업 브랜치를 딴다.
 - Commit 및 Push 성공 여부를 직접 확인한다.
 - tasks/current-state.md에 브랜치와 커밋 상태를 기록한다.
 - 작업 완료 보고에는 브랜치명, 커밋 메시지,

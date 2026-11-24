@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AX 프로젝트 관리장 — 서비스 명세</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<style>
+:root{--ink:#1f2328;--muted:#5f6b7a;--line:#e3e6ea;--soft:#f6f7f9;--accent:#3b6fb6;--accent-soft:#eaf1fb;--warn:#b7791f;--warn-soft:#fdf6e7;--ok:#2f855a;--ok-soft:#eaf6ef;--bad:#c0392b;--bad-soft:#fdeeee;--new:#6b46c1;--new-soft:#f3edfc}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans KR',system-ui,sans-serif;color:var(--ink);line-height:1.75;font-size:15.5px;word-break:keep-all}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1260px;margin:0 auto}
+nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:36px 20px 36px 28px;border-right:1px solid var(--line);font-size:13.5px}
+nav.toc b{display:block;font-size:12px;color:var(--muted);margin-bottom:10px}
+nav.toc a{display:block;color:var(--ink);text-decoration:none;padding:4px 8px;border-radius:6px}
+nav.toc a:hover{background:var(--soft)}
+nav.toc a.sub{padding-left:20px;color:var(--muted);font-size:13px}
+main{padding:44px 56px 96px;max-width:980px}
+header.doc{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:30px}
+header.doc h1{font-size:30px;margin:0 0 8px;line-height:1.35}
+header.doc p{margin:0;color:var(--muted)}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px;font-size:13px;color:var(--muted)}
+.meta span b{color:var(--ink);font-weight:500;margin-left:4px}
+h2{font-size:22px;margin:56px 0 14px;padding-top:8px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:30px 0 10px}
+h4{font-size:15px;margin:18px 0 6px}
+p{margin:10px 0}
+ul,ol{padding-left:22px;margin:8px 0}
+li{margin:3px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:9px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:500;font-size:13px;color:var(--muted)}
+code{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;background:var(--soft);padding:1px 5px;border-radius:4px}
+.badge{display:inline-block;font-size:12px;padding:1px 9px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--muted);font-weight:500;white-space:nowrap;vertical-align:1px}
+.badge.ok{background:var(--ok-soft);border-color:#c6e6d3;color:var(--ok)}
+.badge.warn{background:var(--warn-soft);border-color:#f0dcb0;color:var(--warn)}
+.badge.bad{background:var(--bad-soft);border-color:#f2c9c4;color:var(--bad)}
+.badge.blue{background:var(--accent-soft);border-color:#cfdff4;color:var(--accent)}
+.badge.new{background:var(--new-soft);border-color:#ddd0f3;color:var(--new)}
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+.callout.warn{border-color:var(--warn);background:var(--warn-soft)}
+.callout.ok{border-color:var(--ok);background:var(--ok-soft)}
+.callout b{display:block;margin-bottom:2px}
+.diagram{border:1px solid var(--line);border-radius:10px;padding:18px;margin:16px 0;overflow-x:auto}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+.card{border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.card h4{margin:0 0 6px}
+.card p{margin:4px 0;font-size:14px;color:var(--muted)}
+.stat strong{display:block;font-size:26px;line-height:1.2}
+.stat span{font-size:13px;color:var(--muted)}
+.screen{border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:14px 0}
+.screen h4{margin:0 0 8px;display:flex;gap:8px;align-items:center}
+.screen .where{font-size:12.5px;color:var(--muted);margin-bottom:6px}
+footer{margin-top:64px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
+@media (max-width:900px){.layout{grid-template-columns:1fr}nav.toc{display:none}main{padding:28px 20px}.grid3,.grid2{grid-template-columns:1fr}}
+@media print{nav.toc{display:none}.layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav class="toc">
+  <b>목차</b>
+  <a href="#overview">1. 서비스 개요</a>
+  <a href="#users">2. 사용자와 사용 장면</a>
+  <a href="#features">3. 화면별 기능</a>
+  <a class="sub" href="#f-home">홈 머리말</a>
+  <a class="sub" href="#f-summary">업무 요약</a>
+  <a class="sub" href="#f-heatmap">작업 내역 히트맵</a>
+  <a class="sub" href="#f-projects">전체 프로젝트(WBS 간트)</a>
+  <a class="sub" href="#f-drawer">태스크 드로어</a>
+  <a class="sub" href="#f-files">자료 창</a>
+  <a class="sub" href="#f-review">검토 필요</a>
+  <a class="sub" href="#f-auth">로그인·사용자 관리</a>
+  <a class="sub" href="#f-connect">내 계정 연결(예정)</a>
+  <a href="#auto">4. 자동으로 처리되는 일</a>
+  <a class="sub" href="#a-collect">수집</a>
+  <a class="sub" href="#a-judge">판별</a>
+  <a class="sub" href="#a-status">상태와 진척</a>
+  <a class="sub" href="#a-human">사람의 정정</a>
+  <a href="#sources">5. 연동 출처</a>
+  <a href="#data">6. 데이터</a>
+  <a href="#security">7. 권한·보안·개인정보</a>
+  <a href="#ops">8. 운영</a>
+  <a href="#deploy">9. 배포 선택지</a>
+  <a href="#roadmap">10. 진행 현황과 로드맵</a>
+  <a href="#open">11. 결정이 필요한 것</a>
+  <a href="#glossary">12. 용어</a>
+</nav>
+
+<main>
+<header class="doc">
+  <h1>AX 프로젝트 관리장 — 서비스 명세</h1>
+  <p>지금 만들고 있는 서비스가 무엇을 하고, 누가 어떻게 쓰며, 뒤에서 어떻게 동작하는지 정리한 문서</p>
+  <div class="meta">
+    <span>작성<b>AX-Lead</b></span>
+    <span>기준일<b>2026-11-24</b></span>
+    <span>버전<b>1.0</b></span>
+    <span>단계<b>실데이터 파일럿 운영 · 팀 공개 준비</b></span>
+  </div>
+</header>
+
+<section id="overview">
+<h2 style="border-top:0">1. 서비스 개요</h2>
+<div class="callout"><b>한 줄 정의</b>팀원이 따로 기록하지 않아도, 이미 쓰고 있는 도구(Google Drive·Chat·Gmail·GitHub·AI 작업 도구)에 남은 흔적을 읽어 <strong>팀의 프로젝트 › 태스크 › 작업 내역</strong>을 자동으로 정리해 보여 주는 업무 관리장.</div>
+
+<div class="grid3">
+  <div class="card"><h4>풀려는 문제</h4><p>업무 기록이 여러 도구에 흩어져 있고, 진척을 보려면 누군가 따로 정리해야 한다. 정리는 늘 늦고, WBS와 실제 작업이 따로 논다.</p></div>
+  <div class="card"><h4>하는 일</h4><p>흔적을 모아 같은 업무끼리 묶고, 업무가 아닌 것은 버리고, 완료·지연을 판단해 한 화면에 보여 준다.</p></div>
+  <div class="card"><h4>다른 점</h4><p>입력 화면이 없다. 시스템이 먼저 판단하고, 사람은 애매한 것만 본다. 원문은 저장하지 않는다.</p></div>
+</div>
+
+<h3>핵심 원칙</h3>
+<table>
+<thead><tr><th style="width:26%">원칙</th><th>내용</th></tr></thead>
+<tbody>
+<tr><td>자동 판별 우선</td><td>프로젝트·태스크를 세우고, 작업 내역을 붙이고, 완료를 판단하는 것까지 근거가 분명하면 시스템이 바로 반영한다.</td></tr>
+<tr><td>업무만 기록</td><td>무언가를 만들고, 분석·검토·결정하고, 문제를 해결한 기록만 남긴다. 파일 이동·회의 초대·자료 재공유는 남기지 않는다.</td></tr>
+<tr><td>WBS와 무관한 판별</td><td>WBS는 있으면 쓰는 계획 정보다. WBS에 없어도 실제 일이면 태스크·프로젝트로 세운다.</td></tr>
+<tr><td>원문 비저장</td><td>본문은 판단할 때만 읽는다. 저장은 이름·시각·160자 이하 요약뿐이다.</td></tr>
+<tr><td>되돌릴 수 있음</td><td>모든 변경은 한 경로(delta)로만, 이력과 함께 남는다. 사람이 고친 값은 자동으로 덮지 않는다.</td></tr>
+<tr><td>라벨만 있는 화면</td><td>일반 웹서비스처럼 설명 문구 없이 라벨만 둔다. 시스템 정보나 내부 분류 용어를 드러내지 않는다.</td></tr>
+</tbody>
+</table>
+
+<h3>현재 규모 (2026-11-24, 실데이터)</h3>
+<div class="grid3">
+  <div class="card stat"><strong>11</strong><span>프로젝트</span></div>
+  <div class="card stat"><strong>50</strong><span>태스크 (완료 26)</span></div>
+  <div class="card stat"><strong>61</strong><span>작업 내역</span></div>
+  <div class="card stat"><strong>187</strong><span>근거 자료</span></div>
+  <div class="card stat"><strong>7종</strong><span>연동 출처</span></div>
+  <div class="card stat"><strong>하루 4회</strong><span>자동 수집 (09·12·15·18시)</span></div>
+</div>
+</section>
+
+<section id="users">
+<h2>2. 사용자와 사용 장면</h2>
+<table>
+<thead><tr><th style="width:18%">사용자</th><th style="width:22%">역할(권한)</th><th>주로 하는 일</th></tr></thead>
+<tbody>
+<tr><td>팀 리더·PM</td><td>관리자 또는 구성원</td><td>프로젝트별 진척과 지연 확인, 한 주의 팀 업무 파악, 계획 대비 실제 비교</td></tr>
+<tr><td>팀원</td><td>구성원</td><td>자기 업무가 제대로 잡혔는지 확인, 잘못 잡힌 것 정정, 확인 필요 항목 처리</td></tr>
+<tr><td>관계자</td><td>보기</td><td>진행 상황 열람만</td></tr>
+<tr><td>운영 담당</td><td>관리자</td><td>사람 초대·역할 관리, 수집 토큰 관리, 수집 제외 대상 지정</td></tr>
+</tbody>
+</table>
+
+<h3>사용 장면</h3>
+<div class="grid2">
+  <div class="card"><h4>월요일 아침, 리더</h4><p>홈의 "한 주의 업무"를 지난주로 넘겨 프로젝트별로 무슨 일이 있었는지 읽는다. 전체 프로젝트에서 지연·확인 필요 칩이 붙은 태스크를 눌러 드로어에서 근거를 본다.</p></div>
+  <div class="card"><h4>평소, 팀원</h4><p>아무것도 입력하지 않는다. 문서를 쓰고, 메일을 보내고, 커밋하고, AI 에이전트에게 일을 시키면 하루 네 번 자동으로 정리된다. 가끔 자기 이름 탭을 눌러 맞게 잡혔는지 본다.</p></div>
+  <div class="card"><h4>회의에서 새 과제가 생겼을 때</h4><p>계획 문서에 없어도, 전용 작업 폴더·목표 문서·이틀 이상 이어진 작업이 보이면 시스템이 새 프로젝트로 세운다. 예: "사내 지식 구축".</p></div>
+  <div class="card"><h4>결과서가 올라왔을 때</h4><p>시스템이 산출물 파일을 열어 결과가 채워졌는지 보고, 채워졌으면 사람 확인 없이 태스크를 완료로 바꾼다. 완료일은 결과가 갖춰진 날이다.</p></div>
+</div>
+
+<div class="diagram"><pre class="mermaid">
+flowchart LR
+  W["팀원이 평소처럼 일함<br/>문서·메일·Chat·커밋·AI 에이전트"] --> C["자동 수집<br/>하루 4회"]
+  C --> J["자동 판별<br/>업무인가 · 어느 태스크 · 완료인가"]
+  J --> S["화면에 반영<br/>요약 · 히트맵 · 간트"]
+  J -->|애매한 것만| R["검토 필요"]
+  S --> L["리더·팀원이 확인"]
+  R --> L
+  L -->|정정| J
+</pre></div>
+</section>
+
+<section id="features">
+<h2>3. 화면별 기능</h2>
+<p>한 페이지 구성이다. 위에서 아래로 홈 머리말 → 업무 요약 → 작업 내역 히트맵 → 전체 프로젝트 순서이고, 태스크를 누르면 오른쪽에 드로어가 열린다.</p>
+
+<div class="screen" id="f-home"><h4>홈 머리말</h4>
+<ul>
+<li>팀 이름, 참여자 목록(이니셜 아바타 + 영어 이름), 기준일("2026.11.24 기준").</li>
+<li>오른쪽 위: <b>검토 필요</b> 버튼(건수 표시), 설정.</li>
+<li>화면 테마 선택: Linear·Notion 등 색상 테마.</li>
+</ul></div>
+
+<div class="screen" id="f-summary"><h4>업무 요약</h4>
+<div class="where">홈 첫 번째 영역</div>
+<ul>
+<li><b>기간 단위</b>: 일간 / 주간 / 월간 탭, 이전·다음 이동과 기간 선택.</li>
+<li><b>사람 탭</b>: 전체 또는 사람별로 좁혀 보기.</li>
+<li><b>요약 카드</b>: 작업 내역 건수, 프로젝트 수, 참여 인원, 태스크 수.</li>
+<li><b>프로젝트별 요약</b>: "태스크명: 작업 내역 최대 3개 외 N건" 형식의 문장. 펼치면 작업 내역 목록(제목·담당·시각)이 나오고, 누르면 해당 태스크로 이동.</li>
+<li><b>업무 유형별 작업 내역</b>: 기획·설계 / 조사·분석 / 제작·구현 / 검증 / 운영·지원 5종 분포 막대.</li>
+<li><b>담당자별 작업</b>: 사람마다 작업 내역 수, 태스크 수, 확인 요청 수. 긴 이름은 말줄임.</li>
+</ul></div>
+
+<div class="screen" id="f-heatmap"><h4>작업 내역 히트맵</h4>
+<ul>
+<li>최근 39주(3월부터) 날짜별 칸. 진하기는 그날 작업한 <b>(사람, 태스크) 쌍의 수</b>: 0 / 1 / 2 / 3–4 / 5+.</li>
+<li>오늘 이후 칸은 비워 둔다. 범례는 "적음 … 많음".</li>
+<li>칸을 누르면 업무 요약이 그날의 일간 요약으로 바뀐다. 사람 탭을 고르면 그 사람 기준으로 바뀐다.</li>
+</ul></div>
+
+<div class="screen" id="f-projects"><h4>전체 프로젝트 (WBS 간트 표)</h4>
+<ul>
+<li>검색(프로젝트·태스크 이름), 담당자 필터, "최근 순" 정렬, 모두 펼치기, 월 이동.</li>
+<li><b>프로젝트 행</b>: 이름, 태스크·기록 수, 담당(아바타), 기간, <b>진척률</b>(완료 ÷ 전체)과 계획 진도, 지연·확인 필요 칩, 목적 한 줄.</li>
+<li><b>묶음 행</b>: WBS의 상위 단계(예: 5.1, 5.2)를 묶음으로 보여 주고 "완료 3/4"처럼 요약.</li>
+<li><b>태스크 행</b>: WBS 번호(있으면), 이름, 담당, 기간("11/4–11/10", 시작일만 있으면 "11/18 ~ 종료일 미정"), 상태 칩.</li>
+<li><b>상태 칩</b>: 완료 · 진행 중 · 지연 · 확인 필요 · 예정 · 일정 미정.</li>
+<li><b>간트 영역</b>: 바는 계획 기간, 파란 점은 실제로 작업한 날, 빨간 세로선은 오늘. 계획보다 일찍·늦게 하면 바와 점이 떨어져 보인다(의도한 표시).</li>
+<li>WBS가 없는 태스크도 같은 표에 섞여 나온다. 따로 구분하거나 표시하지 않는다.</li>
+</ul></div>
+
+<div class="screen" id="f-drawer"><h4>태스크 드로어</h4>
+<div class="where">태스크를 누르면 오른쪽에 문서처럼 열림</div>
+<ul>
+<li>프로젝트 이름, 태스크 이름, <b>업무 설명</b>(어떤 일인지 한두 문장).</li>
+<li>속성: 상태, 담당, 기간, 산출물.</li>
+<li><b>작업 내역</b>: 날짜별로 묶어 시간·수행자·제목·요약, 그리고 근거 링크(Drive 파일, GitHub 커밋 등).</li>
+<li>위·아래 화살표로 이전·다음 태스크, 닫기.</li>
+<li>프로젝트를 펼치면 아래에 "관련 자료" 카드(파일·커밋·AI 세션)가 줄지어 나온다.</li>
+</ul></div>
+
+<div class="screen" id="f-files"><h4>자료 창</h4>
+<ul>
+<li>근거 파일을 누르면 그 파일이 들어 있는 <b>폴더의 전체 파일 목록</b>이 열리고, 해당 파일 줄이 2초 동안 연하게 강조된다.</li>
+<li>파일 줄을 누르면 그 파일이 바로 열리고, 아래 "Google Drive에서 폴더 열기"를 누르면 폴더가 열린다.</li>
+<li>GitHub 커밋·PR, claude.ai·ChatGPT 대화처럼 폴더가 없는 근거는 원본 링크만 보여 준다. 링크가 없는 근거(로컬 AI 세션 등)는 이름만 나온다.</li>
+</ul></div>
+
+<div class="screen" id="f-review"><h4>검토 필요</h4>
+<ul>
+<li>시스템이 혼자 정하기 어려웠던 것만 모인다: 완료 확인 요청, 근거가 엇갈리는 연결 등.</li>
+<li>구성원 이상이 승인·거절·정정한다. 정정한 값은 이후 자동 판별이 덮지 않는다.</li>
+</ul></div>
+
+<div class="screen" id="f-auth"><h4>로그인·사용자 관리 <span class="badge new">구현 완료 · 배포 전</span></h4>
+<ul>
+<li>"Google 계정으로 로그인" 한 버튼. 회사 도메인 계정이면서 <b>초대된 사람</b>만 들어온다.</li>
+<li>관리자 전용 <b>사용자 관리</b>: 목록, 초대(이메일), 역할 변경(관리자·구성원·보기), 비활성화, 화면 담당자와 연결. 자기 자신 강등·마지막 관리자 비활성화는 막는다.</li>
+<li>수집 토큰 발급·폐기(사용자 PC의 수집기가 결과를 올릴 때 사용).</li>
+</ul></div>
+
+<div class="screen" id="f-connect"><h4>내 계정 연결 <span class="badge warn">설계 단계</span></h4>
+<ul>
+<li>팀원 각자가 자기 Google(Drive·Chat·Gmail)과 GitHub를 읽기 전용으로 한 번 연결한다. 회사 공동 워크스페이스 없이 여러 사람의 기록을 모으기 위한 화면.</li>
+<li>무엇을 연결할지 각자 고르고, 언제든 끊거나 자기 기록을 지울 수 있다.</li>
+<li>Google은 회사 조직 안의 클라우드 프로젝트로 "내부" 앱을 만들면 재연결 없이 쓸 수 있다. 개인 프로젝트로 만들면 7일마다 재연결이 필요하다(Google 정책).</li>
+</ul></div>
+</section>
+
+<section id="auto">
+<h2>4. 자동으로 처리되는 일</h2>
+<h3 id="a-collect">수집</h3>
+<div class="diagram"><pre class="mermaid">
+sequenceDiagram
+  autonumber
+  participant S as 정기 실행(하루 4회)
+  participant A as 판별 에이전트(AX-Lead)
+  participant X as 출처(Drive·Chat·Gmail·GitHub·AI 세션)
+  participant D as 데이터
+  S->>A: 실행
+  A->>D: 마지막 수집 시각·기존 프로젝트·태스크 확인
+  A->>X: 그 뒤의 새 기록만 읽기(읽기 전용)
+  X-->>A: 이름·시각·작성자 + 필요한 본문
+  A->>A: 업무인가 → 어느 프로젝트·태스크 → 완료인가
+  A->>D: 변경 묶음(delta) 시험 반영 → 실제 반영
+  D-->>A: 결과(추가·수정·삭제·거부)
+</pre></div>
+<ul>
+<li>체크포인트(출처별 마지막 수집 시각) 이후만 읽어 중복을 피한다.</li>
+<li>수집 제외 목록에 있는 프로젝트·사람·Chat 스페이스는 읽지도 받지도 않는다.</li>
+<li>판단이 애매한 것은 반영하지 않고 사유를 남긴다(다음 실행이나 사람이 판단).</li>
+</ul>
+
+<h3 id="a-judge">판별</h3>
+<table>
+<thead><tr><th style="width:18%">대상</th><th>기준</th></tr></thead>
+<tbody>
+<tr><td><b>작업 내역</b></td><td>만들거나, 분석·검토·결정하거나, 문제를 해결한 기록. <br>아님: 파일 이동·이름 변경·삭제, 회의 초대·일정 변경, 자료 전달·재공유·링크만 공유, "~하겠다/~해 달라"만 있는 연락, 병합 커밋, 질문만 한 AI 대화, 개인적인 대화.</td></tr>
+<tr><td><b>태스크</b></td><td>끝났다고 말할 수 있는 일(목표·결과물·담당이 있음). 같은 목적·결과물로 이어지면 한 태스크로 묶고, 개별 요청·메일 대응·후속 수정은 그 태스크의 작업 내역. 지나치게 잘게 쪼개진 태스크는 합친다. <br>아님: 정보 공유, 업무일지·주간보고, 계획 문서 갱신 그 자체, 회의 일정 조율, 참고 자료 모으기.</td></tr>
+<tr><td><b>프로젝트</b></td><td>하나의 목표를 향해 여러 날 이어지는 일의 묶음. 전용 작업 공간 · 목표를 적은 문서 · 이틀 이상 이어진 작업 · 회의에서 나온 과제 · 계획 문서 중 <b>두 가지 이상</b>이 겹치면 세운다. 도구가 아니라 목표로 이름 짓는다.</td></tr>
+<tr><td><b>수행자</b></td><td>실제로 한 사람(파일을 고친 사람, 메일·메시지를 보낸 사람, 커밋한 사람). AI 에이전트에게 시킨 일은 시킨 사람.</td></tr>
+<tr><td><b>업무 유형</b></td><td>기획·설계 / 조사·분석 / 제작·구현 / 검증 / 운영·지원 중 하나만.</td></tr>
+<tr><td><b>교차 출처</b></td><td>같은 업무가 Drive·메일·Chat·커밋에 따로 남아 있으면 이름·폴더·파일명·참여자·시기·명시적 참조로 대조해 한 태스크에 모은다.</td></tr>
+</tbody>
+</table>
+
+<h3 id="a-status">상태와 진척</h3>
+<table>
+<thead><tr><th style="width:18%">상태</th><th>조건</th></tr></thead>
+<tbody>
+<tr><td><span class="badge ok">완료</span></td><td>산출물 파일을 열어 결과가 채워졌거나, 끝났다는 분명한 근거가 있다. 완료일은 결과가 갖춰진 작업 내역의 시각.</td></tr>
+<tr><td><span class="badge blue">진행 중</span></td><td>시작일이 지났고 종료일 전(또는 종료일 없이 작업 중).</td></tr>
+<tr><td><span class="badge bad">지연</span></td><td>종료일이 지났고 작업 내역은 있지만 완료 근거가 없다.</td></tr>
+<tr><td><span class="badge warn">확인 필요</span></td><td>종료일이 지났는데 작업 내역도 근거도 없다. 사람이 본다.</td></tr>
+<tr><td><span class="badge">예정 · 일정 미정</span></td><td>시작일 전 / 계획 기간이 없음.</td></tr>
+</tbody>
+</table>
+<ul>
+<li><b>진척률</b> = 완료 태스크 ÷ 전체 태스크(WBS 여부 무관, 합쳐진 태스크 제외).</li>
+<li><b>계획 진도</b> = 종료일 있는 태스크 중 종료일이 지난 비율(확인 필요 제외). 진척률이 더 낮으면 뒤처짐.</li>
+<li><b>프로젝트 기간</b> = 태스크 계획 기간과 작업 내역 중 가장 이른 날 ~ 가장 늦은 날.</li>
+</ul>
+
+<h3 id="a-human">사람의 정정</h3>
+<ul>
+<li>사람이 고친 값(제목·상태·담당 등)은 이력에 남고, 이후 자동 판별이 그 값을 덮지 않는다.</li>
+<li>사람이 고친 기록은 자동으로 지워지지 않는다.</li>
+<li>특정 프로젝트·사람을 빼 달라는 요청은 기록과 이력 내용까지 지우고(purge), 이후 수집에서도 제외한다.</li>
+</ul>
+</section>
+
+<section id="sources">
+<h2>5. 연동 출처</h2>
+<table>
+<thead><tr><th style="width:16%">출처</th><th style="width:28%">연결 방식</th><th style="width:30%">가져오는 것</th><th>상태</th></tr></thead>
+<tbody>
+<tr><td>Google Drive</td><td>공유 드라이브 활동·파일 정보(읽기 전용)</td><td>파일 이름·폴더·시각·작업자, 판단 시 내용 요약</td><td><span class="badge ok">운영 중</span></td></tr>
+<tr><td>Google Chat</td><td>팀 스페이스 메시지(1:1 제외)</td><td>메시지 요약, 첨부 이름</td><td><span class="badge ok">운영 중</span></td></tr>
+<tr><td>Gmail</td><td>업무 메일 검색(광고·알림 제외)</td><td>스레드 제목·요약</td><td><span class="badge ok">운영 중</span></td></tr>
+<tr><td>GitHub</td><td>REST API(토큰 없으면 공개 저장소만)</td><td>커밋·PR·이슈 제목·시각·링크</td><td><span class="badge ok">운영 중</span></td></tr>
+<tr><td>Claude Code·Codex</td><td>PC의 세션 기록(Paseo로 띄운 세션 포함)</td><td>작업 폴더·날짜·메시지 수·수정 파일(본문 없음)</td><td><span class="badge ok">운영 중</span></td></tr>
+<tr><td>claude.ai·ChatGPT</td><td>각 서비스의 "데이터 내보내기" 파일을 지정 폴더에 넣음(대화 목록 공식 API 없음)</td><td>대화 제목·날짜·메시지 수·링크</td><td><span class="badge blue">준비됨(파일 대기)</span></td></tr>
+<tr><td>로컬 Git</td><td>GitHub에 아직 안 올린 저장소의 커밋 기록</td><td>커밋 제목·시각·변경 파일 수</td><td><span class="badge ok">운영 중</span></td></tr>
+<tr><td>팀원 계정</td><td>사이트의 "내 계정 연결"(사람별 동의)</td><td>위와 같은 항목을 사람별로</td><td><span class="badge warn">설계 단계</span></td></tr>
+</tbody>
+</table>
+<div class="callout ok"><b>여러 계정의 같은 기록은 하나로</b>팀원 계정이 연결되면 같은 메일·파일·메시지가 여러 사람에게 보인다. 메일 고유번호, Drive 파일 ID, Chat 메시지 ID, 커밋 SHA로 같은 것을 알아보고 한 건으로 센다. 누가 봤는지가 아니라 실제로 한 사람이 수행자가 된다(ADR-019, 확정 대기).</div>
+</section>
+
+<section id="data">
+<h2>6. 데이터</h2>
+<div class="diagram"><pre class="mermaid">
+erDiagram
+  PERSON ||--o{ PROJECT : "책임"
+  PROJECT ||--o{ TASK : "포함"
+  PERSON ||--o{ TASK : "담당"
+  TASK ||--o{ WORKLOG : "작업 내역"
+  PERSON ||--o{ WORKLOG : "수행"
+  WORKLOG ||--o{ LINK : "근거 연결"
+  LINK }o--|| SOURCE : "근거 자료"
+  USER |o--o| PERSON : "로그인 계정"
+</pre></div>
+<table>
+<thead><tr><th style="width:16%">항목</th><th>담는 것</th></tr></thead>
+<tbody>
+<tr><td>사람</td><td>이름(영어 표기), 외부 계정 연결(Chat·메일 등)</td></tr>
+<tr><td>프로젝트</td><td>이름, 목적, 책임자·부책임자</td></tr>
+<tr><td>태스크</td><td>이름, 업무 설명, 업무 유형, 담당, 상태, WBS 번호·상위 묶음(있으면), 시작·종료일, 완료일과 완료 근거, 합쳐진 대상</td></tr>
+<tr><td>작업 내역</td><td>수행자, 시각, 제목, 160자 이하 요약</td></tr>
+<tr><td>근거 자료</td><td>이름, 종류(문서·시트·발표·PDF·이미지·메시지·커밋·PR·이슈·AI 세션), 링크, 폴더</td></tr>
+<tr><td>변경 이력</td><td>모든 변경의 전후 값, 바꾼 주체(시스템·사람), 사유</td></tr>
+<tr><td>사용자·세션</td><td>로그인 이메일, 역할, 상태, 세션(해시로 저장)</td></tr>
+</tbody>
+</table>
+<ul>
+<li>데이터를 바꾸는 길은 하나(delta)다. 형식·비밀값·원문·제외 대상을 검사하고, 같은 실행을 다시 돌려도 결과가 같다.</li>
+<li>실데이터는 Git에 올리지 않고, 소유자만 접근할 수 있는 전용 폴더에 둔다.</li>
+</ul>
+</section>
+
+<section id="security">
+<h2>7. 권한·보안·개인정보</h2>
+<table>
+<thead><tr><th style="width:16%">역할</th><th>권한</th></tr></thead>
+<tbody>
+<tr><td><span class="badge blue">관리자</span></td><td>사람 초대·역할 변경·비활성화, 모든 화면, 검토 결정, 수집 토큰 관리</td></tr>
+<tr><td><span class="badge ok">구성원</span></td><td>팀 화면 보기, 검토 결정·정정</td></tr>
+<tr><td><span class="badge">보기</span></td><td>팀 화면 보기만</td></tr>
+</tbody>
+</table>
+<div class="grid2">
+  <div class="card"><h4>접근 보호</h4><p>Google 로그인(회사 도메인·초대제), 서버 저장 세션(유휴 12시간·최대 7일), 위조 요청 방지, 보안 헤더, 로그인 시도 제한, 주소 우회 차단, 로그인·조회·권한 변경 기록. 독립 보안 검토 통과.</p></div>
+  <div class="card"><h4>정보 보호</h4><p>읽기 전용 연결, 원문 비저장(160자 요약), 본문 속 지시문 무시, 비밀값·토큰은 환경 변수로만(토큰은 해시 저장), 1:1 대화 제외, 요청 시 내용까지 삭제.</p></div>
+</div>
+<ul>
+<li>팀원 계정이 연결되면 각자 연결 범위를 고르고, 자기 기록을 보고 지울 수 있어야 한다(설계 반영 예정).</li>
+<li>개인 메일·개인 대화는 업무와 관계없으면 기록하지 않는다.</li>
+</ul>
+</section>
+
+<section id="ops">
+<h2>8. 운영</h2>
+<table>
+<thead><tr><th style="width:24%">항목</th><th>현재</th></tr></thead>
+<tbody>
+<tr><td>정기 수집</td><td>Paseo 예약 실행이 하루 4회(09·12·15·18시) 판별 에이전트를 띄워 절차서대로 수집·판별·반영</td></tr>
+<tr><td>실행 모드</td><td>예시 데이터 / 파일럿 / 실데이터(<code>?data=real</code>). 운영 모드에서는 실데이터만</td></tr>
+<tr><td>실패 처리</td><td>연결 실패나 거부된 변경은 실행 기록에 사유만 남기고 다음 실행에서 이어 감</td></tr>
+<tr><td>품질 확인</td><td>자동 테스트(서버 250여 개, 화면 비교 54건, 화면 이동 108건)를 변경마다 실행</td></tr>
+<tr><td>개발 운영</td><td>AX-Lead(기획·판별·총괄), AX-Builder(구현), AX-Reviewer(독립 검토). 작업 브랜치 Push까지, 병합은 사용자</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="deploy">
+<h2>9. 배포 선택지</h2>
+<p>지금은 사용자 PC에서만 돈다. 2~3명이 각자 로그인해서 쓰려면 서버를 어딘가에 켜 두어야 한다(앱으로 만들어도 데이터를 내주는 서버는 필요하다).</p>
+<table>
+<thead><tr><th style="width:21%">방법</th><th style="width:11%">비용</th><th style="width:15%">PC 꺼져도</th><th style="width:16%">지금 코드로</th><th>비고</th></tr></thead>
+<tbody>
+<tr><td>이 PC + 터널(ngrok·Tailscale 무료 고정 주소)</td><td>무료</td><td>안 됨</td><td>바로</td><td>가장 빠름. 업무 시간엔 수집 때문에 어차피 켜져 있음. Google이 그 주소를 받아 주는지 시험 필요</td></tr>
+<tr><td>이 PC + Cloudflare Tunnel + 내 도메인</td><td>도메인 연 1만 원대</td><td>안 됨</td><td>바로</td><td>고정 주소가 확실함</td></tr>
+<tr><td><b>Cloudflare Workers + D1</b></td><td>무료(수집 CPU가 많으면 월 5달러)</td><td><b>됨</b></td><td>옮기기 필요</td><td>항상 켜짐, <code>workers.dev</code> 무료 주소, 예약 실행으로 팀원 계정 수집 가능. 판별은 PC에서</td></tr>
+<tr><td>ChatGPT Sites</td><td>미확인</td><td>됨</td><td>옮기기 필요</td><td>기반이 Workers와 같음. 예약 실행·외부 연동 지원이 문서로 확인되지 않음(공개 베타)</td></tr>
+<tr><td>무료 클라우드 VM(Oracle)</td><td>무료</td><td>됨</td><td>바로</td><td>가입·서버 설정에 손이 감</td></tr>
+</tbody>
+</table>
+<div class="callout warn"><b>어느 방법이든 공통으로 필요한 것</b>회사 조직 안의 Google 클라우드 프로젝트(로그인·계정 연결용 "내부" 앱), 고정 주소, 첫 관리자 지정.</div>
+</section>
+
+<section id="roadmap">
+<h2>10. 진행 현황과 로드맵</h2>
+<div class="diagram"><pre class="mermaid">
+timeline
+  title 진행 경과와 다음 단계
+  11/18~19 : 저장소 개설·기존 기획 승계 : 기본 결정 승인 : 첫 실데이터
+  11/20 : 정기 수집 시작 : 홈 화면·WBS 간트
+  11/23 : 진척·완료 판별 : 드로어 : 업무 아닌 기록 삭제
+  11/24 : GitHub·AI 세션 연결 : WBS 없는 프로젝트 판별 : 로그인·권한
+  다음 : 팀원 계정 연결 : 팀 단위 중복 제거 : 배포
+  이후 : 공수(시간) : 프로젝트별 공개 범위
+</pre></div>
+<table>
+<thead><tr><th style="width:30%">항목</th><th style="width:16%">상태</th><th>내용</th></tr></thead>
+<tbody>
+<tr><td>자동 수집·판별(내 계정)</td><td><span class="badge ok">운영 중</span></td><td>Drive·Chat·Gmail·GitHub·AI 세션·로컬 Git</td></tr>
+<tr><td>화면(요약·히트맵·간트·드로어)</td><td><span class="badge ok">운영 중</span></td><td>실데이터로 표시</td></tr>
+<tr><td>로그인·권한</td><td><span class="badge blue">구현 완료</span></td><td>배포 대기</td></tr>
+<tr><td>팀원 계정 연결</td><td><span class="badge warn">설계</span></td><td>사람별 동의, 토큰 암호화 보관, 사람별 수집</td></tr>
+<tr><td>팀 단위 판별(ADR-019)</td><td><span class="badge warn">확정 대기</span></td><td>같은 기록은 하나로, 수행자는 실제로 한 사람</td></tr>
+<tr><td>배포</td><td><span class="badge warn">결정 대기</span></td><td>9장 선택지 중 결정</td></tr>
+<tr><td>공수(시간)</td><td><span class="badge">후속</span></td><td>지금은 작업 내역 건수 기준</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="open">
+<h2>11. 결정이 필요한 것</h2>
+<table>
+<thead><tr><th style="width:30%">항목</th><th>선택지</th></tr></thead>
+<tbody>
+<tr><td>배포 위치</td><td>이 PC + 터널 / Cloudflare Workers / ChatGPT Sites(기능 시험 후) / 무료 VM</td></tr>
+<tr><td>Google 앱 방식</td><td>회사 조직 안 프로젝트(내부, 권장) / 개인 프로젝트(외부·테스트, 7일마다 재연결)</td></tr>
+<tr><td>팀원 메일 수집</td><td>각자 동의한 사람의 업무 메일만 / 처음엔 메일 제외</td></tr>
+<tr><td>팀 단위 판별 기준</td><td>같은 기록은 하나로, 수행자는 실제로 한 사람 — 확정 여부</td></tr>
+<tr><td>남은 사본 정리</td><td>제외한 프로젝트 내용이 남은 지난 변경 파일·DB 백업 삭제 여부</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="glossary">
+<h2>12. 용어</h2>
+<table>
+<tbody>
+<tr><th style="width:22%">프로젝트</th><td>하나의 목표를 향해 여러 날 이어지는 일의 묶음</td></tr>
+<tr><th>태스크</th><td>끝났다고 말할 수 있는 일</td></tr>
+<tr><th>작업 내역</th><td>태스크를 위해 실제로 한 일 한 건(누가·언제·무엇을)</td></tr>
+<tr><th>근거 자료</th><td>작업 내역을 뒷받침하는 파일·메시지·메일·커밋·AI 세션</td></tr>
+<tr><th>업무 유형</th><td>기획·설계 / 조사·분석 / 제작·구현 / 검증 / 운영·지원</td></tr>
+<tr><th>작업 공간</th><td>일이 모이는 장소: 로컬 폴더, Paseo 워크스페이스, Git 저장소, Drive 폴더, Chat 스페이스</td></tr>
+<tr><th>delta</th><td>한 번의 수집·정정 결과 묶음. 데이터를 바꾸는 유일한 방법</td></tr>
+<tr><th>purge</th><td>기록과 이력 내용까지 지우는 삭제</td></tr>
+<tr><th>수집 토큰</th><td>사용자 PC의 수집기가 서버에 결과를 올릴 때 쓰는 기계용 열쇠</td></tr>
+<tr><th>Paseo</th><td>Claude·GPT(Codex) 에이전트를 띄우고 관리하는 도구. 정기 수집과 구현을 여기서 돌린다</td></tr>
+</tbody>
+</table>
+</section>
+
+<footer>관련 문서: 구조와 판단 기준 정리(<code>AX_SYSTEM_OVERVIEW.html</code>), 결정 기록(<code>docs/decisions/</code>), 수집 절차서·배포 절차서(<code>docs/runbooks/</code>). 수치는 2026-11-24 기준이며 실명·고객사명은 넣지 않았다.</footer>
+</main>
+</div>
+<script>
+mermaid.initialize({startOnLoad:true,theme:'neutral',fontFamily:'Noto Sans KR, sans-serif',securityLevel:'strict'});
+</script>
+</body>
+</html>

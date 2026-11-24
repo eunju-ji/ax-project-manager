@@ -113,6 +113,8 @@ const localPoc = pilotMode || realMode || /(?:^|[?&])data=local(?:&|$)/.test(loc
 let pilotReviews: {id: string; kind: string; version: number; proposal?: string; candidate_task_ids?: string[]}[] = [];
 let saveStatus = '';
 let saving = false;
+let sessionInfo: {role:string;csrf:string|null;local?:boolean}|null = null;
+const csrfHeaders = (): Record<string,string> => sessionInfo?.csrf ? {'X-CSRF-Token':sessionInfo.csrf} : {};
 const localVersions = new Map<string, number>();
 const pendingDecisions = new Map<string, string>();
 const visibleTask = (t: Task) => t.planSource !== 'reference' && t.merged_into == null;
@@ -146,7 +148,7 @@ const empty = (s: string, body: string) => `<div class="empty">${icon('search', 
 function filtered() { return M.sortProjects(projects.filter(p => p.tasks.some(t => (state.topic === '전체' || t.topic === state.topic) && (state.owner === '전체' || t.owner === state.owner || t.subtasks.some(s => s.owner === state.owner))) && (!state.query || [p.name, p.desc, ...p.tasks.flatMap(t => [t.title, ...t.subtasks.map(s => s.title)])].join(' ').toLowerCase().includes(state.query.toLowerCase())))); }
 function records() { return M.weekRecords(projects, week()).filter(r => state.weekOwner === '전체' || r.subtask.owner === state.weekOwner); }
 function header() {
-    return `<header class="global-header"><button class="brand" data-action="home" aria-label="프로젝트 홈으로 돌아가기"><span class="brand-symbol">AX</span><strong>프로젝트 관리장</strong></button><span class="header-divider"></span><span class="breadcrumb">${icon('layers', 16)} AX팀 <span>/</span><b>프로젝트</b></span><div class="header-right">${localPoc ? `<span class="demo-mark" role="status">${esc(saveStatus)}</span>` : ''}${realMode ? '' : `<span class="demo-mark"><i></i>${pilotMode ? 'AX-TF 공유 드라이브 기록' : '예시 데이터'}</span>`}<button class="review-trigger ${reviewCount() ? 'needs-review' : ''}" data-action="reviews" aria-haspopup="dialog">${icon('bell', 17)} 검토 필요 <b>${reviewCount()}</b></button><button class="settings-trigger icon-button" data-action="settings" aria-label="설정 및 서비스 연동" title="설정 및 서비스 연동">${icon('settings', 21)}</button></div></header>`;
+    return `<header class="global-header"><button class="brand" data-action="home" aria-label="프로젝트 홈으로 돌아가기"><span class="brand-symbol">AX</span><strong>프로젝트 관리장</strong></button><span class="header-divider"></span><span class="breadcrumb">${icon('layers', 16)} AX팀 <span>/</span><b>프로젝트</b></span><div class="header-right">${sessionInfo && !sessionInfo.local && sessionInfo.role === 'admin' ? '<a href="/admin/users">사용자 관리</a>' : ''}${sessionInfo && !sessionInfo.local ? '<button data-action="logout">로그아웃</button>' : ''}${localPoc ? `<span class="demo-mark" role="status">${esc(saveStatus)}</span>` : ''}${realMode ? '' : `<span class="demo-mark"><i></i>${pilotMode ? 'AX-TF 공유 드라이브 기록' : '예시 데이터'}</span>`}<button class="review-trigger ${reviewCount() ? 'needs-review' : ''}" data-action="reviews" aria-haspopup="dialog">${icon('bell', 17)} 검토 필요 <b>${reviewCount()}</b></button><button class="settings-trigger icon-button" data-action="settings" aria-label="설정 및 서비스 연동" title="설정 및 서비스 연동">${icon('settings', 21)}</button></div></header>`;
 }
 function summaryLabel(range: DateRange) { return state.summaryUnit === 'day' ? fullDate(range.start) : state.summaryUnit === 'month' ? range.start.slice(0,7).replace('-', '년 ') + '월' : weekLabel(range); }
 function weekly() {
@@ -662,6 +664,7 @@ function init() {
     });
 }
 async function loadLocal() {
+    if (!sessionInfo) { const me = await fetch('/api/me'); if (me.status === 401) { location.href='/'; throw new Error('login'); } if(me.ok)sessionInfo=await me.json(); }
     const response = await fetch(pilotMode ? '/api/view?data=pilot' : realMode ? '/api/view?data=real' : '/api/view');
     if (!response.ok) throw new Error('load failed');
     const data = await response.json();
@@ -676,14 +679,14 @@ async function loadLocal() {
     for (const r of data.decisions) { state.reviewed.add(r.review_id); state.reviewAnswers.set(r.review_id, r.decision); }
 }
 async function saveLocalReview(id: string, value: string) {
-    if (saving || state.reviewed.has(id)) return;
+    if (sessionInfo?.role === 'viewer' || saving || state.reviewed.has(id)) return;
     const review = completionReviews().find(r => r.id === id);
     if (!review) return;
     saving = true; saveStatus = '판단함 · 저장 중'; render();
     const key = id + ':' + value;
     if (!pendingDecisions.has(key)) pendingDecisions.set(key, crypto.randomUUID());
     try {
-        const response = await fetch(realMode ? '/api/decision?data=real' : '/api/decision', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ review_id: id, answer: value, change_id: pendingDecisions.get(key), expected_version: localVersions.get(review.taskId) }) });
+        const response = await fetch(realMode ? '/api/decision?data=real' : '/api/decision', { method: 'POST', headers: { 'Content-Type': 'application/json', ...csrfHeaders() }, body: JSON.stringify({ review_id: id, answer: value, change_id: pendingDecisions.get(key), expected_version: localVersions.get(review.taskId) }) });
         if (!response.ok) throw new Error('save failed');
         await loadLocal(); saveStatus = '저장됨';
     } catch { saveStatus = '저장 실패 · 다시 시도'; }
@@ -703,9 +706,11 @@ async function savePilotReview(id: string, answer: string) {
     const key = id + ':' + answer + ':' + (task || '');
     if (!pendingDecisions.has(key)) pendingDecisions.set(key, crypto.randomUUID());
     try {
-        const response = await fetch('/api/pilot-decision', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({review_id:id,answer,task_id:task,expected_version:review.version,change_id:pendingDecisions.get(key)})});
+        const response = await fetch('/api/pilot-decision', {method:'POST', headers:{'Content-Type':'application/json',...csrfHeaders()}, body:JSON.stringify({review_id:id,answer,task_id:task,expected_version:review.version,change_id:pendingDecisions.get(key)})});
         if (!response.ok) throw new Error('save failed');
         await loadLocal(); saveStatus = '저장됨';
     } catch { saveStatus = '저장 실패 · 다시 시도'; }
     saving = false; render();
 }
+
+document.addEventListener('click', async event => { if ((event.target as HTMLElement).closest('[data-action=logout]')) { const r=await fetch('/auth/logout',{method:'POST',headers:csrfHeaders()}); if(r.ok)location.href='/'; } });

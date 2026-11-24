@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AX 프로젝트 관리장 — 구조와 판단 기준 정리</title>
+<title>AX 프로젝트 관리장 — 구조와 판단 기준 정리 v2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
@@ -14,12 +14,11 @@
 <style>
 :root{--ink:#1f2328;--muted:#5f6b7a;--line:#e3e6ea;--soft:#f6f7f9;--accent:#3b6fb6;--accent-soft:#eaf1fb;--warn:#b7791f;--warn-soft:#fdf6e7;--ok:#2f855a;--ok-soft:#eaf6ef;--bad:#c0392b;--bad-soft:#fdeeee}
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
 body{margin:0;font-family:'Noto Sans KR',system-ui,sans-serif;color:var(--ink);background:#fff;line-height:1.75;font-size:15.5px;word-break:keep-all}
 .layout{display:grid;grid-template-columns:250px minmax(0,1fr);max-width:1240px;margin:0 auto}
 nav.toc{position:sticky;top:0;height:100vh;overflow:auto;padding:36px 20px 36px 28px;border-right:1px solid var(--line);font-size:13.5px}
 nav.toc b{display:block;font-size:12px;color:var(--muted);letter-spacing:.04em;margin-bottom:10px}
-nav.toc a{display:block;color:var(--ink);text-decoration:none;padding:5px 8px;border-radius:6px}
+nav.toc a{display:block;color:var(--ink);text-decoration:none;padding:4px 8px;border-radius:6px}
 nav.toc a:hover{background:var(--soft)}
 nav.toc a.sub{padding-left:20px;color:var(--muted);font-size:13px}
 main{padding:44px 56px 96px;max-width:960px}
@@ -29,18 +28,18 @@ header.doc p{margin:0;color:var(--muted)}
 .meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px;font-size:13px;color:var(--muted)}
 .meta span b{color:var(--ink);font-weight:500;margin-left:4px}
 h2{font-size:22px;margin:56px 0 14px;padding-top:6px;border-top:1px solid var(--line)}
-h2:first-of-type{border-top:0}
 h3{font-size:17px;margin:30px 0 10px}
 p{margin:10px 0}
 ul,ol{padding-left:22px;margin:8px 0}
 li{margin:3px 0}
-.badge{display:inline-block;font-size:12px;padding:1px 9px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--muted);vertical-align:2px;font-weight:500}
+.badge{display:inline-block;font-size:12px;padding:1px 9px;border-radius:999px;background:var(--soft);border:1px solid var(--line);color:var(--muted);vertical-align:2px;font-weight:500;white-space:nowrap}
 .badge.ok{background:var(--ok-soft);border-color:#c6e6d3;color:var(--ok)}
 .badge.warn{background:var(--warn-soft);border-color:#f0dcb0;color:var(--warn)}
 .badge.bad{background:var(--bad-soft);border-color:#f2c9c4;color:var(--bad)}
 .badge.blue{background:var(--accent-soft);border-color:#cfdff4;color:var(--accent)}
+.badge.new{background:#f3edfc;border-color:#ddd0f3;color:#6b46c1}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
-.stat{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:#fff}
+.stat{border:1px solid var(--line);border-radius:10px;padding:14px 16px}
 .stat strong{display:block;font-size:26px;line-height:1.2}
 .stat span{font-size:13px;color:var(--muted)}
 table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
@@ -52,9 +51,9 @@ td code,p code,li code{font-family:'JetBrains Mono',monospace;font-size:12.5px;b
 .callout.bad{border-color:var(--bad);background:var(--bad-soft)}
 .callout.ok{border-color:var(--ok);background:var(--ok-soft)}
 .callout b{display:block;margin-bottom:2px}
-.diagram{border:1px solid var(--line);border-radius:10px;padding:18px;margin:16px 0;background:#fff;overflow-x:auto}
+.diagram{border:1px solid var(--line);border-radius:10px;padding:18px;margin:16px 0;overflow-x:auto}
 .charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
-.chart{border:1px solid var(--line);border-radius:10px;padding:16px;background:#fff}
+.chart{border:1px solid var(--line);border-radius:10px;padding:16px}
 .chart h4{margin:0 0 8px;font-size:14px;font-weight:500}
 pre{margin:14px 0;border:1px solid var(--line);border-radius:10px;overflow:auto}
 pre code.hljs{font-family:'JetBrains Mono',monospace;font-size:12.5px;padding:14px 16px;background:var(--soft)}
@@ -63,7 +62,7 @@ pre code.hljs{font-family:'JetBrains Mono',monospace;font-size:12.5px;padding:14
 .card{border:1px solid var(--line);border-radius:10px;padding:14px 16px}
 .card h4{margin:0 0 6px;font-size:15px}
 footer{margin-top:64px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
-@media (max-width:900px){.layout{grid-template-columns:1fr}nav.toc{display:none}main{padding:28px 20px}.charts,.two{grid-template-columns:1fr}}
+@media (max-width:900px){.layout{grid-template-columns:1fr}nav.toc{display:none}main{padding:28px 20px}.charts,.two,.stats{grid-template-columns:1fr}}
 @media print{nav.toc{display:none}.layout{grid-template-columns:1fr}}
 </style>
 </head>
@@ -72,13 +71,14 @@ footer{margin-top:64px;color:var(--muted);font-size:13px;border-top:1px solid va
 <nav class="toc">
   <b>목차</b>
   <a href="#summary">1. 한눈에 보기</a>
-  <a href="#why">2. 무엇을 풀려고 하나</a>
+  <a href="#stage">2. 진행 단계</a>
   <a href="#decisions">3. 지금까지 정한 것</a>
   <a class="sub" href="#decisions-table">결정 기록 목록</a>
   <a class="sub" href="#corrections">방향을 바꾼 지점</a>
   <a href="#architecture">4. 아키텍처</a>
-  <a class="sub" href="#arch-flow">전체 흐름</a>
-  <a class="sub" href="#arch-collect">정기 수집 한 번</a>
+  <a class="sub" href="#arch-now">지금: 로컬 파일럿</a>
+  <a class="sub" href="#arch-target">다음: 공개 사이트</a>
+  <a class="sub" href="#arch-sources">수집 출처</a>
   <a class="sub" href="#arch-code">코드 구성</a>
   <a href="#data">5. 데이터 구성</a>
   <a class="sub" href="#data-er">핵심 엔터티</a>
@@ -86,174 +86,199 @@ footer{margin-top:64px;color:var(--muted);font-size:13px;border-top:1px solid va
   <a class="sub" href="#data-delta">변경은 delta로만</a>
   <a class="sub" href="#data-now">현재 데이터</a>
   <a href="#rules">6. 판별 규칙</a>
-  <a class="sub" href="#rules-task">태스크인가 아닌가</a>
-  <a class="sub" href="#rules-worklog">작업 내역인가 아닌가</a>
+  <a class="sub" href="#rules-project">프로젝트인가</a>
+  <a class="sub" href="#rules-task">태스크인가</a>
+  <a class="sub" href="#rules-worklog">작업 내역인가</a>
   <a class="sub" href="#rules-status">완료·지연·확인 필요</a>
   <a class="sub" href="#rules-progress">진척률·히트맵</a>
-  <a href="#ui">7. 화면 원칙</a>
-  <a href="#security">8. 보안·운영 원칙</a>
-  <a href="#open">9. 남은 결정과 위험</a>
-  <a href="#glossary">10. 용어</a>
+  <a href="#auth">7. 공개 사이트·인증</a>
+  <a href="#ui">8. 화면 원칙</a>
+  <a href="#security">9. 보안·운영 원칙</a>
+  <a href="#branches">10. 브랜치 현황</a>
+  <a href="#open">11. 남은 결정</a>
+  <a href="#glossary">12. 용어</a>
 </nav>
 
 <main>
 <header class="doc">
   <h1>AX 프로젝트 관리장 — 구조와 판단 기준 정리</h1>
-  <p>지금까지 고민하고 정한 내용, 시스템 구조, 데이터 구성, 자동 판별 규칙을 한 곳에 모은 문서</p>
+  <p>지금까지 고민하고 정한 내용, 시스템 구조, 데이터 구성, 자동 판별 규칙, 다음 단계(공개 사이트)를 한 곳에 모은 문서</p>
   <div class="meta">
     <span>작성<b>AX-Lead</b></span>
-    <span>기준일<b>2026-11-23</b></span>
-    <span>버전<b>1.0</b></span>
-    <span>단계<b>M4 실데이터 파일럿 운영</b></span>
+    <span>기준일<b>2026-11-24</b></span>
+    <span>버전<b>2.0</b></span>
+    <span>단계<b>M4 실데이터 파일럿 운영 → 공개 사이트 준비</b></span>
     <span>상태<b><span class="badge blue">운영 중</span></b></span>
   </div>
 </header>
 
 <section id="summary">
-<h2>1. 한눈에 보기</h2>
-<p>AX 프로젝트 관리장은 팀원이 따로 기록하지 않아도 <b>Drive·Chat·Gmail에 이미 남은 흔적을 읽어</b> "누가, 어떤 프로젝트의 어떤 일을, 언제 했는지"를 자동으로 정리하는 도구다. 사람은 정말 판단하기 어려운 것만 본다.</p>
+<h2 style="border-top:0">1. 한눈에 보기</h2>
+<p>AX 프로젝트 관리장은 팀원이 따로 기록하지 않아도 <b>Drive·Chat·Gmail·GitHub·AI 작업 세션에 이미 남은 흔적을 읽어</b> "누가, 어떤 프로젝트의 어떤 일을, 언제 했는지"를 자동으로 정리하는 도구다. 사람은 정말 판단하기 어려운 것만 본다.</p>
 <div class="stats">
-  <div class="stat"><strong>11</strong><span>프로젝트</span></div>
-  <div class="stat"><strong>62</strong><span>태스크 (완료 28)</span></div>
-  <div class="stat"><strong>267</strong><span>작업 내역</span></div>
-  <div class="stat"><strong>478</strong><span>근거 자료 (파일 193 · 메시지 285)</span></div>
-  <div class="stat"><strong>14</strong><span>참여자</span></div>
+  <div class="stat"><strong>11</strong><span>프로젝트 (WBS에 없는 프로젝트 포함)</span></div>
+  <div class="stat"><strong>50</strong><span>태스크 (완료 26)</span></div>
+  <div class="stat"><strong>61</strong><span>작업 내역</span></div>
+  <div class="stat"><strong>187</strong><span>근거 자료 (파일·메시지·커밋·AI 세션)</span></div>
+  <div class="stat"><strong>7종</strong><span>수집 출처</span></div>
   <div class="stat"><strong>하루 4회</strong><span>정기 수집 (09·12·15·18시)</span></div>
 </div>
-<div class="callout"><b>핵심 세 가지</b>
+<div class="callout"><b>핵심 네 가지</b>
 <ol>
 <li><b>업무 구조는 프로젝트 › 태스크 › 작업 내역</b> 세 단계다. 태스크는 "끝났다고 말할 수 있는 일"이다.</li>
-<li><b>시스템이 먼저 판단한다.</b> 근거가 분명하면 연결·완료까지 자동으로 반영하고, 애매한 것만 남긴다.</li>
-<li><b>원문은 저장하지 않는다.</b> 내용은 읽되 이름과 160자 이하 요약만 남긴다.</li>
+<li><b>시스템이 먼저 판단한다.</b> 프로젝트·태스크를 세우는 것부터 완료까지, 근거가 분명하면 자동으로 반영한다. WBS에 없어도 마찬가지다.</li>
+<li><b>업무만 기록한다.</b> 회의 초대·파일 이동 같은 기록은 숨기지 않고 아예 남기지 않는다.</li>
+<li><b>원문은 저장하지 않는다.</b> 내용은 읽되 이름·시각과 160자 이하 요약만 남긴다.</li>
 </ol></div>
 </section>
 
-<section id="why">
-<h2>2. 무엇을 풀려고 하나</h2>
-<div class="two">
-  <div class="card"><h4>문제</h4>
-  <ul>
-    <li>업무 기록이 Drive·Chat·메일·WBS에 흩어져 있다.</li>
-    <li>진척을 보려면 사람이 따로 정리해야 하고, 정리는 늘 늦다.</li>
-    <li>같은 일이 여러 곳에 다른 이름으로 남아 하나로 보기 어렵다.</li>
-  </ul></div>
-  <div class="card"><h4>목표</h4>
-  <ul>
-    <li>흩어진 기록을 같은 업무 단위로 묶는다(통합 취합).</li>
-    <li>WBS 계획과 실제 작업을 한 화면에서 비교한다.</li>
-    <li>사람의 입력 부담을 거의 없앤다(자동 판별 우선).</li>
-  </ul></div>
-</div>
-<p>파일럿은 AX팀(공유 드라이브 AX_TF, 관련 Chat 스페이스, 메일)으로 시작했다. 모델은 다른 팀으로 넓힐 수 있게 만든다(ADR-001).</p>
+<section id="stage">
+<h2>2. 진행 단계</h2>
+<p>Discovery → Design → Build → Review → Iterate 순서로 진행한다. 지금은 실데이터 파일럿을 돌리며 판별 기준을 다듬는 Iterate 단계이고, 다음은 공개 사이트다.</p>
+<div class="diagram"><pre class="mermaid">
+timeline
+  title 관리장 진행 경과 (2026년 11월)
+  11/18 : 저장소 개설 : 기존 기획 승계·ADR 10건
+  11/19 : 기본 결정 일괄 승인 : Drive 커넥터·로컬 SQLite : 첫 실데이터 반영
+  11/20 : 정기 수집 시작(하루 4회) : 홈 화면·WBS 간트
+  11/23 : WBS 태스크·진척률·완료 판별 : 드로어·태스크 합치기 : 업무 아닌 기록 삭제
+  11/24 : 고객사 대시보드 제외(purge) : GitHub·AI 세션 연결 : WBS 없는 프로젝트 판별 : 공개 사이트·인증 착수
+</pre></div>
+<table>
+<thead><tr><th style="width:24%">단계</th><th>내용</th><th style="width:90px">상태</th></tr></thead>
+<tbody>
+<tr><td>M0~M3 기준선·설계·로컬 PoC</td><td>기존 UI 이관, 데이터 모델, 로컬 DB, 합성 데이터</td><td><span class="badge ok">완료</span></td></tr>
+<tr><td>M4 실데이터 파일럿</td><td>AX팀 공유 드라이브·Chat·메일 수집, 자동 판별, 화면 개편</td><td><span class="badge blue">운영 중</span></td></tr>
+<tr><td>출처 확장</td><td>GitHub, Claude Code·Codex 세션, claude.ai·ChatGPT 내보내기, 로컬 Git</td><td><span class="badge blue">구현 완료</span></td></tr>
+<tr><td>공개 사이트·인증</td><td>Google 로그인, 사람별 권한, 수집 결과 업로드, 배포 준비</td><td><span class="badge warn">구현 중</span></td></tr>
+<tr><td>배포 (G3)</td><td>호스팅·도메인·회사 OAuth 등록 후 운영 배포</td><td><span class="badge">결정 대기</span></td></tr>
+</tbody>
+</table>
 </section>
 
 <section id="decisions">
 <h2>3. 지금까지 정한 것</h2>
 <p>설계 결정은 <code>docs/decisions/</code>에 ADR로 남긴다. 2026-11-19에 기본 결정을 일괄 승인했고, 이후 사용자 지시로 여러 번 고쳤다.</p>
-
 <h3 id="decisions-table">결정 기록 목록</h3>
 <table>
-<thead><tr><th style="width:90px">ADR</th><th>결정</th><th style="width:90px">상태</th></tr></thead>
+<thead><tr><th style="width:80px">ADR</th><th>결정</th><th style="width:110px">상태</th></tr></thead>
 <tbody>
 <tr><td>001</td><td>AX팀 파일럿, 확장 가능한 모델</td><td><span class="badge ok">유효</span></td></tr>
 <tr><td>002</td><td>MVP 자원 단위는 작업 내역 건수. 공수(시간)는 후속</td><td><span class="badge ok">유효</span></td></tr>
 <tr><td>003</td><td>프로젝트 › 태스크 › 작업 내역 + 업무 유형 5종</td><td><span class="badge ok">유효</span></td></tr>
-<tr><td>004 · 012</td><td>논리 데이터 모델, 원본(source)과 발생 이벤트 분리 저장</td><td><span class="badge ok">유효</span></td></tr>
-<tr><td>005</td><td>AI 대화 원문은 자동 수집하지 않음</td><td><span class="badge ok">유효</span></td></tr>
+<tr><td>004 · 012</td><td>논리 데이터 모델, 원본과 발생 이벤트 분리 저장</td><td><span class="badge ok">유효</span></td></tr>
+<tr><td>005</td><td>AI 대화 원문 자동 수집 제외 (색인·요약 연결은 020)</td><td><span class="badge ok">유효</span></td></tr>
 <tr><td>006 · 008</td><td>사람 확정·사람 교정 기본</td><td><span class="badge">대체됨 → 016</span></td></tr>
 <tr><td>007</td><td>원문 외 정보 보호, 접근 감사, 목적 제한</td><td><span class="badge ok">유효</span></td></tr>
-<tr><td>009</td><td>생성물(빌드 결과) Git 추적 방식</td><td><span class="badge ok">유효</span></td></tr>
-<tr><td>010</td><td>G0~G3 단계별 승인 게이트</td><td><span class="badge ok">유효</span></td></tr>
+<tr><td>009 · 010</td><td>생성물 Git 추적, G0~G3 승인 게이트</td><td><span class="badge ok">유효</span></td></tr>
 <tr><td>011</td><td>파일럿 소스 Drive + GitHub</td><td><span class="badge">확대됨 → 017</span></td></tr>
 <tr><td>013</td><td>데이터 원본은 트랜잭션 DB, 스프레드시트는 읽기 전용 사본</td><td><span class="badge ok">유효</span></td></tr>
-<tr><td>015</td><td>실데이터 파일럿: 공유 드라이브 AX_TF, 사내 OAuth, 로컬 SQLite</td><td><span class="badge ok">유효</span></td></tr>
-<tr><td>016</td><td>자동 판별 우선: 시스템이 판별·수정, 근거 분명하면 완료도 자동</td><td><span class="badge ok">유효</span></td></tr>
-<tr><td>017</td><td>여러 소스 통합 취합: 내용은 읽고 원문 대신 핵심(digest)만 저장</td><td><span class="badge ok">유효</span></td></tr>
-<tr><td>018</td><td>WBS 행을 태스크로 들임, 진척률·완료·지연 판별, 태스크·작업 내역 기준, 히트맵 기준</td><td><span class="badge ok">유효</span></td></tr>
+<tr><td>015</td><td>실데이터 파일럿: 공유 드라이브, 사내 OAuth, 로컬 SQLite</td><td><span class="badge ok">유효</span></td></tr>
+<tr><td>016</td><td>자동 판별 우선: 근거 분명하면 완료까지 자동</td><td><span class="badge ok">유효</span></td></tr>
+<tr><td>017</td><td>여러 소스 통합 취합: 내용은 읽고 핵심만 저장</td><td><span class="badge ok">유효</span></td></tr>
+<tr><td>018</td><td>WBS 행을 태스크로, 진척률·완료·지연 판별, 태스크·작업 내역 기준, 히트맵</td><td><span class="badge ok">유효</span></td></tr>
+<tr><td>020</td><td>GitHub·AI 대화 연결(색인·요약만), 수집 제외 목록, 내용까지 지우는 purge</td><td><span class="badge new">신규 11/24</span></td></tr>
+<tr><td>021</td><td>프로젝트 판별: WBS 없어도 신호 두 가지 이상이면 프로젝트</td><td><span class="badge new">신규 11/24</span></td></tr>
+<tr><td>022</td><td>공개 사이트: Google 로그인, 초대제, 역할별 권한, 수집 토큰</td><td><span class="badge new">신규 11/24</span></td></tr>
 <tr><td>014</td><td>운영 DB 제품·배치</td><td><span class="badge warn">예정</span></td></tr>
 <tr><td>019</td><td>여러 계정·소스를 팀 단위로 한 번에 판별</td><td><span class="badge warn">결정 대기</span></td></tr>
 </tbody>
 </table>
 
 <h3 id="corrections">방향을 바꾼 지점</h3>
-<p>처음 설계와 달라진 부분이다. 같은 실수를 반복하지 않도록 이유와 함께 남긴다.</p>
 <table>
-<thead><tr><th style="width:30%">처음 생각</th><th style="width:33%">바꾼 기준</th><th>이유</th></tr></thead>
+<thead><tr><th style="width:29%">처음 생각</th><th style="width:33%">바꾼 기준</th><th>이유</th></tr></thead>
 <tbody>
-<tr><td>시스템이 제안하고 사람이 확정</td><td>근거가 분명하면 시스템이 바로 반영(완료 포함)</td><td>사람 확인을 기다리면 기록이 늘 밀린다. 명확히 끝난 것은 1차로 시스템이 판단한다.</td></tr>
-<tr><td>Drive 메타데이터만 수집</td><td>Drive·Chat·Gmail 내용까지 읽고 요약만 저장</td><td>메타데이터만으로는 같은 업무가 여러 곳에 있을 때 묶을 수 없다.</td></tr>
-<tr><td>WBS에 있는 일과 없는 일을 나눠 표시</td><td>태스크 여부는 WBS로 가르지 않는다</td><td>업무는 WBS가 있을 수도 없을 수도 있다. "WBS에 없는 업무", "계획 외 업무" 같은 구분은 쓰지 않는다.</td></tr>
-<tr><td>요청·메일 대응 하나하나를 태스크로</td><td>같은 목적·결과물로 이어지는 일은 한 태스크</td><td>너무 잘게 쪼개면 맥락이 안 보인다. 개별 요청은 그 태스크의 작업 내역이다.</td></tr>
-<tr><td>Drive에 변화가 있으면 작업 내역</td><td>만들고·분석·검토·결정·해결한 기록만 작업 내역</td><td>파일 이동, 회의 초대, 일정 취소는 업무가 아니다.</td></tr>
-<tr><td>업무 아닌 기록은 "참고 기록"으로 숨김</td><td>업무 아닌 기록은 아예 남기지 않음</td><td>우리가 기록하는 것은 "업무"다. 숨긴 묶음은 무엇인지 알 수 없는 데이터만 늘린다.</td></tr>
-<tr><td>WBS 업무 카테고리를 업무 유형으로 사용</td><td>업무 유형은 ADR-003의 5종만</td><td>둘을 섞었더니 요약 숫자와 유형별 분포가 맞지 않았다.</td></tr>
-<tr><td>계획 기간이 지나면 모두 지연</td><td>지연(작업 있음)과 확인 필요(작업·근거 없음)를 구분, 산출물로 완료 자동 판별</td><td>결과서가 이미 있는데 지연으로 뜨는 오판이 많았다.</td></tr>
+<tr><td>시스템이 제안, 사람이 확정</td><td>근거가 분명하면 시스템이 바로 반영(완료 포함)</td><td>사람 확인을 기다리면 기록이 늘 밀린다.</td></tr>
+<tr><td>Drive 메타데이터만 수집</td><td>Drive·Chat·Gmail 내용까지 읽고 요약만 저장</td><td>같은 업무가 여러 곳에 있을 때 묶으려면 내용이 필요하다.</td></tr>
+<tr><td>WBS 유무로 업무를 나눠 표시</td><td>태스크·프로젝트 여부를 WBS로 가르지 않는다</td><td>업무는 WBS가 있을 수도 없을 수도 있다.</td></tr>
+<tr><td>프로젝트는 WBS 대분류에서만</td><td>작업 공간·목표 문서·여러 날 작업 등이 겹치면 시스템이 프로젝트를 세운다</td><td>회의에서 나온 과제(예: 사내 지식 구축)는 WBS에 없지만 분명한 프로젝트다.</td></tr>
+<tr><td>요청 하나하나를 태스크로</td><td>같은 목적·결과물로 이어지는 일은 한 태스크</td><td>너무 잘게 쪼개면 맥락이 안 보인다.</td></tr>
+<tr><td>Drive 변화가 있으면 작업 내역</td><td>만들고·분석·검토·결정·해결한 기록만</td><td>파일 이동·회의 초대·일정 취소는 업무가 아니다.</td></tr>
+<tr><td>업무 아닌 기록은 "참고 기록"으로 숨김</td><td>아예 남기지 않음</td><td>기록하는 것은 "업무"다.</td></tr>
+<tr><td>지운 기록도 이력에 원래 값 보존</td><td>요청 시 이력 내용까지 지우는 purge</td><td>특정 프로젝트를 빼 달라는 요청은 사본도 남기지 말라는 뜻이다.</td></tr>
+<tr><td>AI 대화는 수집 대상 아님</td><td>Claude Code·Codex 세션과 내보내기 파일을 색인만 해서 연결</td><td>AI 에이전트로 하는 개발·분석도 실제 업무다.</td></tr>
+<tr><td>내 PC에서만 실행</td><td>공개 사이트에서 사람마다 로그인·권한</td><td>팀이 함께 보고 쓰려면 접근 통제가 있는 사이트가 필요하다.</td></tr>
 </tbody>
 </table>
 </section>
 
 <section id="architecture">
 <h2>4. 아키텍처</h2>
-<h3 id="arch-flow">전체 흐름</h3>
-<p>수집·판별은 정기 실행 에이전트가 하고, 결과는 <b>delta 파일</b>로만 데이터셋에 반영한다. 서버는 데이터셋이 바뀌면 SQLite를 다시 적재해 화면에 내보낸다.</p>
+<h3 id="arch-now">지금: 로컬 파일럿</h3>
 <div class="diagram"><pre class="mermaid">
 flowchart TB
-  subgraph SRC["업무 흔적 (Google Workspace)"]
-    D["Drive<br/>공유 드라이브 AX_TF"]
-    C["Chat<br/>팀 스페이스"]
+  subgraph SRC["업무 흔적"]
+    direction LR
+    D["Drive"]
+    C["Chat"]
     G["Gmail"]
+    GH["GitHub"]
+    AI["Claude Code·Codex 세션<br/>(Paseo로 실행)"]
+    EX["claude.ai·ChatGPT<br/>내보내기 파일"]
+    LG["로컬 Git"]
   end
-  subgraph COL["수집·판별 (하루 4회)"]
+  subgraph COL["수집·판별 — 사용자 PC, 하루 4회"]
     S["Paseo 정기 실행"] --> A["AX-Lead 에이전트<br/>절차서 real-collect.md"]
-    A -->|"읽기 전용"| M["gws-work MCP"]
+    A --> M["gws-work MCP (읽기)"]
+    A --> CO["수집기<br/>collect-github · collect-ai-chats · collect-local-git"]
   end
   D & C & G --> M
-  A -->|"delta JSON 작성"| I["inbox/delta-*.json"]
-  I --> P["apply-delta.cjs<br/>검증 → dry-run → 반영"]
-  P --> J[("real-dataset.json<br/>+ 변경 이력")]
-  J -->|"digest 바뀌면 재적재"| Q[("SQLite")]
-  Q --> API["API 서버<br/>/api/view"]
-  API --> UI["웹 화면<br/>요약·히트맵·WBS 간트·드로어"]
+  GH & AI & EX & LG --> CO
+  A -->|"판별 결과"| I["delta JSON"]
+  I --> P["apply-delta<br/>검증·제외·이력"]
+  P --> J[("데이터셋 + 변경 이력")]
+  J --> Q[("SQLite")]
+  Q --> API["API 서버"] --> UI["웹 화면"]
 </pre></div>
-<div class="callout"><b>왜 delta만 쓰나</b>데이터셋을 직접 고치지 않고 delta로만 바꾸면 ① 형식·비밀값·원문 포함 여부를 한 곳에서 검사하고 ② 모든 변경이 이력(before/after)으로 남고 ③ 같은 실행을 다시 돌려도 결과가 같다(멱등).</div>
 
-<h3 id="arch-collect">정기 수집 한 번</h3>
+<h3 id="arch-target">다음: 공개 사이트</h3>
+<p>수집은 계속 사용자 PC에서 한다(Workspace 연결과 AI 세션 기록이 그 PC에 있다). 판별 결과(delta)만 <b>수집 토큰</b>으로 사이트에 보내고, 팀원은 Google 계정으로 로그인해 본다.</p>
 <div class="diagram"><pre class="mermaid">
-sequenceDiagram
-  autonumber
-  participant SCH as Paseo 스케줄
-  participant AG as AX-Lead 에이전트
-  participant GW as gws-work (읽기)
-  participant AD as apply-delta
-  participant DS as 데이터셋
-  SCH->>AG: 09·12·15·18시 실행
-  AG->>DS: 체크포인트·기존 태스크 확인
-  AG->>GW: 체크포인트 이후 Drive·Chat·Gmail 조회
-  GW-->>AG: 메타데이터 + 본문(읽기만)
-  AG->>AG: WBS 동기화, 업무/비업무 판별, 태스크 대조, 산출물로 완료 판별
-  AG->>AD: delta 작성 후 dry-run
-  AD-->>AG: 검증 결과
-  AG->>AD: 반영
-  AD->>DS: 추가·수정·삭제 + 이력 + 체크포인트
-  AG-->>SCH: 결과 보고 (판단 보류는 notes)
+flowchart LR
+  subgraph PC["사용자 PC"]
+    COL2["정기 수집·판별"] --> PUSH["push-delta<br/>(수집 토큰)"]
+  end
+  subgraph SITE["공개 사이트 (호스팅 결정 대기)"]
+    ING["/api/ingest/delta"] --> AD2["apply-delta 규칙"] --> DB[("DB")]
+    DB --> API2["API (로그인 필요)"]
+    AUTH["Google 로그인<br/>회사 도메인 + 초대제"] --> API2
+  end
+  PUSH -->|HTTPS| ING
+  U1["관리자"] & U2["구성원"] & U3["보기 전용"] -->|로그인| AUTH
+  API2 --> W["웹 화면 · 사용자 관리"]
 </pre></div>
+
+<h3 id="arch-sources">수집 출처</h3>
+<table>
+<thead><tr><th style="width:20%">출처</th><th style="width:32%">연결 방식</th><th>남기는 것</th></tr></thead>
+<tbody>
+<tr><td>Drive</td><td>gws-work MCP 읽기, 공유 드라이브 활동</td><td>파일 이름·폴더·시각·작업자, 내용 요약</td></tr>
+<tr><td>Chat</td><td>팀 스페이스 메시지(1:1 제외, 제외 스페이스 제외)</td><td>요약, 첨부 파일 이름</td></tr>
+<tr><td>Gmail</td><td>업무 메일 검색(광고·알림 제외)</td><td>스레드 제목·요약</td></tr>
+<tr><td>GitHub <span class="badge new">신규</span></td><td>REST API(토큰 없으면 공개 저장소만)</td><td>커밋·PR·이슈 제목·시각·링크</td></tr>
+<tr><td>Claude Code·Codex <span class="badge new">신규</span></td><td>PC의 세션 기록(Paseo로 띄운 세션 포함)</td><td>작업 폴더·날짜·메시지 수·수정 파일</td></tr>
+<tr><td>claude.ai·ChatGPT <span class="badge new">신규</span></td><td>사용자가 받은 내보내기 파일을 지정 폴더에 넣음(공식 목록 API 없음)</td><td>대화 제목·날짜·메시지 수·링크</td></tr>
+<tr><td>로컬 Git <span class="badge new">신규</span></td><td>GitHub에 아직 안 올린 저장소의 git log</td><td>커밋 제목·시각·변경 파일 수</td></tr>
+</tbody>
+</table>
+<div class="callout"><b>AI 세션은 사람의 일로 본다</b>Paseo로 Claude·GPT 에이전트에게 시킨 일은 지시한 사람의 작업 내역이다. 세션은 그 근거로 연결된다.</div>
 
 <h3 id="arch-code">코드 구성</h3>
 <table>
-<thead><tr><th style="width:34%">경로</th><th>역할</th></tr></thead>
+<thead><tr><th style="width:36%">경로</th><th>역할</th></tr></thead>
 <tbody>
-<tr><td><code>app/src/app.ts</code> → <code>app/app.js</code></td><td>화면 전체(요약, 히트맵, WBS 간트, 드로어, 자료 창). <code>python build.py</code>로 컴파일</td></tr>
-<tr><td><code>app/src/model.js</code></td><td>진척률·지연·기간·주간 집계 같은 계산</td></tr>
-<tr><td><code>app/src/adapter.js</code></td><td>API 응답을 화면 모델로 변환, 합쳐진 태스크 제외</td></tr>
-<tr><td><code>app/server/api/server.cjs</code></td><td>API 서버. 예시·파일럿·실데이터(<code>?data=real</code>) 세 모드</td></tr>
-<tr><td><code>app/server/real/apply-delta.cjs</code></td><td>delta 검증·반영·이력·체크포인트. 유일한 데이터 변경 경로</td></tr>
-<tr><td><code>app/server/db/migrations</code></td><td>SQLite 스키마(26개 테이블: 업무·원본·이벤트·감사·요청 등)</td></tr>
-<tr><td><code>app/server/.real/</code></td><td>실데이터(커밋 금지, 소유자 전용 권한)</td></tr>
-<tr><td><code>docs/runbooks/</code></td><td>정기 수집 절차서, delta 형식</td></tr>
-<tr><td><code>tasks/current-state.md</code></td><td>세션 간 인수인계. 새 세션은 여기서 시작</td></tr>
+<tr><td><code>app/src/app.ts</code> → <code>app/app.js</code></td><td>화면 전체. <code>python build.py</code>로 컴파일</td></tr>
+<tr><td><code>app/src/model.js</code> · <code>adapter.js</code></td><td>진척률·지연·집계 계산, API 응답을 화면 모델로 변환</td></tr>
+<tr><td><code>app/server/api/server.cjs</code></td><td>API 서버(로그인·권한·수집 업로드 추가 중)</td></tr>
+<tr><td><code>app/server/real/apply-delta.cjs</code></td><td>유일한 데이터 변경 경로: 검증·제외·삭제·purge·이력</td></tr>
+<tr><td><code>app/server/real/collect-*.cjs</code></td><td>GitHub·AI 세션·로컬 Git 수집기(색인만)</td></tr>
+<tr><td><code>app/server/.real/</code></td><td>실데이터·수집 설정(커밋 금지, 소유자 전용 권한)</td></tr>
+<tr><td><code>docs/decisions/</code> · <code>docs/runbooks/</code></td><td>결정 기록, 정기 수집 절차서·delta 형식·배포 절차서</td></tr>
+<tr><td><code>tasks/current-state.md</code></td><td>세션 간 인수인계</td></tr>
 </tbody>
 </table>
-<p>에이전트 역할은 셋이다. <b>AX-Lead</b>(기획·설계·총괄, 정기 수집 판별), <b>AX-Builder</b>(구현·테스트), <b>AX-Reviewer</b>(독립 검토). 작업 브랜치를 원격에 올리는 것까지 하고, main 병합은 사용자가 한다.</p>
+<p>에이전트 역할: <b>AX-Lead</b>(기획·설계·총괄, 정기 수집 판별), <b>AX-Builder</b>(구현·테스트), <b>AX-Reviewer</b>(독립 검토). 작업 브랜치를 원격에 올리는 데까지 하고, main 병합은 사용자가 한다.</p>
 </section>
 
 <section id="data">
@@ -268,124 +293,131 @@ erDiagram
   PERSON ||--o{ WORKLOG : "수행"
   TASK ||--o| TASK : "merged_into"
   LINK }o--|| SOURCE : "근거"
-  LINK }o--o| TASK : "대상"
   LINK }o--o| WORKLOG : "대상"
   PERSON ||--o{ EXTERNAL_ACCOUNT : "계정"
-  HISTORY }o--|| TASK : "변경 이력"
+  USER |o--o| PERSON : "로그인 계정"
+  USER ||--o{ SESSION : "세션"
 </pre></div>
 <div class="two">
   <div class="card"><h4>업무 구조</h4>
   <ul>
-    <li><b>프로젝트</b>: 목적이 있는 일의 묶음</li>
-    <li><b>태스크</b>: 끝낼 수 있는 일. WBS 번호·계획 기간이 있을 수도 없을 수도 있다</li>
-    <li><b>작업 내역</b>: 태스크를 위해 실제로 한 일 한 건(언제·누가·무엇을)</li>
+    <li><b>프로젝트</b>: 하나의 목표를 향한 일의 묶음(WBS 여부 무관)</li>
+    <li><b>태스크</b>: 끝낼 수 있는 일</li>
+    <li><b>작업 내역</b>: 실제로 한 일 한 건(언제·누가·무엇을)</li>
   </ul></div>
-  <div class="card"><h4>근거 구조</h4>
+  <div class="card"><h4>근거·계정 구조</h4>
   <ul>
-    <li><b>근거 자료(source)</b>: 파일·메시지·메일의 이름·위치·폴더</li>
-    <li><b>연결(link)</b>: 근거 ↔ 태스크·작업 내역</li>
-    <li><b>변경 이력(history)</b>: 모든 변경의 전후 값과 주체</li>
+    <li><b>근거 자료</b>: 파일·메시지·메일·커밋·PR·AI 세션</li>
+    <li><b>연결</b>: 근거 ↔ 태스크·작업 내역</li>
+    <li><b>변경 이력</b>: 모든 변경의 전후 값과 주체</li>
+    <li><b>사용자·세션</b>: 사이트 로그인 계정과 역할 <span class="badge new">신규</span></li>
   </ul></div>
 </div>
 
 <h3 id="data-fields">주요 필드</h3>
 <table>
-<thead><tr><th style="width:16%">엔터티</th><th>필드</th></tr></thead>
+<thead><tr><th style="width:15%">엔터티</th><th>필드</th></tr></thead>
 <tbody>
 <tr><td>프로젝트</td><td><code>project_id</code> <code>name</code> <code>purpose</code> <code>owner_id</code> <code>deputy_id</code></td></tr>
-<tr><td>태스크</td><td><code>task_id</code> <code>project_id</code> <code>title</code> <code>description</code>(업무 설명, 200자) <code>category</code>(업무 유형 5종) <code>assignee_id</code> <code>status</code> <code>wbs_code</code> <code>wbs_groups</code>(상위 묶음) <code>start_date</code> <code>due_date</code> <code>plan_source</code>(wbs|activity) <code>completed_at</code> <code>completion_basis</code> <code>merged_into</code></td></tr>
-<tr><td>작업 내역</td><td><code>worklog_id</code> <code>task_id</code> <code>performer_id</code> <code>performed_at</code> <code>performed_at_precision</code>(exact|date|unknown) <code>title</code> <code>summary</code>(160자 이하 요약)</td></tr>
-<tr><td>근거 자료</td><td><code>source_key</code> <code>title</code> <code>kind</code>(문서·시트·PDF·메시지 등) <code>uri</code> <code>folder_id</code> <code>folder_path</code></td></tr>
-<tr><td>연결</td><td><code>target_type</code>(task|worklog) <code>target_id</code> <code>evidence_key</code> <code>status</code> <code>basis</code></td></tr>
-<tr><td>변경 이력</td><td><code>entity_type</code> <code>entity_id</code> <code>before</code> <code>after</code> <code>actor_id</code>(system 또는 사람) <code>reason</code> <code>run_id</code></td></tr>
+<tr><td>태스크</td><td><code>task_id</code> <code>project_id</code> <code>title</code> <code>description</code> <code>category</code>(5종) <code>assignee_id</code> <code>status</code> <code>wbs_code</code> <code>wbs_groups</code> <code>start_date</code> <code>due_date</code> <code>plan_source</code>(wbs|activity) <code>completed_at</code> <code>completion_basis</code> <code>merged_into</code></td></tr>
+<tr><td>작업 내역</td><td><code>worklog_id</code> <code>task_id</code> <code>performer_id</code> <code>performed_at</code> <code>title</code> <code>summary</code>(160자 이하)</td></tr>
+<tr><td>근거 자료</td><td><code>source_key</code> <code>title</code> <code>kind</code>(document·spreadsheet·pdf·image·presentation·message·commit·pull_request·issue·ai_chat) <code>uri</code> <code>folder_path</code></td></tr>
+<tr><td>변경 이력</td><td><code>entity_type</code> <code>entity_id</code> <code>before</code> <code>after</code> <code>actor_id</code> <code>reason</code> <code>run_id</code></td></tr>
+<tr><td>사용자</td><td><code>email</code> <code>person_id</code> <code>role</code>(admin·member·viewer) <code>status</code>(invited·active·disabled)</td></tr>
 </tbody>
 </table>
-<div class="callout warn"><b>사람이 고친 값은 보호된다</b>변경 이력에 사람이 고친 기록이 있으면 그 필드는 자동 수집이 덮어쓰지 않고, 그 기록은 자동으로 지우지 않는다.</div>
+<div class="callout warn"><b>사람이 고친 값은 보호된다</b>사람이 고친 필드는 자동 수집이 덮어쓰지 않고, 사람이 고친 기록은 자동으로 지우지 않는다.</div>
 
 <h3 id="data-delta">변경은 delta로만</h3>
-<p>정기 수집과 수작업 정정 모두 같은 형식의 delta 파일을 쓴다.</p>
 <pre><code class="language-json">{
-  "run_id": "RUN-예시-202611230900",
-  "collected_at": "2026-11-23T00:00:00Z",
-  "checkpoints": { "drive": "...", "chat": "...", "gmail": "..." },
-  "tasks":            [ /* 새 태스크 */ ],
-  "worklogs":         [ /* 새 작업 내역 */ ],
-  "sources": [], "links": [],
-  "task_updates":     [ { "task_id": "T-1", "status": "completed",
-                          "completion_basis": "산출물 확인: 결과서에 결과가 채워짐" } ],
-  "worklog_updates":  [ { "worklog_id": "W-1", "task_id": "T-2" } ],
-  "project_updates":  [ { "project_id": "P-1", "purpose": "..." } ],
-  "worklog_removals": [ "W-9" ],
-  "task_removals":    [ "T-9" ],
-  "notes": [ /* 판단 보류 사유 */ ]
+  "run_id": "RUN-예시-202611240900",
+  "collected_at": "2026-11-24T00:00:00Z",
+  "checkpoints": { "drive": "...", "chat": "...", "gmail": "...", "github": "...", "ai_chats": "..." },
+  "projects": [], "tasks": [], "worklogs": [], "sources": [], "links": [],
+  "task_updates": [], "worklog_updates": [], "project_updates": [],
+  "person_updates":   [ { "person_id": "P-1", "display_name": "..." } ],
+  "worklog_removals": [], "task_removals": [], "source_removals": [],
+  "project_removals": [], "person_removals": [],
+  "purge": false,
+  "history_purges":   [ { "entity_type": "tasks", "entity_id": "T-9" } ],
+  "notes": []
 }</code></pre>
-<pre><code class="language-bash"># app/ 기준
-node server/real/apply-delta.cjs server/.real/inbox/delta-RUN-예시.json --dry-run
-node server/real/apply-delta.cjs server/.real/inbox/delta-RUN-예시.json</code></pre>
 <table>
-<thead><tr><th style="width:30%">검사</th><th>거부 조건</th></tr></thead>
+<thead><tr><th style="width:26%">검사</th><th>거부 조건</th></tr></thead>
 <tbody>
-<tr><td>원문 차단</td><td><code>body</code>·<code>raw</code>·<code>content</code> 같은 원문 필드, 160자 넘는 요약</td></tr>
-<tr><td>비밀값 차단</td><td>API 키·토큰·비밀번호·키 파일 형태의 문자열</td></tr>
-<tr><td>값 검증</td><td>업무 유형 5종 외 값, 잘못된 날짜, 없는 사람·프로젝트·태스크 참조</td></tr>
-<tr><td>삭제 보호</td><td>사람이 고친 기록, 작업 내역이 남은 태스크, 합치기 대상 태스크</td></tr>
-<tr><td>재실행</td><td>같은 run_id·같은 내용은 무시, 같은 run_id·다른 내용은 거부</td></tr>
+<tr><td>원문·비밀값 차단</td><td>본문 필드, 160자 넘는 요약, 키·토큰 형태 문자열</td></tr>
+<tr><td>값 검증</td><td>업무 유형 5종 외 값, 잘못된 날짜, 없는 대상 참조</td></tr>
+<tr><td>제외 목록 <span class="badge new">신규</span></td><td>제외된 프로젝트·사람·Chat 스페이스를 참조하는 기록</td></tr>
+<tr><td>삭제 보호</td><td>사람이 고친 기록, 남은 참조가 있는 대상(작업 내역이 남은 태스크, 태스크가 남은 프로젝트 등)</td></tr>
+<tr><td>purge <span class="badge new">신규</span></td><td>purge 삭제는 이력에도 내용을 남기지 않음. 이미 지운 대상의 이력도 지울 수 있음</td></tr>
+<tr><td>재실행</td><td>같은 run_id·같은 내용은 무시, 다른 내용은 거부</td></tr>
 </tbody>
 </table>
 
-<h3 id="data-now">현재 데이터 (2026-11-23)</h3>
+<h3 id="data-now">현재 데이터 (2026-11-24)</h3>
 <div class="charts">
-  <div class="chart"><h4>월별 작업 내역</h4><canvas id="monthly" height="220"></canvas></div>
   <div class="chart"><h4>업무 유형별 태스크</h4><canvas id="category" height="220"></canvas></div>
+  <div class="chart"><h4>근거 자료 종류</h4><canvas id="sources" height="220"></canvas></div>
 </div>
 <table>
 <thead><tr><th>항목</th><th>값</th><th>비고</th></tr></thead>
 <tbody>
-<tr><td>태스크 상태</td><td>완료 28 · 진행 중 34</td><td>확인 필요 7(계획 기간이 지났는데 작업·근거 없음), 지연 0</td></tr>
-<tr><td>태스크 출처</td><td>WBS 37 · 기록에서 찾음 25</td><td>둘을 화면에서 나눠 보이지 않는다</td></tr>
-<tr><td>합쳐진 태스크</td><td>11</td><td>같은 목적의 잘게 쪼개진 태스크를 묶음, 화면에 안 나옴</td></tr>
-<tr><td>근거 자료</td><td>메시지 285 · 문서 71 · 시트 71 · 이미지 29 · 발표 12 · PDF 10</td><td>이름·위치만 저장</td></tr>
-<tr><td>삭제한 비업무 기록</td><td>태스크 15 · 작업 내역 121</td><td>회의 초대·일정 변경·파일 이동·공유·업무일지 등(이력에 원래 값 보존)</td></tr>
+<tr><td>태스크 상태</td><td>완료 26 · 진행 중 24</td><td>지연 1, 확인 필요 7</td></tr>
+<tr><td>태스크 출처</td><td>WBS 37 · 기록에서 찾음 13</td><td>화면에서 나눠 보이지 않는다</td></tr>
+<tr><td>WBS 없이 세운 프로젝트</td><td>사내 지식 구축</td><td>로컬 작업 폴더·Paseo 세션·계획 문서로 판별(ADR-021)</td></tr>
+<tr><td>11/24 정리</td><td>고객사 대시보드 프로젝트 1개와 관련 기록 609건 purge</td><td>그 프로젝트에만 관련된 10명 제외, 이후 수집에서도 제외</td></tr>
+<tr><td>이름 표기</td><td>사람 이름은 영어 표기</td><td>Drive 파일명 같은 실제 이름은 그대로</td></tr>
 </tbody>
 </table>
 </section>
 
 <section id="rules">
 <h2>6. 판별 규칙</h2>
-<p>시스템이 매 수집마다 따르는 기준이다(ADR-016·017·018, 절차서 <code>real-collect.md</code>).</p>
+<h3 id="rules-project">프로젝트인가 <span class="badge new">신규</span></h3>
+<p>하나의 목표와 결과물을 향해 여러 날 이어지는 일의 묶음이면 프로젝트다. 아래 신호가 <b>두 가지 이상</b> 겹치면 시스템이 세운다(ADR-021).</p>
+<table>
+<thead><tr><th style="width:28%">신호</th><th>예</th></tr></thead>
+<tbody>
+<tr><td>전용 작업 공간</td><td>로컬 작업 폴더, Paseo 워크스페이스, Git 저장소, Drive 폴더, Chat 스페이스</td></tr>
+<tr><td>목표를 적은 문서</td><td>README·PLAN·기획서·회의록에 목적·범위·완료 기준</td></tr>
+<tr><td>이틀 이상 이어진 작업</td><td>같은 주제의 커밋·AI 세션·파일 수정이 다른 날에도 있음</td></tr>
+<tr><td>회의·지시에서 나온 과제</td><td>"~를 구축하자"로 정해진 일</td></tr>
+<tr><td>계획 문서</td><td>WBS·업무계획의 대분류</td></tr>
+</tbody>
+</table>
+<ul>
+<li><b>목표로 이름 짓는다.</b> "Paseo 작업"이 아니라 "사내 지식 구축".</li>
+<li>같은 목표의 작업 공간이 여럿이면(로컬 폴더 + 나중의 GitHub 저장소) 한 프로젝트로 묶고, 대응을 수집 설정(<code>projects_map</code>)에 남겨 다음 판별에 쓴다.</li>
+</ul>
+<div class="callout ok"><b>예: 사내 지식 구축</b>회사 안의 지식을 AI가 쓰기 좋은 형태(온톨로지·지식 데이터)로 만드는 프로젝트. WBS에는 없지만 전용 작업 폴더, 계획 문서, 이틀 이상 이어진 Paseo(Claude Code·Codex) 작업이 겹쳐 프로젝트로 세웠다. 첫 태스크는 "OCR·문서 파서 실험실 구축". GitHub에 연결하면 저장소가 같은 프로젝트에 더해진다.</div>
 
-<h3 id="rules-task">태스크인가 아닌가</h3>
+<h3 id="rules-task">태스크인가</h3>
 <div class="two">
   <div class="card"><h4><span class="badge ok">태스크</span></h4>
-  <p>끝낼 수 있는 일. 목표나 결과물(완료 상태)이 있고 누가 해야 하는지 말할 수 있다.</p>
-  <p class="quote">예: 결과서 작성, 대시보드 개발, 이관, 결과가 남는 리뷰 회의</p></div>
+  <p>끝낼 수 있는 일. 목표·결과물이 있고 누가 해야 하는지 말할 수 있다.</p>
+  <p class="quote">예: 결과서 작성, 실험실 구축, 이관, 결과가 남는 리뷰</p></div>
   <div class="card"><h4><span class="badge bad">태스크 아님 → 기록하지 않음</span></h4>
-  <ul>
-    <li>정보·사례·도구 공유</li>
-    <li>업무일지·주간보고·개인 체크리스트</li>
-    <li>WBS·업무계획 갱신 그 자체</li>
-    <li>회의 일정 조율·초대·채널 운영</li>
-    <li>참고 자료 모으기</li>
-  </ul></div>
+  <ul><li>정보·사례 공유</li><li>업무일지·주간보고</li><li>WBS·업무계획 갱신 그 자체</li><li>회의 일정 조율·초대</li><li>참고 자료 모으기</li></ul></div>
 </div>
 <ul>
-<li><b>WBS 여부로 가르지 않는다.</b> WBS 행은 태스크로 들이되, WBS에 없다고 태스크가 아닌 것은 아니다.</li>
-<li><b>단위</b>: 같은 목적·같은 결과물로 이어지는 일은 한 태스크. 요청·메일 대응·후속 수정은 그 태스크의 작업 내역이다.</li>
-<li><b>새로 만들기 전에</b> 같은 프로젝트의 기존 태스크에 넣을 수 있는지 먼저 본다(이름·폴더·파일명·참여자·시기·명시적 참조).</li>
-<li>애매하면 "이 일이 끝났다고 말할 수 있는가"로 가르고, 그래도 애매하면 만들지 않고 <code>notes</code>에 남긴다.</li>
+<li>같은 목적·결과물로 이어지는 일은 한 태스크. 개별 요청·메일 대응·후속 수정은 작업 내역이다.</li>
+<li>애매하면 "이 일이 끝났다고 말할 수 있는가"로 가르고, 그래도 애매하면 판단 보류(notes)로 남긴다.</li>
 </ul>
 
-<h3 id="rules-worklog">작업 내역인가 아닌가</h3>
+<h3 id="rules-worklog">작업 내역인가</h3>
 <div class="diagram"><pre class="mermaid">
 flowchart TD
-  R["새 기록<br/>(파일 변경·메시지·메일)"] --> Q1{"무언가를 만들거나<br/>분석·검토·결정하거나<br/>문제를 해결했나?"}
-  Q1 -->|아니오| X["기록하지 않음<br/>파일 이동·이름 변경·삭제, 회의 초대·일정 변경,<br/>자료 전달·재공유, 의사 표시만 있는 연락"]
-  Q1 -->|예| Q2{"기존 태스크와<br/>같은 업무인가?"}
-  Q2 -->|예| W["그 태스크의 작업 내역으로 연결"]
-  Q2 -->|아니오| Q3{"끝낼 수 있는 일인가?"}
-  Q3 -->|예| N["새 태스크 + 작업 내역"]
-  Q3 -->|애매| H["판단 보류 (notes)"]
+  R["새 기록<br/>파일·메시지·메일·커밋·AI 세션"] --> Q1{"만들거나 분석·검토·결정하거나<br/>문제를 해결했나?"}
+  Q1 -->|아니오| X["기록하지 않음<br/>파일 이동, 회의 초대, 재공유, 병합 커밋,<br/>질문만 한 AI 대화, 개인 대화"]
+  Q1 -->|예| Q2{"기존 태스크와 같은 업무?"}
+  Q2 -->|예| W["그 태스크의 작업 내역"]
+  Q2 -->|아니오| Q3{"끝낼 수 있는 일?"}
+  Q3 -->|예| Q4{"기존 프로젝트에 맞나?"}
+  Q4 -->|예| N["새 태스크"]
+  Q4 -->|"아니오 + 신호 2개 이상"| NP["새 프로젝트 + 태스크"]
+  Q3 -->|애매| H["판단 보류"]
 </pre></div>
+<p>커밋은 같은 PR끼리, PR이 없으면 하루·브랜치 단위로 한 작업 내역으로 묶는다. AI 세션은 같은 날·같은 작업 폴더의 작업 내역에 근거로 붙는다.</p>
 
 <h3 id="rules-status">완료·지연·확인 필요</h3>
 <div class="diagram"><pre class="mermaid">
@@ -394,118 +426,163 @@ stateDiagram-v2
   [*] --> 예정: 시작일 전
   [*] --> 일정미정: 계획 기간 없음
   예정 --> 진행중: 시작일 지남
-  진행중 --> 완료: 산출물·완료 근거 확인
-  진행중 --> 지연: 종료일 지남 + 작업 내역 있음
+  진행중 --> 완료: 산출물·완료 근거
+  진행중 --> 지연: 종료일 지남 + 작업 있음
   진행중 --> 확인필요: 종료일 지남 + 작업·근거 없음
   지연 --> 완료: 산출물 확인
   확인필요 --> 완료: 근거 발견
-  일정미정 --> 완료: 완료 근거 확인
+  일정미정 --> 완료: 완료 근거
 </pre></div>
-<table>
-<thead><tr><th style="width:18%">상태</th><th>조건</th></tr></thead>
-<tbody>
-<tr><td><span class="badge ok">완료</span></td><td>결과물이 채워져 있거나 끝났다는 분명한 근거가 있다. <b>산출물 기반 자동 완료</b>: 시작일이 지난 미완료 태스크마다 산출물에 맞는 파일을 찾아 내용을 읽고, 양식만 있으면 그대로 두고 결과가 채워져 있으면 사람 확인 없이 완료 처리한다.</td></tr>
-<tr><td><span class="badge bad">지연</span></td><td>종료일이 지났고, 작업 내역은 있지만 완료 근거가 없다.</td></tr>
-<tr><td><span class="badge warn">확인 필요</span></td><td>종료일이 지났는데 작업 내역도 근거도 없다. 시스템이 판단할 재료가 없으니 사람이 본다.</td></tr>
-<tr><td><span class="badge blue">진행 중</span></td><td>시작일이 지났고 종료일 전이다(또는 종료일 없이 작업 중).</td></tr>
-<tr><td><span class="badge">예정 · 일정 미정</span></td><td>시작일 전 / 계획 기간이 없다. 시작일만 있으면 "~ 종료일 미정"으로 표시.</td></tr>
-</tbody>
-</table>
-<div class="callout"><b>완료일 정하는 법</b>결과가 갖춰진 작업 내역의 시각을 완료일로 쓴다. 계획 종료일이나 수집 시각을 완료일로 쓰지 않는다. 예: 계획이 11/16이어도 결과 보고서를 11/13에 작성했다면 완료일은 11/13.</div>
-<p><b>프로젝트 기간</b>: 태스크 계획 기간과 작업 내역 중 가장 이른 날부터 가장 늦은 날까지. 기록을 거슬러 수집하면(백필) 시작일이 앞당겨진다.</p>
+<ul>
+<li><b>산출물 기반 자동 완료</b>: 결과 파일을 찾아 내용을 읽고, 결과가 채워졌으면 사람 확인 없이 완료.</li>
+<li><b>완료일</b>: 결과가 갖춰진 작업 내역의 시각. 계획 종료일이나 수집 시각을 쓰지 않는다.</li>
+<li><b>프로젝트 기간</b>: 태스크 계획 기간과 작업 내역 중 가장 이른 날~가장 늦은 날.</li>
+</ul>
 
 <h3 id="rules-progress">진척률·히트맵</h3>
 <table>
 <thead><tr><th style="width:22%">지표</th><th>계산</th></tr></thead>
 <tbody>
-<tr><td>진척률</td><td>완료 태스크 수 ÷ 전체 태스크 수 (WBS 여부 무관, 합쳐진 태스크 제외)</td></tr>
-<tr><td>계획 진도</td><td>종료일이 있는 태스크 중 종료일이 지난 비율 (확인 필요 제외). 진척률이 계획 진도보다 낮으면 뒤처짐으로 표시</td></tr>
-<tr><td>작업 내역 히트맵</td><td>하루(한국 시간)에 작업한 (사람, 태스크) 쌍의 수. 0 / 1 / 2 / 3–4 / 5+ 고정 단계. 최근 39주(약 9개월), 오늘 이후 칸은 비움</td></tr>
-<tr><td>업무 요약</td><td>일·주·월 단위. 프로젝트별 "태스크명: 작업 내역 최대 3개 외 N건", 업무 유형별·담당자별 분포</td></tr>
+<tr><td>진척률</td><td>완료 태스크 ÷ 전체 태스크(WBS 여부 무관, 합쳐진 태스크 제외)</td></tr>
+<tr><td>계획 진도</td><td>종료일 있는 태스크 중 종료일이 지난 비율(확인 필요 제외)</td></tr>
+<tr><td>작업 내역 히트맵</td><td>하루에 작업한 (사람, 태스크) 쌍의 수, 최근 39주(3월부터), 오늘 이후 칸은 비움</td></tr>
+<tr><td>업무 요약</td><td>일·주·월. 프로젝트별 "태스크명: 작업 내역 최대 3개 외 N건"</td></tr>
 </tbody>
 </table>
+</section>
+
+<section id="auth">
+<h2>7. 공개 사이트·인증 <span class="badge new">신규</span></h2>
+<div class="two">
+  <div class="card"><h4>로그인</h4>
+  <ul>
+    <li>Google 로그인(OpenID Connect, PKCE)</li>
+    <li>회사 도메인 계정 + 이메일 인증된 계정만</li>
+    <li>초대된 사람만 입장, 첫 관리자는 설정값으로 지정</li>
+    <li>로컬 개발은 127.0.0.1에서만 로그인 생략 가능</li>
+  </ul></div>
+  <div class="card"><h4>세션·보안</h4>
+  <ul>
+    <li>서버 저장 세션, HttpOnly·Secure 쿠키, 유휴 12시간·최대 7일</li>
+    <li>상태 변경 요청은 Origin 확인 + CSRF 토큰</li>
+    <li>보안 헤더(CSP·HSTS 등), 로그인 시도 제한</li>
+    <li>로그인·조회·권한 변경·업로드를 접근 감사에 기록</li>
+  </ul></div>
+</div>
+<table>
+<thead><tr><th style="width:20%">역할</th><th>할 수 있는 일</th></tr></thead>
+<tbody>
+<tr><td><span class="badge blue">관리자</span></td><td>사람 초대·역할 변경·비활성화, 모든 화면, 검토 결정, 수집 토큰 발급·폐기</td></tr>
+<tr><td><span class="badge ok">구성원</span></td><td>팀 화면 보기, 검토 결정·정정</td></tr>
+<tr><td><span class="badge">보기</span></td><td>팀 화면 보기만</td></tr>
+</tbody>
+</table>
+<ul>
+<li>로그인 계정은 데이터의 사람과 이메일로 연결되어, 화면의 담당자가 곧 그 계정이다.</li>
+<li>파일럿은 초대된 사람이 팀 데이터를 모두 본다. 프로젝트별 공개 범위는 후속.</li>
+<li>사용자 PC의 수집기는 <code>push-delta</code>로 수집 토큰을 붙여 판별 결과를 올린다. 서버는 같은 apply-delta 규칙으로 반영한다.</li>
+</ul>
+<div class="callout warn"><b>배포 전 결정할 것</b>호스팅 위치(클라우드 / 사내 서버 / 인트라넷), 도메인, 회사 Google OAuth 클라이언트 등록(내부 사용자 유형), 첫 관리자. 컨테이너 이미지와 배포 절차서는 준비하고, 실제 배포는 승인 게이트(G3) 뒤에 한다.</div>
 </section>
 
 <section id="ui">
-<h2>7. 화면 원칙</h2>
+<h2>8. 화면 원칙</h2>
 <div class="two">
   <div class="card"><h4>구성</h4>
   <ul>
-    <li><b>업무 요약</b>: 일간·주간·월간, 사람별 탭</li>
-    <li><b>작업 내역 히트맵</b>: 날짜를 누르면 그날 요약으로 이동</li>
-    <li><b>프로젝트 WBS 간트</b>: WBS 묶음 행, 상태 칩, 계획 기간 바, 작업한 날(파란 점)</li>
-    <li><b>태스크 드로어</b>: 오른쪽에 업무 설명·속성·날짜별 작업 내역</li>
-    <li><b>자료 창</b>: 폴더 전체 파일 목록, 해당 파일 2초 연한 강조, 파일 행 누르면 파일, 아래 "Google Drive에서 폴더 열기"</li>
+    <li>업무 요약(일·주·월, 사람별)</li>
+    <li>작업 내역 히트맵(3월부터)</li>
+    <li>프로젝트 WBS 간트(묶음 행, 상태 칩, 계획 바, 작업한 날 점)</li>
+    <li>태스크 드로어(업무 설명·속성·날짜별 작업 내역·근거 링크)</li>
+    <li>자료 창(폴더 파일 목록, 2초 연한 강조, GitHub·AI 근거는 원본 링크)</li>
+    <li>사용자 관리(관리자 전용) <span class="badge new">신규</span></li>
   </ul></div>
   <div class="card"><h4>문구 원칙</h4>
   <ul>
-    <li>일반 웹서비스처럼 <b>라벨만</b> 둔다. 설명 문구를 붙이지 않는다.</li>
+    <li>일반 웹서비스처럼 라벨만. 설명 문구를 붙이지 않는다.</li>
     <li>데이터 출처·수집 시각·판별 주체 같은 시스템 정보는 보이지 않는다.</li>
-    <li>내부 분류(WBS 유무, 계획 외 등)를 화면 문구로 드러내지 않는다.</li>
-    <li>번역투·조어 대신 한국 웹서비스에서 흔한 말을 쓴다(적음/많음, 최근 순, 확인 필요).</li>
+    <li>WBS 유무 같은 내부 분류를 화면에 드러내지 않는다.</li>
+    <li>한국 웹서비스에서 흔한 말을 쓴다.</li>
+    <li>간트 바는 계획 기간, 점은 실제 작업한 날(지금 방식 유지).</li>
   </ul></div>
 </div>
-<div class="callout"><b>간트 바와 파란 점</b>바는 WBS 계획 기간, 파란 점은 실제 작업한 날이다. 계획보다 일찍 하거나 늦게 하면 둘이 떨어져 보인다. 이 표시 방식은 그대로 유지하기로 했다(2026-11-23).</div>
 </section>
 
 <section id="security">
-<h2>8. 보안·운영 원칙</h2>
+<h2>9. 보안·운영 원칙</h2>
 <table>
-<thead><tr><th style="width:24%">원칙</th><th>내용</th></tr></thead>
+<thead><tr><th style="width:22%">원칙</th><th>내용</th></tr></thead>
 <tbody>
-<tr><td>읽기만</td><td>Google Workspace는 읽기 동작만 쓴다. 발송·공유·삭제·이동·이름 변경·초안·라벨 변경을 하지 않는다.</td></tr>
-<tr><td>원문 미저장</td><td>메일·메시지·문서 본문은 판별 때만 읽고 버린다. 이름과 160자 이하 요약만 저장.</td></tr>
-<tr><td>외부 지시 무시</td><td>본문 속 지시문은 데이터로만 다루고, 판별·동작을 바꾸지 않는다.</td></tr>
-<tr><td>실데이터 격리</td><td>회사 데이터는 <code>app/server/.real/</code>에만 둔다. Git 제외, 소유자 전용 접근 권한.</td></tr>
-<tr><td>커밋 전 검사</td><td>비밀값·실데이터·실명·이메일이 커밋에 들어가지 않는지 매번 확인.</td></tr>
-<tr><td>비밀값 미저장</td><td>대화방에 노출된 키·토큰·로그인 정보는 저장·연결하지 않는다. delta 단계에서도 차단.</td></tr>
-<tr><td>범위</td><td>1:1 Chat 제외, AI 대화 원문 자동 수집 제외.</td></tr>
-<tr><td>Git</td><td>작업 브랜치에 커밋·Push까지만. main 병합은 사용자가 한다. force push 금지.</td></tr>
+<tr><td>읽기만</td><td>Workspace·GitHub는 읽기만. 발송·공유·삭제·이동 등 쓰기 동작 없음</td></tr>
+<tr><td>원문 미저장</td><td>본문은 판별 때만 읽음. 저장은 이름·시각·160자 요약. AI 대화·커밋 diff도 같음</td></tr>
+<tr><td>외부 지시 무시</td><td>본문 속 지시문은 데이터로만 다룸</td></tr>
+<tr><td>실데이터 격리</td><td>회사 데이터는 <code>app/server/.real/</code>에만(Git 제외, 소유자 전용 권한)</td></tr>
+<tr><td>수집 제외</td><td>제외 목록의 프로젝트·사람·스페이스는 읽지도 받지도 않음</td></tr>
+<tr><td>비밀값</td><td>OAuth 시크릿·세션 키·수집 토큰·GitHub 토큰은 환경 변수로만. 토큰은 해시만 저장</td></tr>
+<tr><td>커밋 전 검사</td><td>비밀값·실데이터·실명·이메일이 커밋에 들어가지 않는지 매번 확인</td></tr>
+<tr><td>Git</td><td>작업 브랜치에 커밋·Push까지. main 병합은 사용자. force push 금지</td></tr>
 </tbody>
 </table>
-<div class="callout bad"><b>교체 권고</b>파일럿 중 한 Chat 스페이스에서 웹훅 키·토큰·서비스 계정 키·로그인 정보가 평문으로 공유된 것을 발견했다. 시스템은 저장하지 않았지만, 해당 키는 교체를 권고했다.</div>
+<div class="callout bad"><b>교체 권고</b>파일럿 중 한 Chat 스페이스에서 키·토큰·로그인 정보가 평문으로 공유된 것을 발견했다. 저장하지 않았고, 해당 키 교체를 권고했다.</div>
+</section>
+
+<section id="branches">
+<h2>10. 브랜치 현황 (병합 대기)</h2>
+<p>모든 브랜치는 원격에 올라가 있고, 병합은 사용자가 한다. 위 브랜치일수록 아래 브랜치에 포함된다.</p>
+<table>
+<thead><tr><th style="width:32%">브랜치</th><th>내용</th></tr></thead>
+<tbody>
+<tr><td><code>chore/no-main-merge</code></td><td>main 병합 위임 철회</td></tr>
+<tr><td><code>feat/remove-nonwork</code></td><td>업무 아닌 기록 삭제(위 포함)</td></tr>
+<tr><td><code>feat/github-ai-sources</code></td><td>GitHub·AI 대화 연결, 제외·purge(위 포함)</td></tr>
+<tr><td><code>feat/project-detection</code></td><td>프로젝트 판별 기준, Codex·로컬 Git 수집(위 포함)</td></tr>
+<tr><td><code>feat/auth-site</code></td><td>공개 사이트 로그인·권한(github-ai-sources에서 분기, 구현 중)</td></tr>
+<tr><td><code>fix/heatmap-range</code></td><td>히트맵 3월부터(main에서 분기)</td></tr>
+<tr><td><code>docs/system-overview</code></td><td>이 문서</td></tr>
+</tbody>
+</table>
 </section>
 
 <section id="open">
-<h2>9. 남은 결정과 위험</h2>
+<h2>11. 남은 결정</h2>
 <table>
-<thead><tr><th style="width:30%">항목</th><th>내용</th><th style="width:90px">상태</th></tr></thead>
+<thead><tr><th style="width:28%">항목</th><th>내용</th><th style="width:100px">상태</th></tr></thead>
 <tbody>
-<tr><td>팀 단위 판별 (ADR-019)</td><td>다른 사람의 Drive·GitHub가 연결되면 같은 일이 여러 계정에 겹쳐 남는다. 계정별이 아니라 팀 전체 기록을 한 번에 대조해 같은 업무로 묶는 방안</td><td><span class="badge warn">결정 대기</span></td></tr>
-<tr><td>운영 DB (ADR-014)</td><td>파일럿은 로컬 SQLite. 운영 DB 제품·배치 결정 필요</td><td><span class="badge warn">예정</span></td></tr>
-<tr><td>판단 보류 보기</td><td>notes에 남긴 판단 보류 항목을 화면 검토함에서 보는 기능</td><td><span class="badge">미구현</span></td></tr>
-<tr><td>동명 폴더</td><td>Drive의 한 폴더가 ID 두 개로 보임(같은 이름 폴더 가능성)</td><td><span class="badge">확인 필요</span></td></tr>
-<tr><td>gws-work 운영</td><td>MCP 서버 운영 주체·로그 보관 정책 미확인</td><td><span class="badge warn">위험</span></td></tr>
-<tr><td>공수</td><td>지금은 작업 내역 건수만. 시간 단위 공수는 후속(ADR-002)</td><td><span class="badge">후속</span></td></tr>
+<tr><td>호스팅 (ADR-022 §6)</td><td>클라우드(Cloud Run + Cloud SQL) / 사내 서버·VM 한 대 + SQLite / 인트라넷</td><td><span class="badge warn">결정 대기</span></td></tr>
+<tr><td>운영 DB (ADR-014)</td><td>호스팅과 함께 결정</td><td><span class="badge warn">예정</span></td></tr>
+<tr><td>팀 단위 판별 (ADR-019)</td><td>다른 사람의 Drive·GitHub가 연결되면 겹치는 일을 팀 전체에서 한 번에 대조</td><td><span class="badge warn">결정 대기</span></td></tr>
+<tr><td>남은 사본 정리</td><td>지난 delta 일부와 DB 백업에 제외한 프로젝트 내용이 남아 있음</td><td><span class="badge warn">결정 대기</span></td></tr>
+<tr><td>비공개 저장소</td><td>GitHub 토큰 또는 GitHub MCP 인증 수리 필요</td><td><span class="badge">사용자 조치</span></td></tr>
+<tr><td>claude.ai·ChatGPT</td><td>내보내기 파일을 지정 폴더에 넣어야 연결됨</td><td><span class="badge">사용자 조치</span></td></tr>
 </tbody>
 </table>
 </section>
 
 <section id="glossary">
-<h2>10. 용어</h2>
+<h2>12. 용어</h2>
 <table>
 <tbody>
-<tr><th style="width:22%">작업 내역</th><td>태스크를 위해 실제로 한 일 한 건. 업무가 아닌 기록은 포함하지 않는다.</td></tr>
+<tr><th style="width:22%">작업 내역</th><td>태스크를 위해 실제로 한 일 한 건. 업무가 아닌 기록은 포함하지 않음</td></tr>
 <tr><th>업무 유형</th><td>기획·설계 / 조사·분석 / 제작·구현 / 검증 / 운영·지원</td></tr>
-<tr><th>delta</th><td>한 번의 수집·정정 결과를 담은 JSON. 데이터셋을 바꾸는 유일한 방법</td></tr>
-<tr><th>체크포인트</th><td>소스별 마지막 수집 시각. 다음 수집은 이후 기록만 본다</td></tr>
-<tr><th>백필</th><td>체크포인트 이전 기록을 거슬러 수집하는 것</td></tr>
-<tr><th>digest</th><td>원문 대신 저장하는 핵심 요약(이름·참조·사람·시기, 160자 이하)</td></tr>
-<tr><th>합치기 (merged_into)</th><td>같은 목적의 태스크를 하나로 묶은 표시. 작업 내역은 대상 태스크로 옮긴다</td></tr>
-<tr><th>산출물 기반 완료</th><td>결과 파일 내용을 읽어 결과가 채워졌으면 자동 완료</td></tr>
+<tr><th>작업 공간</th><td>일이 모이는 장소: 로컬 폴더, Paseo 워크스페이스, Git 저장소, Drive 폴더, Chat 스페이스</td></tr>
+<tr><th>delta</th><td>한 번의 수집·정정 결과 JSON. 데이터를 바꾸는 유일한 방법</td></tr>
+<tr><th>purge</th><td>지우면서 변경 이력에도 내용을 남기지 않는 삭제</td></tr>
+<tr><th>수집 토큰</th><td>사용자 PC의 수집기가 사이트에 판별 결과를 올릴 때 쓰는 기계용 열쇠</td></tr>
+<tr><th>체크포인트</th><td>출처별 마지막 수집 시각</td></tr>
+<tr><th>Paseo</th><td>Claude·GPT(Codex) 에이전트를 띄우고 관리하는 도구. 정기 수집과 구현을 여기서 돌린다</td></tr>
 </tbody>
 </table>
 </section>
 
-<footer>원본 기록: <code>docs/decisions/</code>(ADR), <code>docs/runbooks/real-collect.md</code>, <code>docs/runbooks/real-delta-format.md</code>, <code>tasks/current-state.md</code>. 숫자는 2026-11-23 기준이며 프로젝트·사람 이름은 넣지 않았다.</footer>
+<footer>원본 기록: <code>docs/decisions/</code>(ADR), <code>docs/runbooks/</code>, <code>tasks/current-state.md</code>. 숫자는 2026-11-24 기준이며 프로젝트·사람 실명은 넣지 않았다.</footer>
 </main>
 </div>
 <script>
 hljs.highlightAll();
 mermaid.initialize({startOnLoad:true,theme:'neutral',fontFamily:'Noto Sans KR, sans-serif',securityLevel:'strict'});
 const grid={color:'#eef0f3'},tick={color:'#5f6b7a',font:{family:'Noto Sans KR'}};
-new Chart(document.getElementById('monthly'),{type:'bar',data:{labels:['7월','8월','9월','10월','11월'],datasets:[{data:[6,12,48,67,134],backgroundColor:'#3b6fb6',borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:tick},y:{grid,ticks:tick,beginAtZero:true}}}});
-new Chart(document.getElementById('category'),{type:'bar',data:{labels:['기획·설계','조사·분석','제작·구현','검증','운영·지원'],datasets:[{data:[15,10,7,13,17],backgroundColor:['#3b6fb6','#5b8fd0','#7ea9de','#a7c3e9','#c9daf2'],borderRadius:4}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid,ticks:tick,beginAtZero:true},y:{grid:{display:false},ticks:tick}}}});
+new Chart(document.getElementById('category'),{type:'bar',data:{labels:['기획·설계','조사·분석','제작·구현','검증','운영·지원'],datasets:[{data:[14,8,6,12,10],backgroundColor:['#3b6fb6','#5b8fd0','#7ea9de','#a7c3e9','#c9daf2'],borderRadius:4}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid,ticks:tick,beginAtZero:true},y:{grid:{display:false},ticks:tick}}}});
+new Chart(document.getElementById('sources'),{type:'bar',data:{labels:['문서','시트','커밋','AI 세션','이미지','메시지','발표','PDF','PR'],datasets:[{data:[52,27,24,24,23,19,9,8,1],backgroundColor:'#3b6fb6',borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:tick},y:{grid,ticks:tick,beginAtZero:true}}}});
 </script>
 </body>
 </html>

@@ -11,6 +11,40 @@ function mergeCase() {
  const data={persons:[{person_id:'P'}],projects:[{project_id:'PR',name:'Old'},{project_id:'OTHER'}],tasks:['A','B','C'].map(task_id=>({task_id,project_id:'PR',status:'in_progress'})),worklogs:[{worklog_id:'W',task_id:'A',performer_id:'unknown',summary:'synthetic',performed_at_precision:'unknown'}]};
  return {data,delta:{run_id:'MERGE',collected_at:'2026-11-23T00:00:00Z',task_updates:[{task_id:'A',merged_into:'B'}],worklog_updates:[{worklog_id:'W',task_id:'B'}]}};
 }
+
+function removalCase() {
+ const {data}=mergeCase();data.tasks[0].plan_source='reference';
+ data.sources=[{source_key:'S'}];data.links=[['LW','worklog','W'],['LT','task','A'],['KEEP','task','B']].map(([link_id,target_type,target_id])=>({link_id,target_type,target_id,evidence_type:'source',evidence_key:'S',status:'confirmed'}));
+ return {data,delta:{run_id:'REMOVE',collected_at:'2026-11-23T00:00:00Z',worklog_removals:['W'],task_removals:['A']}};
+}
+test('removals delete targets and links, preserve sources and full history, replay once',()=>{
+ const {data,delta}=removalCase(),before=structuredClone(data),r=merge(data,{},delta);a.equal(r.ok,true);a.equal(r.removed,2);a.equal(r.dataset.worklogs.length,0);a.deepEqual(r.dataset.tasks.map(t=>t.task_id),['B','C']);a.deepEqual(r.dataset.links.map(l=>l.link_id),['KEEP']);a.deepEqual(r.dataset.sources,data.sources);a.deepEqual(data,before);
+ for(const [type,id] of [['worklogs','W'],['tasks','A']]){const h=r.dataset.history.find(h=>h.entity_id===id);a.equal(h.change_id,'DELTA-REMOVE-'+id);a.deepEqual(h.before,data[type][0]);a.equal(h.after,null);a.equal(h.reason,'remove non-work record');a.equal(h.actor_id,'system');}
+ const replay=merge(r.dataset,r.state,delta);a.equal(replay.ok,true);a.equal(replay.ignored,2);a.equal(replay.removed,0);a.equal(replay.dataset.history.length,2);
+});
+test('task removal accepts reassignment and retains worklog links; legacy reference permits unrelated update',()=>{
+ const {data,delta}=removalCase();delete delta.worklog_removals;delta.worklog_updates=[{worklog_id:'W',task_id:'B'}];const r=merge(data,{},delta);a.equal(r.ok,true);a.equal(r.dataset.worklogs[0].task_id,'B');a.deepEqual(r.dataset.links.map(l=>l.link_id),['LW','KEEP']);
+ a.equal(merge(data,{}, {run_id:'OLD',collected_at:delta.collected_at,task_updates:[{task_id:'A',title:'updated'}]}).ok,true);
+});
+for(const kind of ['remaining worklog','new worklog','merge target','human task','human worklog','human unchanged history','updated removal','new removal'])test('removal rejects '+kind+' atomically',()=>{
+ const {data,delta}=removalCase();
+ if(kind==='remaining worklog')delete delta.worklog_removals;
+ if(kind==='new worklog')delta.worklogs=[{...data.worklogs[0],worklog_id:'NEW'}];
+ if(kind==='merge target')data.tasks[1].merged_into='A';
+ if(kind.startsWith('human')){const type=kind==='human worklog'?'worklogs':'tasks',id=type==='tasks'?'A':'W';data.history=[{entity_type:type,entity_id:id,actor_id:'P',before:{title:'old'},after:{title:kind==='human unchanged history'?'old':'new'}}];}
+ if(kind==='updated removal')delta.task_updates=[{task_id:'A',title:'new'}];
+ if(kind==='new removal'){delta.tasks=[{task_id:'NEW',project_id:'PR',status:'in_progress'}];delta.task_removals=['NEW'];}
+ const before=structuredClone(data),r=merge(data,{},delta);a.equal(r.ok,false);a.equal(r.removed,0);a.deepEqual(data,before);
+});
+for(const field of ['worklog_removals','task_removals'])for(const value of ['W',[1],[''],[null],['missing'],field==='task_removals'?['A','A']:['W','W']])test(field+' rejects malformed, missing or duplicate '+JSON.stringify(value),()=>{
+ const {data,delta}=removalCase();delta[field]=value;const before=structuredClone(data);a.equal(merge(data,{},delta).ok,false);a.deepEqual(data,before);
+});
+test('removal dry-run preserves bytes; API reload drops removed task',async t=>{
+ const f=fixture(t);a.equal(f.apply().ok,true);
+ const {server}=createServer({dir:f.dir,seedMode:'small',realDatasetFile:f.file});f.setServer(server);await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const get=async()=>await(await fetch(`http://127.0.0.1:${server.address().port}/api/view?data=real`)).json();a.equal((await get()).projects[0].tasks.length,1);
+ const d={run_id:'REMOVE',collected_at:f.delta.collected_at,worklog_removals:['W'],task_removals:['T']},before=f.read();a.equal(f.apply(d,{dryRun:true}).ok,true);a.deepEqual(f.read(),before);a.equal(f.apply(d).removed,2);a.equal(f.read().sources.length,1);a.equal((await get()).projects.flatMap(p=>p.tasks).length,0);
+});
 test('task merge and worklog move validate final state, preserve history and allow clearing',()=>{
  const {data,delta}=mergeCase(),r=merge(data,{},delta);a.equal(r.ok,true);a.equal(r.updated,2);
  a.equal(r.dataset.tasks[0].merged_into,'B');a.equal(r.dataset.worklogs[0].task_id,'B');a.equal(r.dataset.history[0].after.merged_into,'B');a.equal(data.tasks[0].merged_into,undefined);
@@ -68,10 +102,10 @@ function fixture(t) {
  delta.links[0].status='confirmed';
  return {dir,file,data,delta,setServer:s=>server=s,read:()=>JSON.parse(fs.readFileSync(file,'utf8')),apply:(d=delta,opts={})=>applyDelta(d,{dataset:file,...opts})};
 }
-test('reference plan source is retained on new tasks and task updates',t=>{
+test('reference plan source is rejected on new tasks and task updates',t=>{
  const f=fixture(t);f.delta.tasks=[{task_id:'REF',project_id:'PR',title:'참고',status:'in_progress',plan_source:'reference'}];
- f.delta.task_updates=[{task_id:'T',plan_source:'reference'}];a.equal(f.apply().ok,true);
- a.equal(f.read().tasks.find(t=>t.task_id==='REF').plan_source,'reference');a.equal(f.read().tasks.find(t=>t.task_id==='T').plan_source,'reference');
+ a.equal(f.apply().ok,false);delete f.delta.tasks;
+ f.delta.task_updates=[{task_id:'T',plan_source:'reference'}];a.equal(f.apply().ok,false);
 });
 test('merge stamps provenance, Seoul date, state and audit; replay is idempotent', t => {
  const f=fixture(t); const r=f.apply(); a.equal(r.ok,true); a.equal(r.added,3);
@@ -202,3 +236,50 @@ for (const target of ['tasks','task_updates']) {
   a.equal(f.apply().ok,false);a.deepEqual(f.read(),f.data);
  });
 }
+test('purge removes all entities and their old history, including external accounts',()=>{
+ const data={persons:[{person_id:'P'}],projects:[{project_id:'PR',owner_id:'P'}],tasks:[{task_id:'T',project_id:'PR',status:'in_progress'}],worklogs:[],sources:[{source_key:'S'}],links:[],externalAccounts:[{person_id:'P'}],history:[{entity_type:'sources',entity_id:'S',actor_id:'system',before:{title:'old'}}]};
+ const delta={run_id:'PURGE',collected_at:'2026-11-20T00:00:00Z',purge:true,task_removals:['T'],project_removals:['PR'],person_removals:['P'],source_removals:['S']};
+ const r=merge(data,{},delta);a.equal(r.ok,true);a.equal(r.removed,4);a.equal(r.dataset.externalAccounts.length,0);a.equal(r.dataset.history.length,4);for(const h of r.dataset.history){a.equal(h.before,null);a.equal(h.after,null);a.equal(h.reason,'purge');}a.equal(merge(r.dataset,r.state,delta).ignored,4);
+});
+test('person update protects human values and exclusion follows task references',()=>{
+ const data={persons:[{person_id:'P',display_name:'Old'}],projects:[{project_id:'PR'}],tasks:[{task_id:'T',project_id:'PR',assignee_id:'P',status:'in_progress'}]};
+ const delta={run_id:'PERSON',collected_at:'2026-11-20T00:00:00Z',person_updates:[{person_id:'P',display_name:'New'}]};
+ a.equal(merge(data,{},delta).ok,true);
+ data.history=[{entity_type:'persons',entity_id:'P',actor_id:'P',before:{display_name:'Earlier'},after:{display_name:'Old'}}];
+ a.equal(merge(data,{},delta).ok,false);
+ a.equal(merge(data,{excluded:{projects:['PR']}},{...delta,person_updates:[],worklogs:[{worklog_id:'W',task_id:'T',performer_id:'P',summary:'short',performed_at_precision:'unknown'}]}).errors.some(e=>e.code==='excluded_reference'),true);
+});
+for(const kind of ['commit','pull_request','issue','ai_chat'])test('new source kind '+kind,()=>a.equal(merge({}, {},{run_id:'KIND',collected_at:'2026-11-20T00:00:00Z',sources:[{source_key:'S',kind,title:'Short'}]}).ok,true));
+for(const [field,id] of [['project_removals','PR'],['person_removals','P'],['source_removals','S']])for(const value of ['bad',[null],[''],['missing'],[id,id]])test(field+' invalid removal '+JSON.stringify(value),()=>{
+ const data={persons:[{person_id:'P'}],projects:[{project_id:'PR'}],sources:[{source_key:'S'}]},before=structuredClone(data);a.equal(merge(data,{}, {run_id:'BAD',collected_at:'2026-11-20T00:00:00Z',[field]:value}).ok,false);a.deepEqual(data,before);
+});
+for(const kind of ['task','performer','owner','deputy','source'])test('remaining reference prevents removal '+kind,()=>{
+ const data={persons:[{person_id:'P'}],projects:[{project_id:'PR'}],tasks:[{task_id:'T',project_id:'PR',status:'in_progress'}],worklogs:[],sources:[{source_key:'S'}],links:[]};
+ let field='person_removals',id='P';if(kind==='task')data.tasks[0].assignee_id='P';if(kind==='performer')data.worklogs=[{worklog_id:'W',task_id:'T',performer_id:'P',summary:'Short',performed_at_precision:'unknown'}];if(['owner','deputy'].includes(kind))data.projects[0][kind+'_id']='P';if(kind==='source'){field='source_removals';id='S';data.links=[{link_id:'L',target_type:'task',target_id:'T',evidence_type:'source',evidence_key:'S',status:'confirmed'}];}
+ a.equal(merge(data,{}, {run_id:'REF',collected_at:'2026-11-20T00:00:00Z',[field]:[id]}).ok,false);
+});
+test('project deletion needs tasks removed and normal history retains before',()=>{
+ const data={projects:[{project_id:'PR',name:'Old'}],tasks:[{task_id:'T',project_id:'PR',status:'in_progress'}]};const delta={run_id:'PR',collected_at:'2026-11-20T00:00:00Z',project_removals:['PR']};a.equal(merge(data,{},delta).ok,false);delta.task_removals=['T'];const r=merge(data,{},delta);a.equal(r.ok,true);a.equal(r.dataset.history[1].before.name,'Old');
+});
+for(const name of ['',null,7,'x'.repeat(81)])test('person invalid name '+typeof name+String(name).length,()=>a.equal(merge({persons:[{person_id:'P'}]}, {}, {run_id:'P',collected_at:'2026-11-20T00:00:00Z',person_updates:[{person_id:'P',display_name:name}]}).ok,false));
+for(const field of ['source_key','uri'])test('excluded Chat space in '+field,()=>{
+ const row={source_key:'S',title:'Short',kind:'ai_chat',[field]:'https://chat.google.com/spaces/SPACE/messages/1'};const r=merge({}, {excluded:{chat_spaces:['spaces/SPACE']}},{run_id:'EX',collected_at:'2026-11-20T00:00:00Z',sources:[row]});a.ok(r.errors.some(e=>e.code==='excluded_reference'));
+});
+test('new removal dry run and atomic failure preserve all files',t=>{
+ const f=fixture(t),d={run_id:'NEW',collected_at:f.delta.collected_at,task_removals:['T'],project_removals:['PR'],person_updates:[{person_id:'P',display_name:'New'}]};const before=f.read();a.equal(f.apply(d,{dryRun:true}).ok,true);a.deepEqual(f.read(),before);d.source_removals=['missing'];a.equal(f.apply(d).ok,false);a.deepEqual(f.read(),before);
+});
+test('excluded absent targets still report exclusion code',()=>{
+ const r=merge({}, {excluded:{projects:['PR']}}, {run_id:'ABSENT',collected_at:'2026-11-20T00:00:00Z',tasks:[{task_id:'T',project_id:'PR',status:'in_progress'}]});a.equal(r.ok,false);a.ok(r.errors.some(e=>e.code==='excluded_reference'));
+});
+
+test('history_purges removes history of already-removed entities only, with purge',()=>{
+ const {data}=removalCase();data.history=[{entity_type:'tasks',entity_id:'GONE',actor_id:'system',before:{title:'x'},after:null},{entity_type:'tasks',entity_id:'B',actor_id:'system',before:{},after:{}}];
+ const base={run_id:'HP',collected_at:'2026-11-24T00:00:00Z'};
+ const r=merge(data,{},{...base,purge:true,history_purges:[{entity_type:'tasks',entity_id:'GONE'}]});a.equal(r.ok,true);a.equal(r.removed,1);a.deepEqual(r.dataset.history.map(h=>h.entity_id),['B']);
+ a.equal(merge(data,{},{...base,history_purges:[{entity_type:'tasks',entity_id:'GONE'}]}).ok,false);
+ a.equal(merge(data,{},{...base,purge:true,history_purges:[{entity_type:'tasks',entity_id:'B'}]}).ok,false);
+ a.equal(merge(data,{},{...base,purge:true,history_purges:[{entity_type:'nope',entity_id:'GONE'}]}).ok,false);
+});
+test('github and ai_chats checkpoints are accepted',()=>{
+ const {data}=removalCase();a.equal(merge(data,{},{run_id:'CP',collected_at:'2026-11-24T00:00:00Z',checkpoints:{github:'2026-11-24T00:00:00Z',ai_chats:'2026-11-24T00:00:00Z'}}).ok,true);
+});

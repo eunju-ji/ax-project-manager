@@ -275,3 +275,6 @@ test('numberless tasks follow numbered tasks by start or first record with unifo
  assert.ok(html.indexOf('data-gantt-task="number"')<html.indexOf('data-gantt-task="first"'));assert.ok(html.indexOf('data-gantt-task="first"')<html.indexOf('data-gantt-task="later"'));
  assert.doesNotMatch(html,/activity-bar|gantt-group-label|wbs-group-row|--wbs-depth:1/);assert.equal((html.match(/<code><\/code>/g)||[]).length,2);
 });
+for(const kind of ['commit','pull_request','issue','ai_chat'])test('index-only source modal '+kind,()=>{
+ const a=app();a.run(`const f=projects[0].files[0];Object.assign(f,{kind:'${kind}',url:'https://github.com/o/r',folderId:'ignored',folderPath:['ignored']});state.modal={project:projects[0].id,file:f.id}`);let html=a.run('modal()');assert.match(html,/https:\/\/github.com\/o\/r/);assert.doesNotMatch(html,/folder-browser|<img|Google Drive/);a.run('projects[0].files[0].url=undefined');html=a.run('modal()');assert.doesNotMatch(html,/<a |folder-browser|<img/);
+});

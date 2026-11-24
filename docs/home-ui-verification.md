@@ -184,3 +184,10 @@
 - adapter·앱에서 병합 태스크·내역·자료·검토를 제외하고 모든 테마·일/주/월 요약·집계·간트·히트맵·드로어 이전/다음을 검증했다. SQLite/API 재적재 시 프로젝트 수정값과 이동 내역 보존도 합성 데이터로 확인했다.
 - 최종 검증: python3.15.exe build.py·typecheck exit 0, 단위/UI 73/73, 서버 153/153, 시각 54/54(기준·오프라인 차이 0), 탐색 108/108. 기준 이미지 변경 없음. 로그: `app/test-results/task-merge-{unit,server,visual,navigation}.log`.
 - 실데이터 접근·추가 에이전트·커밋·푸시 없음. 다른 작업자의 변경 보존. 미해결 기능 오류 없음. 다음: AX-Lead 완료 판정·독립 검토 및 실제 프로젝트 설명 수정.
+
+## 2026-11-23 업무 아닌 기록 제거 — AX-Builder
+
+- `feat/remove-nonwork`: worklog_removals/task_removals로 기록·대상 links 제거, sources 보존. 사람 변경 이력·중복·없는 대상·남은 worklog·merged_into 참조 보호 및 원본 before/after:null history. 신규/갱신 reference 입력은 거부하고 기존 값은 호환한다.
+- 최종 검증: 합성 데이터 real-delta 118/118, 단위/UI 73/73, 서버 184/184, 빌드·typecheck, 탐색 108/108, 시각 54/54(기준·오프라인 차이 0) 통과. 로그: `app/test-results/remove-nonwork-{unit,server,visual-final,navigation}.log`.
+- 시각 최초 비교·재비교에서 Notion 834px 홈의 폴더 아이콘 가장자리 4픽셀만 달랐다(개발/오프라인 차이 0). 해당 PNG 한 장과 manifest 해시만 갱신했다. 화면·adapter에 제거할 “참고 기록” 문구 없음.
+- 실데이터 접근·추가 위임·커밋·푸시 없음. 다른 작업자 변경 보존. 미해결 오류 없음. 다음: Lead 완료 판정·검토.

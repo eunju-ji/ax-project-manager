@@ -39,3 +39,6 @@ test('adapter passes WBS group paths and defaults absent or null paths to empty 
  const tasks=adapt(d).projects.flatMap(p=>p.tasks);assert.deepEqual(tasks.find(t=>t.id===d.tasks[0].task_id).wbsGroups,d.tasks[0].wbs_groups);assert.deepEqual(tasks.find(t=>t.id===d.tasks[1].task_id).wbsGroups,[]);
  delete d.tasks[0].wbs_groups;assert.deepEqual(adapt(d).projects.flatMap(p=>p.tasks).find(t=>t.id===d.tasks[0].task_id).wbsGroups,[]);
 });
+for(const host of ['github.com','claude.ai','chatgpt.com'])test('source URL permits exact host '+host,()=>{
+ const d=clone(),s=d.sources.find(s=>d.links.some(l=>l.evidence_key===s.source_key));s.kind='ai_chat';s.uri='https://'+host+'/test';delete s.folder_path;delete s.availability;const files=adapt(d).projects.flatMap(p=>p.files).filter(f=>f.id===s.source_key);assert.ok(files.length);assert.ok(files.every(f=>f.kind==='ai_chat'&&f.url===s.uri&&f.previewable));s.uri='https://'+host+'.evil.invalid/test';assert.ok(adapt(d).projects.flatMap(p=>p.files).filter(f=>f.id===s.source_key).every(f=>!f.url));
+});

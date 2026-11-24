@@ -166,7 +166,7 @@ footer{margin-top:64px;color:var(--muted);font-size:13px;border-top:1px solid va
 <tr><td>데이터 범위</td><td>고객사 대시보드 프로젝트 포함(태스크 25)</td><td>사용자 요청으로 <b>그 프로젝트와 관련 기록 609건, 그 프로젝트에만 있던 10명 삭제</b>. 이력 내용까지 지우고 이후 수집에서도 제외</td></tr>
 <tr><td>사람 이름</td><td>한글·영어 섞임</td><td>영어 표기로 통일(사용자 이름 포함)</td></tr>
 <tr><td>delta 기능</td><td>추가·수정·작업 내역 이동·태스크 합치기</td><td>+ 프로젝트·사람·근거·태스크·작업 내역 삭제, 사람 이름 수정, <b>purge</b>, 지난 이력 삭제, <b>제외 목록</b>, 새 근거 종류(커밋·PR·이슈·AI 세션)</td></tr>
-<tr><td>실행 형태</td><td>사용자 PC의 로컬 서버만</td><td><b>공개 사이트용 로그인·권한 구현</b>(Google 로그인, 초대제, 관리자·구성원·보기, CSRF·보안 헤더·접근 감사, 수집 토큰 업로드, Dockerfile·배포 절차서). <span class="badge warn">보안 검토 중</span> 배포는 호스팅 결정 대기</td></tr>
+<tr><td>실행 형태</td><td>사용자 PC의 로컬 서버만</td><td><b>공개 사이트용 로그인·권한 구현</b>(Google 로그인, 초대제, 관리자·구성원·보기, CSRF·보안 헤더·접근 감사, 수집 토큰 업로드, Dockerfile·배포 절차서). <span class="badge ok">보안 검토 통과</span> 배포는 호스팅 결정 대기</td></tr>
 <tr><td>화면</td><td>히트맵 6개월, 긴 이름이 표에서 겹침</td><td>히트맵 <b>3월부터(39주)</b>, 담당자 표 말줄임, GitHub·AI 근거 링크, 관리자용 사용자 관리 화면. 간트 바는 계획 기간 그대로 유지하기로 함</td></tr>
 <tr><td>Git 운영</td><td>AX-Lead가 main 병합</td><td><b>작업 브랜치 Push까지만</b>, 병합은 사용자</td></tr>
 <tr><td>수치</td><td>프로젝트 11 · 태스크 62 · 작업 내역 267 · 근거 478</td><td>프로젝트 11 · 태스크 50 · 작업 내역 61 · 근거 187 (삭제·정리 반영, 새 프로젝트·GitHub·AI 근거 추가)</td></tr>
@@ -192,7 +192,7 @@ timeline
 <tr><td>M0~M3 기준선·설계·로컬 PoC</td><td>기존 UI 이관, 데이터 모델, 로컬 DB, 합성 데이터</td><td><span class="badge ok">완료</span></td></tr>
 <tr><td>M4 실데이터 파일럿</td><td>AX팀 공유 드라이브·Chat·메일 수집, 자동 판별, 화면 개편</td><td><span class="badge blue">운영 중</span></td></tr>
 <tr><td>출처 확장</td><td>GitHub, Claude Code·Codex 세션, claude.ai·ChatGPT 내보내기, 로컬 Git</td><td><span class="badge blue">구현 완료</span></td></tr>
-<tr><td>공개 사이트·인증</td><td>Google 로그인, 사람별 권한, 수집 결과 업로드, 배포 준비</td><td><span class="badge warn">구현 완료·보안 검토 중</span></td></tr>
+<tr><td>공개 사이트·인증</td><td>Google 로그인, 사람별 권한, 수집 결과 업로드, 배포 준비</td><td><span class="badge ok">구현·보안 검토 완료</span></td></tr>
 <tr><td>배포 (G3)</td><td>호스팅·도메인·회사 OAuth 등록 후 운영 배포</td><td><span class="badge">결정 대기</span></td></tr>
 </tbody>
 </table>
@@ -524,7 +524,7 @@ stateDiagram-v2
 <li>파일럿은 초대된 사람이 팀 데이터를 모두 본다. 프로젝트별 공개 범위는 후속.</li>
 <li>사용자 PC의 수집기는 <code>push-delta</code>로 수집 토큰을 붙여 판별 결과를 올린다. 서버는 같은 apply-delta 규칙으로 반영한다.</li>
 </ul>
-<div class="callout"><b>보안 검토 (11/24, AX-Reviewer)</b>차단 등급 문제는 없었다. 중요 3건을 고치는 중이다: 보기 권한 사용자가 로그아웃되지 않던 문제, 인코딩된 주소로 운영 모드의 데이터 차단을 우회하던 문제, 프록시 뒤에서 모든 사용자가 로그인 시도 제한을 함께 쓰던 문제. 고친 뒤 다시 검토한다.</div>
+<div class="callout"><b>보안 검토 (11/24, AX-Reviewer)</b>차단 등급 문제는 없었다. 중요 3건을 고친 뒤 재검토를 통과했다: 보기 권한 사용자가 로그아웃되지 않던 문제, 인코딩된 주소로 운영 모드의 데이터 차단을 우회하던 문제, 프록시 뒤에서 모든 사용자가 로그인 시도 제한을 함께 쓰던 문제.</div>
 <div class="callout warn"><b>배포 전 결정할 것</b>호스팅 위치(클라우드 / 사내 서버 / 인트라넷), 도메인, 회사 Google OAuth 클라이언트 등록(내부 사용자 유형), 첫 관리자. 컨테이너 이미지와 배포 절차서는 준비하고, 실제 배포는 승인 게이트(G3) 뒤에 한다.</div>
 </section>
 
@@ -579,7 +579,7 @@ stateDiagram-v2
 <tr><td><code>feat/remove-nonwork</code></td><td>업무 아닌 기록 삭제(위 포함)</td></tr>
 <tr><td><code>feat/github-ai-sources</code></td><td>GitHub·AI 대화 연결, 제외·purge(위 포함)</td></tr>
 <tr><td><code>feat/project-detection</code></td><td>프로젝트 판별 기준, Codex·로컬 Git 수집(위 포함)</td></tr>
-<tr><td><code>feat/auth-site</code></td><td>공개 사이트 로그인·권한(github-ai-sources에서 분기, 구현 완료·보안 검토 후 Push)</td></tr>
+<tr><td><code>feat/auth-site</code></td><td>공개 사이트 로그인·권한(github-ai-sources에서 분기, 구현·보안 검토 완료, Push됨)</td></tr>
 <tr><td><code>fix/heatmap-range</code></td><td>히트맵 3월부터(main에서 분기)</td></tr>
 <tr><td><code>docs/system-overview</code></td><td>이 문서</td></tr>
 </tbody>

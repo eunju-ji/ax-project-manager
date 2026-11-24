@@ -16,7 +16,7 @@
   - `build-real-dataset.cjs`는 최초 생성용(state.json 있으면 거부). 다시 돌리지 않는다.
   - 생성기 기록: `wbs-delta.cjs`, `samsung-backfill-delta.cjs`, `descriptions-delta.cjs`, `wbs-groups-delta.cjs`, `folder-sources-delta.cjs`, `samsung-merge-delta.cjs`, `category-fix-delta.cjs`, `remove-nonwork-delta.cjs`. 백필 요약 `backfill/`.
 - 정기 수집: Paseo 스케줄 `55620666` — 매일 09·12·15·18시 KST, Claude Code 에이전트가 `docs/runbooks/real-collect.md` 수행(체크포인트 이후 수집 → WBS 동기화 → 판별·산출물 기반 완료 → delta 반영). 점검: `mcp__paseo__inspect_schedule 55620666`, `.real/runs.log`.
-- 현재 데이터(11/23): 프로젝트 11, 태스크 62, 그중 WBS 37, 완료 28, 작업 내역 267, 근거 478(파일 193), 사람 14. 체크포인트 drive 11-23T01:50Z · chat 05:35Z · gmail 04:29Z.
+- 현재 데이터(11/24): 프로젝트 10, 태스크 49(완료 26), 작업 내역 59, 근거 172, 사람 4. 체크포인트에 github·ai_chats 추가.
 
 ## 3. 판별 기준 (요약 — 상세는 ADR)
 - ADR-016: 자동 판별 우선, 근거가 분명하면 사람 확인 없이 반영.
@@ -53,3 +53,13 @@
 - 판단 보류(notes) 항목을 검토함에 보여 주는 기능 미구현.
 - `.real/`의 오래된 `real.sqlite.previous-*` 백업 정리 여부 미정(지우지 않음).
 - gws-work 서버 운영 주체·로그 보관 정책 미확인(ADR-017 위험 항목).
+
+## 2026-11-24 삼성 대시보드 제외, 이름, GitHub·AI 대화 연결 (ADR-020)
+- 브랜치 `feat/github-ai-sources`(`feat/remove-nonwork` 위에서 땀 — 삭제 기능 의존). main 병합은 사용자.
+- 삼성 대시보드: 프로젝트·태스크 25·작업 내역 219·근거 354·관련 인물 10명을 purge로 지움(이력 내용까지). 이전 삭제 때 남은 이력 313개 엔터티분도 `history_purges`로 지움. `state.json`의 `excluded`에 프로젝트·인물·Chat 스페이스 등록 → 정기 수집이 읽지 않고 apply-delta도 거부. 삼성 GBC AdPilot(gbc)은 별개 프로젝트라 남김. P-HJ는 AX팀 운영 WBS 담당이라 남김.
+- 남은 사본(결정 대기): `.real/inbox/`의 지난 delta 일부와 `real.sqlite.previous-*` 백업 16개에 삼성 대시보드 내용이 있음. 삼성 전용 파일(백필 원본 요약·삼성 delta·생성기)은 지움.
+- 이름: 사용자(P-EJ) 표시 이름을 영어 이름으로(person_updates), 프로젝트 담당 표시·태스크 설명의 한글 이름도 바꿈. Drive 파일명은 실제 이름이라 유지.
+- GitHub: `collect-github.cjs`(공개 API, `GITHUB_TOKEN` 있으면 비공개 포함). 계정 eunju-ji 공개 저장소 5개 중 최근 활동은 ax-project-manager뿐. 첫 반영: 태스크 AXPM-DEV "관리장 파일럿 개발" + 날짜별 작업 내역 4건(커밋 30·PR 1 근거, 병합·상태 기록 커밋 제외).
+- AI 대화: `collect-ai-chats.cjs`. Claude Code 세션은 자동 색인(현재 버전 세션 파일에는 제목이 없어 날짜·메시지 수·수정 파일만), 같은 날 작업 내역의 근거로 연결. claude.ai·ChatGPT는 사용자가 내보내기 파일(압축 푼 conversations.json)을 `.real/imports/claude|chatgpt/`에 넣으면 다음 정기 수집이 색인·판별.
+- apply-delta 추가: project/person/source 삭제, person_updates, purge, history_purges, excluded 거부, 새 근거 종류(commit·pull_request·issue·ai_chat), 체크포인트 github·ai_chats.
+- 화면: 담당자 표의 긴 이름 말줄임. 간트 바는 지금 방식 유지(사용자 결정 11/24).

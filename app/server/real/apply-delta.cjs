@@ -34,7 +34,7 @@ function validPlan(row, nullable=false) {
 function humanChanged(dataset,type,id,field) {
  return (dataset.history||[]).some(h=>h.entity_type===type&&h.entity_id===id&&h.actor_id!=='system'&&!equal(h.before?.[field],h.after?.[field]));
 }
-const counts = d => Object.keys(KEYS).reduce((n,k)=>n+(d[k]?.length||0),0)+(d.task_updates?.length||0)+(d.worklog_updates?.length||0)+(d.project_updates?.length||0)+(d.worklog_removals?.length||0)+(d.task_removals?.length||0);
+const counts = d => Object.keys(KEYS).reduce((n,k)=>n+(d[k]?.length||0),0)+(d.task_updates?.length||0)+(d.worklog_updates?.length||0)+(d.project_updates?.length||0)+(d.worklog_removals?.length||0)+(d.task_removals?.length||0)+['project_removals','person_removals','source_removals','person_updates','history_purges'].reduce((n,k)=>n+(d[k]?.length||0),0);
 
 // No input values in errors: rejected input may itself contain credentials.
 function merge(dataset, state, delta) {
@@ -45,14 +45,17 @@ function merge(dataset, state, delta) {
  if (!object(delta)) { reject('object_required','delta'); return fail(); }
  if (typeof delta.run_id !== 'string' || !/^[A-Za-z0-9_-]{1,64}$/.test(delta.run_id)) reject('invalid_run_id','run_id');
  if (!iso(delta.collected_at)) reject('invalid_iso','collected_at');
- const allowed = new Set(['run_id','collected_at','checkpoints',...Object.keys(KEYS),'task_updates','worklog_updates','project_updates','worklog_removals','task_removals','notes']);
+ const allowed = new Set(['run_id','collected_at','checkpoints',...Object.keys(KEYS),'task_updates','worklog_updates','project_updates','worklog_removals','task_removals','project_removals','person_removals','source_removals','person_updates','purge','history_purges','notes']);
  for (const k of Object.keys(delta)) if (!allowed.has(k)) reject('unknown_field','delta');
  if (SECRET.test(JSON.stringify(delta))) reject('secret_pattern','delta');
- for (const k of [...Object.keys(KEYS),'task_updates','worklog_updates','project_updates']) if (delta[k] !== undefined && (!Array.isArray(delta[k]) || delta[k].some(r=>!object(r)))) reject('record_array_required',k);
- for (const k of ['worklog_removals','task_removals']) if (delta[k] !== undefined && (!Array.isArray(delta[k]) || delta[k].some(id=>typeof id!=='string'||!id.length))) reject('id_array_required',k);
+ for (const k of [...Object.keys(KEYS),'task_updates','worklog_updates','project_updates','person_updates']) if (delta[k] !== undefined && (!Array.isArray(delta[k]) || delta[k].some(r=>!object(r)))) reject('record_array_required',k);
+ for (const k of ['worklog_removals','task_removals','project_removals','person_removals','source_removals']) if (delta[k] !== undefined && (!Array.isArray(delta[k]) || delta[k].some(id=>typeof id!=='string'||!id.length))) reject('id_array_required',k);
+ if(delta.purge!==undefined&&typeof delta.purge!=='boolean')reject('boolean_required','purge');
+ // 이미 지워진 대상의 이력만 내용째 지운다(purge 전용).
+ if(delta.history_purges!==undefined&&(delta.purge!==true||!Array.isArray(delta.history_purges)||delta.history_purges.some(r=>!object(r)||Object.keys(r).some(k=>!['entity_type','entity_id'].includes(k))||!(r.entity_type in KEYS)||typeof r.entity_id!=='string'||!r.entity_id)))reject('invalid_history_purge','history_purges');
  if (delta.checkpoints !== undefined && !object(delta.checkpoints)) reject('object_required','checkpoints');
  for (const [k,v] of Object.entries(object(delta.checkpoints)?delta.checkpoints:{})) {
-  if (!['drive','chat','gmail'].includes(k) || !iso(v)) reject('invalid_checkpoint','checkpoints');
+  if (!['drive','chat','gmail','github','ai_chats'].includes(k) || !iso(v)) reject('invalid_checkpoint','checkpoints');
  }
  if (errors.length) return fail();
  const inputDigest = digest(delta);
@@ -81,10 +84,10 @@ function merge(dataset, state, delta) {
    if (table==='worklogs' && (typeof row.summary!=='string' || [...row.summary].length>160)) reject('summary_limit',loc);
    if (table==='sources') {
     if (typeof row.title!=='string' || [...row.title].length>200) reject('title_limit',loc);
-    if (typeof row.kind!=='string' || (row.kind!=='message' && (!Array.isArray(row.folder_path) || row.folder_path.some(p=>typeof p!=='string')))) reject('folder_path_required',loc);
+    if (typeof row.kind!=='string' || (!['message','commit','pull_request','issue','ai_chat'].includes(row.kind) && (!Array.isArray(row.folder_path) || row.folder_path.some(p=>typeof p!=='string')))) reject('folder_path_required',loc);
    }
    // Bodies are never part of the digest dataset contract.
-   if (['body','raw','raw_body','content','message_body','html_body'].some(k=>k in row)) reject('raw_content_forbidden',loc);
+   if (['body','raw','raw_body','content','message_body','html_body','diff','patch','messages','chat_messages'].some(k=>k in row)) reject('raw_content_forbidden',loc);
    const existing = index.get(row[key]);
    if (existing) {
     const strip = r => Object.fromEntries(Object.entries(r).filter(([k])=>!['run_id','created_run_id'].includes(k)));
@@ -94,6 +97,16 @@ function merge(dataset, state, delta) {
   }
  }
  next.history ||= [];
+ const seenPersons=new Set();
+ for(const [i,u] of (delta.person_updates||[]).entries()){
+  const loc='person_updates['+i+']',p=next.persons.find(p=>p.person_id===u.person_id);
+  if(!p||seenPersons.has(u.person_id)){reject('missing_or_duplicate_person',loc);continue;}seenPersons.add(u.person_id);
+  if(Object.keys(u).some(k=>!['person_id','display_name'].includes(k))||typeof u.display_name!=='string'||![...u.display_name].length||[...u.display_name].length>80){reject('invalid_person_update',loc);continue;}
+  if(p.display_name===u.display_name){result.ignored++;continue;}
+  if(humanChanged(dataset,'persons',u.person_id,'display_name')){reject('human_correction_protected',loc);continue;}
+  const before=structuredClone(p);p.display_name=u.display_name;
+  next.history.push({change_id:'DELTA-'+delta.run_id+'-'+u.person_id,entity_type:'persons',entity_id:u.person_id,before,after:structuredClone(p),actor_id:'system',reason:'scheduled-collect person update',run_id:delta.run_id,result:'applied',applied_at:delta.collected_at});result.updated++;
+ }
  const seenProjects = new Set();
  for (const [i,update] of (delta.project_updates||[]).entries()) {
   const loc=`project_updates[${i}]`;
@@ -156,7 +169,7 @@ function merge(dataset, state, delta) {
   result.updated++;
  }
  // Apply removals after all additions and updates, before final reference validation.
- for (const [table,key,targetType] of [['worklogs','worklog_id','worklog'],['tasks','task_id','task']]) {
+ for (const [table,key,targetType] of [['worklogs','worklog_id','worklog'],['tasks','task_id','task'],['projects','project_id','project'],['persons','person_id','person'],['sources','source_key','source']]) {
   const field=targetType+'_removals',seen=new Set();
   for (const [i,id] of (delta[field]||[]).entries()) {
    const loc=`${field}[${i}]`;
@@ -168,11 +181,23 @@ function merge(dataset, state, delta) {
    if ((dataset.history||[]).some(h=>h.entity_type===table&&h.entity_id===id&&h.actor_id!=='system')) {reject('human_correction_protected',loc);continue;}
    if (table==='tasks' && next.worklogs.some(w=>w.task_id===id)) {reject('task_has_worklogs',loc);continue;}
    if (table==='tasks' && next.tasks.some(t=>t.task_id!==id&&t.merged_into===id)) {reject('task_is_merge_target',loc);continue;}
+   if(table==='projects'&&next.tasks.some(t=>t.project_id===id)){reject('project_has_tasks',loc);continue;}
+   if(table==='persons'&&(next.tasks.some(t=>t.assignee_id===id)||next.worklogs.some(w=>w.performer_id===id)||next.projects.some(p=>p.owner_id===id||p.deputy_id===id))){reject('person_referenced',loc);continue;}
+   if(table==='sources'&&next.links.some(l=>l.evidence_type==='source'&&l.evidence_key===id)){reject('source_has_links',loc);continue;}
+   if(table==='persons')next.externalAccounts=(next.externalAccounts||[]).filter(a=>a.person_id!==id);
+   if(delta.purge)next.history=next.history.filter(h=>h.entity_type!==table||h.entity_id!==id);
    next[table]=next[table].filter(r=>r[key]!==id);
-   next.links=next.links.filter(l=>l.target_type!==targetType||l.target_id!==id);
-   next.history.push({change_id:`DELTA-${delta.run_id}-${id}`,entity_type:table,entity_id:id,before:structuredClone(original),after:null,actor_id:'system',reason:'remove non-work record',run_id:delta.run_id,result:'applied',applied_at:delta.collected_at});
+   const removedLinks=new Set(next.links.filter(l=>l.target_type===targetType&&l.target_id===id).map(l=>l.link_id));
+   next.links=next.links.filter(l=>!removedLinks.has(l.link_id));
+   if(delta.purge)next.history=next.history.filter(h=>h.entity_type!=='links'||!removedLinks.has(h.entity_id));
+   next.history.push({change_id:`DELTA-${delta.run_id}-${id}`,entity_type:table,entity_id:id,before:delta.purge?null:structuredClone(original),after:null,actor_id:'system',reason:delta.purge?'purge':'remove non-work record',run_id:delta.run_id,result:'applied',applied_at:delta.collected_at});
    result.removed++;
   }
+ }
+ for (const [i,r] of (delta.history_purges||[]).entries()) {
+  if (next[r.entity_type].some(x=>x[KEYS[r.entity_type]]===r.entity_id)) {reject('entity_still_exists',`history_purges[${i}]`);continue;}
+  const before=next.history.length;next.history=next.history.filter(h=>h.entity_type!==r.entity_type||h.entity_id!==r.entity_id);
+  result.removed+=before-next.history.length;
  }
  const ids = Object.fromEntries(Object.entries(KEYS).map(([k,key])=>[k,new Set(next[k].map(r=>r[key]))]));
  const taskIndex = new Map(next.tasks.map(t=>[t.task_id,t]));
@@ -205,7 +230,23 @@ function merge(dataset, state, delta) {
   const evidence = {source:ids.sources,event:new Set((next.sourceEvents||[]).map(e=>e.event_key))}[l.evidence_type];
   if (!target?.has(l.target_id) || !evidence?.has(l.evidence_key)) reject('missing_link_reference','links');
  }
- if (errors.length) return fail();
+ const excluded=state.excluded||{};
+ const blocked=(table,row,seen=new Set())=>{
+  if(!row)return false;const token=table+':'+row[KEYS[table]];if(seen.has(token))return false;seen.add(token);
+  if((excluded.projects||[]).includes(row.project_id)||(excluded.persons||[]).some(id=>[row.person_id,row.assignee_id,row.performer_id,row.owner_id,row.deputy_id].includes(id)))return true;
+  if(table==='sources'&&(excluded.chat_spaces||[]).some(space=>{const id=space.split('spaces/').pop();return id&&[row.source_key,row.uri].some(v=>typeof v==='string'&&v.includes(id));}))return true;
+  if(row.task_id&&table!=='tasks'&&blocked('tasks',next.tasks.find(t=>t.task_id===row.task_id),seen))return true;
+  if(table==='links'){
+   const type={task:'tasks',worklog:'worklogs'}[row.target_type];
+   if(type&&blocked(type,next[type].find(r=>r[KEYS[type]]===row.target_id),seen))return true;
+   if(row.evidence_type==='source'&&blocked('sources',next.sources.find(r=>r.source_key===row.evidence_key),seen))return true;
+  }return false;
+ };
+ for(const [table,key] of Object.entries(KEYS)){
+  const updates={tasks:'task_updates',persons:'person_updates',projects:'project_updates',worklogs:'worklog_updates'}[table];
+  for(const row of [...(delta[table]||[]),...(delta[updates]||[])])if(blocked(table,next[table].find(r=>r[key]===row[key])))reject('excluded_reference',table);
+ }
+ if(errors.length)return fail();
  const date = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date(delta.collected_at));
  next.demoAsOf=date;
  next.demoNotice=/마지막 수집 \d{4}-\d{2}-\d{2}/.test(next.demoNotice||'') ? next.demoNotice.replace(/마지막 수집 \d{4}-\d{2}-\d{2}/g,`마지막 수집 ${date}`) : `${next.demoNotice||''} 마지막 수집 ${date}`.trim();

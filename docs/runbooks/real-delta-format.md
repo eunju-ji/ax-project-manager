@@ -1,5 +1,28 @@
 # 실데이터 증분 반영 형식과 실행 절차
 
+## GitHub·AI 색인 및 삭제 확장 (ADR-020)
+
+- `project_removals`, `person_removals`, `source_removals`: ID 문자열 배열. 빈 값, 중복, 없는 대상, 같은 실행의 추가·갱신과 겹치는 삭제를 거부한다.
+- 프로젝트에 태스크가 남거나, 사람에게 태스크 담당·작업 내역 수행·프로젝트 owner/deputy 참조가 남으면 삭제를 거부한다. 사람의 `externalAccounts` 행은 함께 삭제한다. 근거를 참조하는 links가 남으면 근거 삭제를 거부한다. 작업 내역·태스크 삭제 시 대상 links는 함께 삭제한다.
+- `person_updates: [{person_id, display_name}]`: 이름은 1~80자 문자열. 사람이 고친 값은 보호한다.
+- 최상위 `purge`는 불리언이다. `true`이면 삭제 대상과 entity_type/entity_id가 일치하는 기존 history를 제거하고 삭제 이력에 `before:null, after:null, reason:'purge'`를 남긴다. 기본 삭제는 기존 before 값을 보존한다. 사람의 수정 보호는 purge에도 적용한다.
+- `state.json`의 `excluded: {projects:[], persons:[], chat_spaces:[]}`로 재유입을 막는다. 추가·갱신 레코드의 직접 참조와 작업·링크를 통한 간접 참조를 검사한다. sources의 source_key·uri에 제외 Chat 스페이스 ID(`spaces/` 뒤 부분)가 있으면 `excluded_reference`로 전체 delta를 거부한다.
+- sources.kind의 `commit`, `pull_request`, `issue`, `ai_chat`은 `message`처럼 folder_path가 필요 없다. 자료 창에는 uri가 있을 때만 **원본 열기** 링크를 표시한다. 허용 링크 호스트에 github.com, claude.ai, chatgpt.com을 추가한다.
+- 새 필드에도 원자적 반영, dry-run, run_id 재실행과 ignored 집계를 동일하게 적용한다.
+
+### 색인 수집기
+
+`app`에서 실행한다. 실사용 시 승인된 경로와 계정만 사용한다.
+
+```sh
+node server/real/collect-github.cjs --state <state.json> --out <file> [--since ISO]
+node server/real/collect-ai-chats.cjs --out <file> [--claude-code-dir <dir>] [--project-filter <폴더부분문자열,...>] [--imports <dir>] [--since ISO]
+```
+
+GitHub 설정은 `state.github = {login, repos:[], checkpoint}`다. repos가 비면 최근 90일에 push된 계정 저장소를 조회한다. since 기본값은 checkpoint, 없으면 90일 전이다. `GITHUB_TOKEN`은 요청 헤더에서만 사용한다. 실패는 errors에 코드만 남기며 불완전한 결과로 체크포인트를 전진시키지 않는다.
+
+AI imports는 `claude/conversations.json`, `chatgpt/conversations.json`을 읽는다. ZIP은 먼저 직접 압축 해제해야 한다. Claude Code는 기본 `~/.claude/projects`를 읽고 Temp 폴더를 제외한다. 본문·diff·댓글·도구 입력 전문은 결과에 저장하지 않는다. 제목은 첫 줄 160자 이내, 수정 경로는 cwd 기준 최대 20개, 활동일은 Asia/Seoul 기준이다. 색인 생성은 delta 적용이나 태스크 완료·공수 확정과 별개다.
+
 2026-11-20 / AX-Builder. 수집·판별은 스케줄 에이전트가 수행한다. 이 도구는 로컬 JSON 검증·병합만 수행하며 Google API 호출이나 수집 예약을 하지 않는다. 아래 예시는 전부 합성 데이터다.
 
 ## 스케줄 에이전트용 한 페이지

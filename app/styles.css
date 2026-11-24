@@ -131,3 +131,5 @@ body[data-keyboard-navigation] .searchbox input:focus-visible{outline:2px solid 
 @media(prefers-reduced-motion:reduce){.folder-files button[aria-current=true]{animation:none}}
 .folder-files a[aria-current=true]{background:transparent;color:inherit;animation:folder-current-fade 2s ease-out}
 @media(prefers-reduced-motion:reduce){.folder-files a[aria-current=true]{animation:none}}
+
+.weekly-owner-table tbody th{overflow:hidden;text-overflow:ellipsis}

@@ -236,3 +236,50 @@ for (const target of ['tasks','task_updates']) {
   a.equal(f.apply().ok,false);a.deepEqual(f.read(),f.data);
  });
 }
+test('purge removes all entities and their old history, including external accounts',()=>{
+ const data={persons:[{person_id:'P'}],projects:[{project_id:'PR',owner_id:'P'}],tasks:[{task_id:'T',project_id:'PR',status:'in_progress'}],worklogs:[],sources:[{source_key:'S'}],links:[],externalAccounts:[{person_id:'P'}],history:[{entity_type:'sources',entity_id:'S',actor_id:'system',before:{title:'old'}}]};
+ const delta={run_id:'PURGE',collected_at:'2026-11-20T00:00:00Z',purge:true,task_removals:['T'],project_removals:['PR'],person_removals:['P'],source_removals:['S']};
+ const r=merge(data,{},delta);a.equal(r.ok,true);a.equal(r.removed,4);a.equal(r.dataset.externalAccounts.length,0);a.equal(r.dataset.history.length,4);for(const h of r.dataset.history){a.equal(h.before,null);a.equal(h.after,null);a.equal(h.reason,'purge');}a.equal(merge(r.dataset,r.state,delta).ignored,4);
+});
+test('person update protects human values and exclusion follows task references',()=>{
+ const data={persons:[{person_id:'P',display_name:'Old'}],projects:[{project_id:'PR'}],tasks:[{task_id:'T',project_id:'PR',assignee_id:'P',status:'in_progress'}]};
+ const delta={run_id:'PERSON',collected_at:'2026-11-20T00:00:00Z',person_updates:[{person_id:'P',display_name:'New'}]};
+ a.equal(merge(data,{},delta).ok,true);
+ data.history=[{entity_type:'persons',entity_id:'P',actor_id:'P',before:{display_name:'Earlier'},after:{display_name:'Old'}}];
+ a.equal(merge(data,{},delta).ok,false);
+ a.equal(merge(data,{excluded:{projects:['PR']}},{...delta,person_updates:[],worklogs:[{worklog_id:'W',task_id:'T',performer_id:'P',summary:'short',performed_at_precision:'unknown'}]}).errors.some(e=>e.code==='excluded_reference'),true);
+});
+for(const kind of ['commit','pull_request','issue','ai_chat'])test('new source kind '+kind,()=>a.equal(merge({}, {},{run_id:'KIND',collected_at:'2026-11-20T00:00:00Z',sources:[{source_key:'S',kind,title:'Short'}]}).ok,true));
+for(const [field,id] of [['project_removals','PR'],['person_removals','P'],['source_removals','S']])for(const value of ['bad',[null],[''],['missing'],[id,id]])test(field+' invalid removal '+JSON.stringify(value),()=>{
+ const data={persons:[{person_id:'P'}],projects:[{project_id:'PR'}],sources:[{source_key:'S'}]},before=structuredClone(data);a.equal(merge(data,{}, {run_id:'BAD',collected_at:'2026-11-20T00:00:00Z',[field]:value}).ok,false);a.deepEqual(data,before);
+});
+for(const kind of ['task','performer','owner','deputy','source'])test('remaining reference prevents removal '+kind,()=>{
+ const data={persons:[{person_id:'P'}],projects:[{project_id:'PR'}],tasks:[{task_id:'T',project_id:'PR',status:'in_progress'}],worklogs:[],sources:[{source_key:'S'}],links:[]};
+ let field='person_removals',id='P';if(kind==='task')data.tasks[0].assignee_id='P';if(kind==='performer')data.worklogs=[{worklog_id:'W',task_id:'T',performer_id:'P',summary:'Short',performed_at_precision:'unknown'}];if(['owner','deputy'].includes(kind))data.projects[0][kind+'_id']='P';if(kind==='source'){field='source_removals';id='S';data.links=[{link_id:'L',target_type:'task',target_id:'T',evidence_type:'source',evidence_key:'S',status:'confirmed'}];}
+ a.equal(merge(data,{}, {run_id:'REF',collected_at:'2026-11-20T00:00:00Z',[field]:[id]}).ok,false);
+});
+test('project deletion needs tasks removed and normal history retains before',()=>{
+ const data={projects:[{project_id:'PR',name:'Old'}],tasks:[{task_id:'T',project_id:'PR',status:'in_progress'}]};const delta={run_id:'PR',collected_at:'2026-11-20T00:00:00Z',project_removals:['PR']};a.equal(merge(data,{},delta).ok,false);delta.task_removals=['T'];const r=merge(data,{},delta);a.equal(r.ok,true);a.equal(r.dataset.history[1].before.name,'Old');
+});
+for(const name of ['',null,7,'x'.repeat(81)])test('person invalid name '+typeof name+String(name).length,()=>a.equal(merge({persons:[{person_id:'P'}]}, {}, {run_id:'P',collected_at:'2026-11-20T00:00:00Z',person_updates:[{person_id:'P',display_name:name}]}).ok,false));
+for(const field of ['source_key','uri'])test('excluded Chat space in '+field,()=>{
+ const row={source_key:'S',title:'Short',kind:'ai_chat',[field]:'https://chat.google.com/spaces/SPACE/messages/1'};const r=merge({}, {excluded:{chat_spaces:['spaces/SPACE']}},{run_id:'EX',collected_at:'2026-11-20T00:00:00Z',sources:[row]});a.ok(r.errors.some(e=>e.code==='excluded_reference'));
+});
+test('new removal dry run and atomic failure preserve all files',t=>{
+ const f=fixture(t),d={run_id:'NEW',collected_at:f.delta.collected_at,task_removals:['T'],project_removals:['PR'],person_updates:[{person_id:'P',display_name:'New'}]};const before=f.read();a.equal(f.apply(d,{dryRun:true}).ok,true);a.deepEqual(f.read(),before);d.source_removals=['missing'];a.equal(f.apply(d).ok,false);a.deepEqual(f.read(),before);
+});
+test('excluded absent targets still report exclusion code',()=>{
+ const r=merge({}, {excluded:{projects:['PR']}}, {run_id:'ABSENT',collected_at:'2026-11-20T00:00:00Z',tasks:[{task_id:'T',project_id:'PR',status:'in_progress'}]});a.equal(r.ok,false);a.ok(r.errors.some(e=>e.code==='excluded_reference'));
+});
+
+test('history_purges removes history of already-removed entities only, with purge',()=>{
+ const {data}=removalCase();data.history=[{entity_type:'tasks',entity_id:'GONE',actor_id:'system',before:{title:'x'},after:null},{entity_type:'tasks',entity_id:'B',actor_id:'system',before:{},after:{}}];
+ const base={run_id:'HP',collected_at:'2026-11-24T00:00:00Z'};
+ const r=merge(data,{},{...base,purge:true,history_purges:[{entity_type:'tasks',entity_id:'GONE'}]});a.equal(r.ok,true);a.equal(r.removed,1);a.deepEqual(r.dataset.history.map(h=>h.entity_id),['B']);
+ a.equal(merge(data,{},{...base,history_purges:[{entity_type:'tasks',entity_id:'GONE'}]}).ok,false);
+ a.equal(merge(data,{},{...base,purge:true,history_purges:[{entity_type:'tasks',entity_id:'B'}]}).ok,false);
+ a.equal(merge(data,{},{...base,purge:true,history_purges:[{entity_type:'nope',entity_id:'GONE'}]}).ok,false);
+});
+test('github and ai_chats checkpoints are accepted',()=>{
+ const {data}=removalCase();a.equal(merge(data,{},{run_id:'CP',collected_at:'2026-11-24T00:00:00Z',checkpoints:{github:'2026-11-24T00:00:00Z',ai_chats:'2026-11-24T00:00:00Z'}}).ok,true);
+});

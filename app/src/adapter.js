@@ -4,7 +4,7 @@
   const time=s=>Number.isFinite(Date.parse(s))?Date.parse(s):0;
   const roles=['산출물','검토','요청','참고'];
   // Only original-service links on known hosts are exposed; anything else (example.invalid, javascript:, http:) is dropped.
-  const linkHosts=['drive.google.com','docs.google.com','chat.google.com','mail.google.com','github.com'];
+  const linkHosts=['drive.google.com','docs.google.com','chat.google.com','mail.google.com','github.com','claude.ai','chatgpt.com'];
   const safeUrl=u=>{try{const x=new URL(u);return x.protocol==='https:'&&(linkHosts.includes(x.hostname)||x.hostname.endsWith('.sharepoint.com'))?x.href:'';}catch{return '';}};
   function adapt(data){
     const runs=new Map((data.runs||[]).map(r=>[r.run_id,r.state]));
@@ -34,7 +34,7 @@
       const files=[...new Set(projectLinks.map(l=>l.sourceKey))].sort(lexical).map(key=>{
         const candidates=projectLinks.filter(l=>l.sourceKey===key).sort((a,b)=>time(b.decided_at)-time(a.decided_at)||lexical(a.taskId,b.taskId)||lexical(a.link_id,b.link_id));
         const t=taskMap.get(candidates[0].taskId),s=sources.get(key);
-        return {...(s.folder_id?{folderId:s.folder_id}:{}),...(Array.isArray(s.folder_path)&&s.folder_path.every(x=>typeof x==='string')&&s.folder_path.length?{folderPath:s.folder_path.slice()}:{}),...(safeUrl(s.folder_uri)?{folderUrl:safeUrl(s.folder_uri)}:{}),id:key,name:s.title||'',type:'',source:key.startsWith('github:')?'GitHub':/^chat(-file)?:/.test(key)?'Google Chat':/^gmail(-att)?:/.test(key)?'Gmail':key.startsWith('sharepoint:')?'SharePoint':key.startsWith('calendar:')?'Google Calendar':'Google Drive',summary:'',topic:t.category,taskId:t.task_id,createdAt:s.created_at||'',availability:s.availability,previewable:s.availability==='available',...(safeUrl(s.uri)?{url:safeUrl(s.uri)}:{})};
+        return {...(['commit','pull_request','issue','ai_chat'].includes(s.kind)?{kind:s.kind}:{}),...(s.folder_id?{folderId:s.folder_id}:{}),...(Array.isArray(s.folder_path)&&s.folder_path.every(x=>typeof x==='string')&&s.folder_path.length?{folderPath:s.folder_path.slice()}:{}),...(safeUrl(s.folder_uri)?{folderUrl:safeUrl(s.folder_uri)}:{}),id:key,name:s.title||'',type:'',source:['commit','pull_request','issue'].includes(s.kind)||key.startsWith('github:')?'GitHub':s.kind==='ai_chat'?'AI':/^chat(-file)?:/.test(key)?'Google Chat':/^gmail(-att)?:/.test(key)?'Gmail':key.startsWith('sharepoint:')?'SharePoint':key.startsWith('calendar:')?'Google Calendar':'Google Drive',summary:'',topic:t.category,taskId:t.task_id,createdAt:s.created_at||'',availability:s.availability,previewable:['commit','pull_request','issue','ai_chat'].includes(s.kind)||s.availability==='available',...(safeUrl(s.uri)?{url:safeUrl(s.uri)}:{})};
       });
       return {id:p.project_id,name:p.name,desc:p.purpose||'',owner:p.display_owner||owner(p.owner_id),files,tasks:projectTasks.map(t=>({id:t.task_id,wbsCode:t.wbs_code||undefined,wbsGroups:t.wbs_groups||[],startDate:t.start_date||undefined,planSource:t.plan_source||'activity',dueDate:t.due_date||undefined,status:t.status,completedAt:t.completed_at||undefined,completionBasis:t.completion_basis||undefined,title:t.title,description:t.description||undefined,topic:t.category,summary:t.summary||'',detail:t.completion_criteria||'',decision:t.decision||'',weeklySummary:t.weekly_summary||'',owner:owner(t.assignee_id),createdAt:t.created_at||'',subtasks:logs.filter(w=>w.task_id===t.task_id).map(w=>{
         const link=projectLinks.filter(l=>l.target_type==='worklog'&&l.target_id===w.worklog_id).sort(representative)[0];

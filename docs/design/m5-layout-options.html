@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>관리장 화면 배치안 3종 (2026-11-24 회의 후속)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1f2328;--muted:#5f6b7a;--line:#e3e6ea;--soft:#f6f7f9;--accent:#3b6fb6;--accent-soft:#eaf1fb;--warn:#b7791f;--warn-soft:#fdf6e7;--ok:#2f855a;--ok-soft:#eaf6ef;--bad:#c0392b;--bad-soft:#fdeeee}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans KR',system-ui,sans-serif;color:var(--ink);line-height:1.7;font-size:15px;word-break:keep-all}
+main{max-width:1120px;margin:0 auto;padding:44px 32px 96px}
+header.doc{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:28px}
+h1{font-size:28px;margin:0 0 6px}
+header.doc p{margin:0;color:var(--muted)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;font-size:13px;color:var(--muted)}
+h2{font-size:22px;margin:56px 0 12px;padding-top:10px;border-top:1px solid var(--line)}
+h3{font-size:16px;margin:24px 0 8px}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:500;font-size:13px;color:var(--muted)}
+.badge{display:inline-block;font-size:12px;padding:0 8px;border-radius:999px;border:1px solid var(--line);background:var(--soft);color:var(--muted);white-space:nowrap}
+.ok{background:var(--ok-soft);border-color:#c6e6d3;color:var(--ok)}
+.warn{background:var(--warn-soft);border-color:#f0dcb0;color:var(--warn)}
+.bad{background:var(--bad-soft);border-color:#f2c9c4;color:var(--bad)}
+.blue{background:var(--accent-soft);border-color:#cfdff4;color:var(--accent)}
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+.callout b{display:block}
+/* wireframe */
+.frame{border:1px solid #cfd5dc;border-radius:12px;background:#fbfcfd;padding:16px;margin:14px 0;font-size:13px}
+.frame .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;color:var(--muted);font-size:12px}
+.frame .bar b{color:var(--ink);font-size:14px}
+.tabs{display:flex;gap:6px}.tabs span{padding:2px 10px;border-radius:999px;border:1px solid var(--line);background:#fff}.tabs span.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.sec{font-size:12px;color:var(--muted);margin:12px 0 6px;font-weight:500}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pc{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.pc .t{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13.5px}
+.star{color:#d4a017}
+.stages{display:flex;gap:3px;margin:8px 0 6px}
+.stages i{flex:1;height:6px;border-radius:3px;background:#e6e9ee}
+.stages i.d{background:#7aa7dc}.stages i.c{background:var(--accent)}
+.stl{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted)}
+.row{display:flex;justify-content:space-between;gap:8px;margin-top:6px;font-size:12px}
+.row .k{color:var(--muted);white-space:nowrap}
+.cols{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.col{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.col h5{margin:0 0 8px;font-size:13px}
+.it{border-top:1px solid var(--line);padding:6px 0;font-size:12px}
+.it small{display:block;color:var(--muted)}
+.mx{width:100%;border-collapse:separate;border-spacing:3px;font-size:12px}
+.mx th{background:none;color:var(--muted);font-size:11px;padding:2px 4px;text-align:center;border:0}
+.mx td{border:0;padding:6px;border-radius:6px;background:#eef1f4;text-align:center;font-size:11.5px}
+.mx td.n{background:#fff;text-align:left;font-weight:700;border:1px solid var(--line)}
+.mx td.d{background:#d6e4f5}.mx td.c{background:var(--accent);color:#fff}.mx td.x{background:#fff;border:1px dashed var(--line);color:#aab}
+.mx td.r{background:#fff;text-align:left;border:1px solid var(--line);font-size:11px}
+.fold{background:#fff;border:1px dashed #cfd5dc;border-radius:10px;padding:8px 12px;color:var(--muted);margin-top:10px}
+.strip{display:flex;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.strip span{font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.card h4{margin:0 0 6px;font-size:14px}
+.card ul{margin:0;padding-left:18px;font-size:13.5px}
+@media (max-width:860px){.cards,.cols,.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<header class="doc">
+  <h1>관리장 화면 배치안 3종</h1>
+  <p>2026-11-24 AX팀 회의 후속: 각 안이 "어디까지 진행됐나 · 다음 단계에 무엇이 필요한가 · 누가 도와야 하나"에 답하는지와 필요한 데이터를 점검한다.</p>
+  <div class="meta"><span>작성 AX-Lead</span><span>2026-11-24</span><span>근거 ADR-023, 회의록 261124</span><span>와이어프레임의 프로젝트·숫자는 예시</span></div>
+</header>
+
+<div class="callout"><b>세 안 모두에 공통으로 이미 반영한 것</b>핵심 프로젝트와 AX팀 운영 분리(운영은 접힘), 별표 고정, WBS 번호 대신 상위 단계(리서치 · 기획 · 프로토타입 · 개발·테스트 · 출시·운영), 프로젝트별 다음 단계와 이슈(지연·확인 필요), 프로젝트를 고르면 세부 업무와 관련 파일.</div>
+
+<!-- ================= A ================= -->
+<h2>안 A. 프로젝트 우선 — 전체를 훑고 이번 주로</h2>
+<p>회의에서 "초기에 유용"하다고 한 흐름. 첫 화면 위쪽에 핵심 프로젝트 카드, 그 아래 이번 주 띠, 맨 아래 운영 영역. 업무 요약·히트맵은 아래로 내린다.</p>
+<div class="frame">
+  <div class="bar"><b>AX팀 프로젝트</b><span>2026.11.24 기준 · 검토 필요 2</span></div>
+  <div class="sec">핵심 프로젝트 7</div>
+  <div class="cards">
+    <div class="pc"><div class="t">관리장 <span class="star">★</span></div>
+      <div class="stages"><i class="d"></i><i class="d"></i><i class="c"></i><i></i><i></i></div>
+      <div class="stl"><span>리서치</span><span>기획</span><span>프로토타입</span><span>개발·테스트</span><span>출시</span></div>
+      <div class="row"><span class="k">진척</span><span>86% · 6/7</span></div>
+      <div class="row"><span class="k">다음</span><span>화면 배치안 2~3개</span></div>
+      <div class="row"><span class="k">이슈</span><span><span class="badge bad">지연 1</span></span></div></div>
+    <div class="pc"><div class="t">사내 지식 구축</div>
+      <div class="stages"><i class="c"></i><i></i><i></i><i></i><i></i></div>
+      <div class="stl"><span>리서치</span><span>기획</span><span>프로토타입</span><span>개발·테스트</span><span>출시</span></div>
+      <div class="row"><span class="k">진척</span><span>0% · 0/2</span></div>
+      <div class="row"><span class="k">다음</span><span>벤치마크 WBS(개발실 협의)</span></div>
+      <div class="row"><span class="k">이슈</span><span>—</span></div></div>
+    <div class="pc"><div class="t">Moncoti</div>
+      <div class="stages"><i class="d"></i><i class="d"></i><i class="d"></i><i class="c"></i><i class="c"></i></div>
+      <div class="stl"><span>리서치</span><span>기획</span><span>프로토타입</span><span>개발·테스트</span><span>출시</span></div>
+      <div class="row"><span class="k">진척</span><span>58% · 7/12</span></div>
+      <div class="row"><span class="k">다음</span><span>설치형 실사용 검증</span></div>
+      <div class="row"><span class="k">이슈</span><span><span class="badge bad">지연 1</span> <span class="badge warn">확인 필요 2</span></span></div></div>
+  </div>
+  <div class="sec">이번 주</div>
+  <div class="strip"><span><b>마감</b> 3차 기획 리뷰(관리장) · 11/24</span><span>·</span><span><b>예정</b> 본 이관(GWS) · 11/25</span><span>·</span><span><b>도움 필요</b> 설치형 빌드 Mac 미지원(Moncoti)</span></div>
+  <div class="fold">AX팀 운영 4 ▸ (채용 · 공유폴더 이관 · 교육 · 팀 운영)</div>
+  <div class="sec">아래: 한 주의 업무 · 작업 내역 히트맵 · 전체 간트</div>
+</div>
+<table>
+<thead><tr><th style="width:24%">질문</th><th>답하는 곳</th></tr></thead>
+<tbody>
+<tr><td>어디까지 진행됐나</td><td>카드의 단계 막대 + 진척률</td></tr>
+<tr><td>다음 단계</td><td>카드의 "다음", 이번 주 띠의 마감·예정</td></tr>
+<tr><td>누가 도와야 하나</td><td>카드의 이슈 칩, 이번 주 띠의 "도움 필요"</td></tr>
+</tbody>
+</table>
+<div class="grid2">
+  <div class="card"><h4>장점</h4><ul><li>지금 화면에서 가장 적게 바뀐다(위에 카드만 추가)</li><li>프로젝트 전체 구도가 한눈에 보인다</li><li>필요한 데이터 대부분이 이미 있다</li></ul></div>
+  <div class="card"><h4>단점</h4><ul><li>프로젝트가 많아지면 카드가 길어진다</li><li>이번 주 정보가 띠 하나로 작다</li></ul></div>
+</div>
+
+<!-- ================= B ================= -->
+<h2>안 B. 이번 주 우선 — 주간회의 보드</h2>
+<p>회의에서 "팀이 익숙해지면" 검토하자고 한 흐름. 첫 화면을 세 칸(이번 주 할 일 · 도움이 필요한 것 · 지난주 한 일)으로 나누고, 항목마다 프로젝트를 붙인다. 프로젝트 단계표는 아래.</p>
+<div class="frame">
+  <div class="bar"><b>이번 주 · 11/24 – 11/30</b><span class="tabs"><span class="on">전체</span><span>담당자 1</span><span>담당자 2</span></span></div>
+  <div class="cols">
+    <div class="col"><h5>이번 주 할 일 5</h5>
+      <div class="it">화면 배치안 2~3개<small>관리장 · 기획 · 다음 회의 전</small></div>
+      <div class="it">벤치마크 WBS(개발실 협의)<small>사내 지식 구축 · 리서치</small></div>
+      <div class="it">공유 드라이브 본 이관<small>AX팀 운영 · 11/25</small></div></div>
+    <div class="col"><h5>도움이 필요한 것 3</h5>
+      <div class="it"><span class="badge bad">지연</span> 오픈 후 모니터링·안정화<small>Moncoti · 11/20 마감</small></div>
+      <div class="it"><span class="badge warn">확인 필요</span> 팀별 과제 정리<small>현업진단 · 기록 없음</small></div>
+      <div class="it"><span class="badge blue">요청</span> 설치형 Mac 미지원<small>Moncoti · 경영지원실 협의 필요</small></div></div>
+    <div class="col"><h5>지난주 한 일 34</h5>
+      <div class="it">관리장: 드로어·완료 판별·태스크 합치기 외 3건</div>
+      <div class="it">사내 지식 구축: 실험실 기획·웹 스캐폴딩</div>
+      <div class="it">Moncoti: 검증 방향 협의 외 1건</div></div>
+  </div>
+  <div class="sec">핵심 프로젝트 단계</div>
+  <div class="strip"><span>관리장 ■■▣□□</span><span>사내 지식 구축 ▣□□□□</span><span>Moncoti ■■■▣▣</span><span>현업진단 ■▣▣□□</span><span>…</span></div>
+  <div class="fold">AX팀 운영 4 ▸</div>
+</div>
+<table>
+<thead><tr><th style="width:24%">질문</th><th>답하는 곳</th></tr></thead>
+<tbody>
+<tr><td>어디까지 진행됐나</td><td>아래 단계표(작게), 지난주 한 일</td></tr>
+<tr><td>다음 단계</td><td>"이번 주 할 일" 칸</td></tr>
+<tr><td>누가 도와야 하나</td><td>"도움이 필요한 것" 칸 — 가장 크게 보인다</td></tr>
+</tbody>
+</table>
+<div class="grid2">
+  <div class="card"><h4>장점</h4><ul><li>주간회의 진행 순서와 같다(지난주 → 이슈 → 이번 주)</li><li>도움이 필요한 것이 가장 눈에 띈다</li></ul></div>
+  <div class="card"><h4>단점</h4><ul><li>"이번 주 할 일"과 "요청"은 작업 기록만으로 채우기 어렵다 — 데이터 확보가 먼저</li><li>프로젝트 전체 구도는 덜 보인다</li></ul></div>
+</div>
+
+<!-- ================= C ================= -->
+<h2>안 C. 단계 지도 — 프로젝트 × 단계 표</h2>
+<p>줄은 핵심 프로젝트, 칸은 단계. 칸마다 상태와 지금 하는 태스크, 오른쪽에 다음 단계·이슈. 줄을 누르면 프로젝트 상세 페이지(세부 업무·파일). 운영은 별도 페이지.</p>
+<div class="frame">
+  <div class="bar"><b>핵심 프로젝트</b><span class="tabs"><span class="on">핵심 프로젝트</span><span>AX팀 운영</span><span>업무 기록</span></span></div>
+  <table class="mx">
+    <tr><th></th><th>리서치</th><th>기획</th><th>프로토타입</th><th>개발·테스트</th><th>출시·운영</th><th>다음 · 이슈</th></tr>
+    <tr><td class="n">★ 관리장</td><td class="x">—</td><td class="d">완료 6</td><td class="c">파일럿 개발</td><td class="x">—</td><td class="x">—</td><td class="r">배치안 2~3개 · <span class="badge bad">지연 1</span></td></tr>
+    <tr><td class="n">사내 지식 구축</td><td class="c">파서 실험실</td><td class="x">—</td><td class="x">—</td><td class="x">—</td><td class="x">—</td><td class="r">WBS·개발실 협의</td></tr>
+    <tr><td class="n">Moncoti</td><td class="x">—</td><td class="d">완료 2</td><td class="x">—</td><td class="c">실무 테스트</td><td class="c">오픈·안정화</td><td class="r">설치형 검증 · <span class="badge warn">확인 2</span></td></tr>
+    <tr><td class="n">현업진단</td><td class="c">2팀 진단</td><td class="c">과제 정리</td><td class="c">스킬 개발</td><td class="x">—</td><td class="x">—</td><td class="r">과제 정리 · <span class="badge warn">확인 1</span></td></tr>
+  </table>
+</div>
+<table>
+<thead><tr><th style="width:24%">질문</th><th>답하는 곳</th></tr></thead>
+<tbody>
+<tr><td>어디까지 진행됐나</td><td>표의 칸 색(완료·진행·예정) — 가장 분명하다</td></tr>
+<tr><td>다음 단계</td><td>오른쪽 "다음"</td></tr>
+<tr><td>누가 도와야 하나</td><td>오른쪽 이슈 칩(지원 요청은 별도 데이터 필요)</td></tr>
+</tbody>
+</table>
+<div class="grid2">
+  <div class="card"><h4>장점</h4><ul><li>"3-1" 같은 번호 없이 단계로 비교가 된다</li><li>본부장 보고용으로 한 장에 요약된다</li></ul></div>
+  <div class="card"><h4>단점</h4><ul><li>단계 판별이 틀리면 표 전체가 어긋나 보인다</li><li>지금 화면(간트)과 가장 많이 다르다 — 개발량이 가장 크다</li></ul></div>
+</div>
+
+<!-- ================= Data ================= -->
+<h2>필요한 데이터와 확보 가능 여부</h2>
+<table>
+<thead><tr><th style="width:20%">데이터</th><th style="width:9%">A</th><th style="width:9%">B</th><th style="width:9%">C</th><th style="width:14%">지금</th><th>확보 방법</th></tr></thead>
+<tbody>
+<tr><td>핵심/운영 구분</td><td>필요</td><td>필요</td><td>필요</td><td><span class="badge ok">있음</span></td><td>프로젝트 <code>kind</code>(11/24 반영)</td></tr>
+<tr><td>태스크 단계</td><td>필요</td><td>작게</td><td><b>핵심</b></td><td><span class="badge ok">있음</span></td><td>태스크 <code>stage</code>, 판별 에이전트가 정함. 틀리면 정정</td></tr>
+<tr><td>진척률·상태</td><td>필요</td><td>작게</td><td>필요</td><td><span class="badge ok">있음</span></td><td>자동(ADR-018)</td></tr>
+<tr><td>다음 단계</td><td>필요</td><td>필요</td><td>필요</td><td><span class="badge ok">있음</span></td><td>미완료 태스크 중 가장 가까운 것 + 회의 결정</td></tr>
+<tr><td>지난주 한 일</td><td>아래</td><td><b>핵심</b></td><td>상세</td><td><span class="badge ok">있음</span></td><td>작업 내역 자동 수집</td></tr>
+<tr><td>이번 주 예정</td><td>띠</td><td><b>핵심</b></td><td>—</td><td><span class="badge warn">일부</span></td><td>WBS 일정(이번 주 시작·마감) + <b>회의록의 "다음 검토 대상·향후 일정"을 예정 태스크로 자동 등록</b></td></tr>
+<tr><td>지연·확인 필요</td><td>필요</td><td>필요</td><td>필요</td><td><span class="badge ok">있음</span></td><td>자동</td></tr>
+<tr><td>지원 요청</td><td>띠</td><td><b>핵심</b></td><td>선택</td><td><span class="badge bad">없음</span></td><td>① 회의록·Chat에서 "협의 필요·지원 필요·막힘" 판별(자동) ② 담당자가 태스크에 한 줄 남기기(유일한 입력, 최소화)</td></tr>
+<tr><td>도울 사람</td><td>—</td><td>선택</td><td>—</td><td><span class="badge warn">일부</span></td><td>담당자는 있음. 도울 사람·부서는 회의록에서 판별(예: "경영지원실·개발실 협의")</td></tr>
+</tbody>
+</table>
+
+<h2>권고</h2>
+<div class="callout"><b>지금은 안 A로 시작하고, 데이터가 쌓이면 안 B 보기를 추가</b>
+<ul style="margin:6px 0 0">
+<li>회의 합의(초기엔 "전체 → 이번 주")와 맞고, 필요한 데이터가 대부분 이미 있다. 공통 개편(분리·단계·다음·이슈)을 이미 반영해 개발량이 가장 적다.</li>
+<li>안 B의 핵심인 "이번 주 예정·지원 요청"은 회의록 자동 반영과 한 줄 입력이 먼저 자리 잡아야 한다. 2~3주 운영해 데이터가 채워지면 "이번 주" 탭으로 추가한다.</li>
+<li>안 C의 단계 표는 본부장 보고용 보기로 따로 두는 것을 검토한다(단계 판별 정확도를 본 뒤).</li>
+</ul></div>
+
+<h3>다음 회의에서 정할 것</h3>
+<table>
+<tbody>
+<tr><td style="width:30%">배치안</td><td>A로 시작 / B 먼저 / C 먼저</td></tr>
+<tr><td>지원 요청 입력</td><td>담당자 한 줄 입력을 둘지, 회의록·Chat 자동 판별만 할지</td></tr>
+<tr><td>단계 이름</td><td>리서치 · 기획 · 프로토타입 · 개발·테스트 · 출시·운영 그대로 / 조정</td></tr>
+<tr><td>운영 영역 위치</td><td>같은 페이지 아래(접힘) / 별도 페이지</td></tr>
+</tbody>
+</table>
+</main>
+</body>
+</html>

@@ -173,7 +173,7 @@ test('WBS tasks sort naturally before activity and show owner dates state and pl
  {id:'t2',title:'두번째',wbsCode:'1.2',planSource:'wbs',owner:'합성',startDate:'2026-11-01',dueDate:'2026-11-16',subtasks:[]}]});`);
  const html=a.run('taskPanel(projects[0])');
  assert.ok(html.indexOf('두번째')<html.indexOf('열번째'));assert.ok(html.indexOf('열번째')<html.indexOf('계획 밖'));
- assert.match(html,/1.2/);assert.ok(html.includes('합성 · 11/1~11/16'));assert.match(html,/>확인 필요</);assert.match(html,/>예정</);assert.doesNotMatch(html,/gantt-group-label/);
+ assert.doesNotMatch(html,/<code>/);assert.ok(html.includes('합성 · 11/1~11/16'));assert.match(html,/>확인 필요</);assert.match(html,/>예정</);assert.doesNotMatch(html,/gantt-group-label/);
  assert.ok(a.run('projectInfo(projects[0])').includes('진척 33% · 완료 1/3 · 계획 0%'));
  assert.match(a.run('projectInfo({id:"x",name:"",desc:"",tasks:[],files:[]})'),/진척 0% · 완료 0\/0/);
 });
@@ -252,12 +252,12 @@ test('WBS group rows summarize children, preserve root ordering and collapse nes
  html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');assert.doesNotMatch(html,/첫번째 말단|두번째 말단|2.1 비교평가/);assert.match(html,/최상위 아홉/);assert.equal((html.match(/data-gantt-group=/g)||[]).length,1);
  a.run(`action({dataset:{action:'wbs-group',group:JSON.stringify([projects[0].id,'2 플랫폼 비교평가'])}})`);
  assert.match(a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))'),/첫번째 말단/);
- a.run("state.drawerTask='a'");assert.match(a.run('taskDrawer()'),/2 플랫폼 비교평가 \/ 2.1 비교평가 \/ 2.1.1/);assert.doesNotMatch(a.run('taskDrawer()'),/계획 출처/);
+ a.run("state.drawerTask='a'");assert.match(a.run('taskDrawer()'),/플랫폼 비교평가 \/ 비교평가/);assert.doesNotMatch(a.run('taskDrawer()'),/계획 출처/);
 });
 test('activity copy and work dots explain their meaning and daily record count',()=>{
  const a=app();a.run(`projects[0].tasks=[{id:'x',title:'합성',subtasks:[{performedAt:'2026-11-04',owner:'합성'},{performedAt:'2026-11-04',owner:'합성'}]}];state.drawerTask='x'`);
  const html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');
- assert.doesNotMatch(html,/gantt-group-label|activity-bar/);assert.match(html,/<code><\/code>/);assert.match(html,/title="11월 4일 · 기록 2건" aria-label="11월 4일 · 기록 2건"/);
+ assert.doesNotMatch(html,/gantt-group-label|activity-bar/);assert.doesNotMatch(html,/<code>/);assert.match(html,/title="11월 4일 · 기록 2건" aria-label="11월 4일 · 기록 2건"/);
  assert.match(a.run('statusLegend()'),/● 작업한 날/);assert.doesNotMatch(a.run('taskDrawer()'),/계획 출처|WBS에 없/);
 });
 
@@ -273,8 +273,23 @@ test('numberless tasks follow numbered tasks by start or first record with unifo
  assert.deepEqual(Array.from(a.run('drawerTasks(projects[0]).map(t=>t.id)')),['number','first','later']);
  const html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');
  assert.ok(html.indexOf('data-gantt-task="number"')<html.indexOf('data-gantt-task="first"'));assert.ok(html.indexOf('data-gantt-task="first"')<html.indexOf('data-gantt-task="later"'));
- assert.doesNotMatch(html,/activity-bar|gantt-group-label|wbs-group-row|--wbs-depth:1/);assert.equal((html.match(/<code><\/code>/g)||[]).length,2);
+ assert.doesNotMatch(html,/activity-bar|gantt-group-label|wbs-group-row|--wbs-depth:1/);assert.equal((html.match(/<code>/g)||[]).length,0);
 });
 for(const kind of ['commit','pull_request','issue','ai_chat'])test('index-only source modal '+kind,()=>{
  const a=app();a.run(`const f=projects[0].files[0];Object.assign(f,{kind:'${kind}',url:'https://github.com/o/r',folderId:'ignored',folderPath:['ignored']});state.modal={project:projects[0].id,file:f.id}`);let html=a.run('modal()');assert.match(html,/https:\/\/github.com\/o\/r/);assert.doesNotMatch(html,/folder-browser|<img|Google Drive/);a.run('projects[0].files[0].url=undefined');html=a.run('modal()');assert.doesNotMatch(html,/<a |folder-browser|<img/);
+});
+
+test('project sections separate core and collapsed operations; pins sort and persist per mode',()=>{
+ const a=app(`AX_DATA.projects[1].kind='ops'`);let html=a.run('projectArea()');assert.match(html,/핵심 프로젝트/);assert.match(html,/AX팀 운영/);assert.match(html,/id="ops-projects" hidden/);assert.ok(!html.includes('data-action="project" data-id="'+a.run('projects[1].id')+'"'));
+ a.run(`action({dataset:{action:'ops-toggle'}})`);assert.match(a.run('projectArea()'),/id="ops-projects" >/);
+ a.run(`globalThis.saved={};localStorage.setItem=(k,v)=>saved[k]=v;togglePin(projects.at(-1).id);localStorage.getItem=k=>saved[k];`);assert.equal(a.run('readPins().has(projects.at(-1).id)'),true);assert.equal(a.run('pinKey'),'ax-project-pins:example');html=a.run('projectArea()');assert.ok(html.indexOf('data-action="project-pin" data-id="'+a.run('projects.at(-1).id')+'"')<html.indexOf('data-action="project-pin" data-id="'+a.run('projects[0].id')+'"'));assert.match(html,/aria-pressed="true"/);
+});
+test('stages summarize status, group in order, hide numbers, and expose drawer properties',()=>{
+ const a=app();a.run(`const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'dev',title:'5.1 구현',wbsCode:'5.1',wbsGroups:['5 구현'],stage:'개발·테스트',status:'in_progress',startDate:'2026-11-01'},{...base,id:'research',stage:'리서치',status:'completed'},{...base,id:'plan',stage:'기획',status:'in_progress',startDate:'2026-12-01'},{...base,id:'none',stage:null}];`);
+ assert.equal(a.run('stageStates(projects[0]).map(s=>s.status).join()'),'완료,예정,진행');let html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))');assert.ok(html.indexOf('리서치')<html.indexOf('개발·테스트'));assert.ok(html.indexOf('data-gantt-task="none"')>html.indexOf('data-gantt-task="dev"'));assert.doesNotMatch(html,/<code>|>5\.1 구현</);
+ a.run(`state.drawerTask='dev'`);html=a.run('taskDrawer()');assert.match(html,/<dt>단계<\/dt><dd>개발·테스트/);assert.match(html,/<dt>WBS 번호<\/dt><dd>5.1/);
+});
+test('next step prefers earliest active due, then earliest upcoming, then undated active',()=>{
+ const a=app();a.run(`const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'undated',status:'in_progress',startDate:undefined,dueDate:undefined},{...base,id:'future2',status:'in_progress',startDate:'2026-12-02',dueDate:'2026-12-03'},{...base,id:'future1',status:'in_progress',startDate:'2026-12-01',dueDate:undefined},{...base,id:'active2',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-22'},{...base,id:'active1',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-19'}]`);
+ assert.equal(a.run('nextTask(projects[0]).id'),'active1');a.run(`projects[0].tasks=projects[0].tasks.filter(t=>!t.id.startsWith('active'))`);assert.equal(a.run('nextTask(projects[0]).id'),'future1');a.run(`projects[0].tasks=projects[0].tasks.filter(t=>!t.id.startsWith('future'))`);assert.equal(a.run('nextTask(projects[0]).id'),'undated');
 });

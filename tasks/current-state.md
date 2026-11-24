@@ -69,3 +69,17 @@
 - 첫 적용: "사내 지식 구축"(kb) 프로젝트, 태스크 KB-01 "OCR·문서 파서 실험실 구축". 근거는 로컬 `data_lab`(커밋 3, PLAN.md, Paseo로 돌린 Claude Code 세션 5·Codex 세션 6). `state.json`에 `local_repos`, `projects_map`(작업 공간→프로젝트) 추가.
 - 수집기 추가: Codex 세션 색인(`--codex-dir`, 작업 폴더별), 로컬 Git 커밋 색인(`collect-local-git.cjs`). Codex 세션의 수정 파일 목록은 실제 세션 형식에서 비어 나옴(후속 확인).
 - 공개 사이트·인증(ADR-022)은 별도 브랜치 `feat/auth-site`(Paseo 워크트리)에서 진행 중. 배포 대상(호스팅)은 사용자 결정 대기.
+
+## 2026-11-24 회의 반영 (ADR-023)
+- 브랜치 `feat/meeting-1124`(docs/system-overview 위, 원래 폴더에 체크아웃). 별도 워크트리는 auth-site(Paseo)만 남음.
+- 회의 결정: 목적=프로젝트별 진행·이슈·다음 단계 정기 확인. 핵심/AX팀 운영 분리(운영: ops·hire·gws-mig·edu), 별표, WBS 번호 대신 단계(리서치·기획·프로토타입·개발·테스트·출시·운영), 배치안 2~3개 후 상세 개발.
+- Lead 완료: ADR-023, docs/01-product-brief.md·05-acceptance 개정, docs/design/m5-layout-options.html(배치안 A 프로젝트 우선·B 이번 주 우선·C 단계 지도, 권고 A).
+- 화면 반영 완료(Builder): kind·stage 필드, 핵심/운영 영역(운영 접힘)·별표(localStorage)·단계 칩·다음 단계·이슈, 단계별 묶음, WBS 번호 숨김(드로어에만). 데이터 반영: RUN-MEETING-1124(kind 11, stage 36, 예정 태스크 AXPM-LAYOUT·KB-02·MON-05, 회의록 근거). 서비스 명세 v1.1·정리 문서에 반영.
+- 결정 대기: 배포 위치(PC+터널/Workers/GPT Sites/VM), 회사 조직 GCP 프로젝트 가능 여부, 팀원 메일 수집 범위, ADR-019 확정, 남은 사본 삭제, 배치안 선택(다음 회의).
+
+### AX-Builder 검증 완료 — 2026-11-24
+- 구현: 프로젝트 kind(core/ops), 태스크 stage의 신규·갱신 검증 및 adapter 전달. 기존 SQLite 메타데이터/API 경로는 변경 없이 두 필드를 전달하며 합성 API 재적재로 확인.
+- 화면: 핵심/운영 영역 분리(운영 기본 접힘), 데이터 모드별 별표 저장·정렬, 단계 상태·다음 단계·이슈 개수, 단계순 간트 묶음, WBS 번호 숨김과 드로어 속성. 계획 바·작업일 점 유지.
+- 검증: python3.15.exe build.py, typecheck, 단위 84/84, 서버 256/256, 시각 기준 갱신 및 재비교 54/54(모든 픽셀 차이 0), 탐색 110/110 통과. git diff --check 통과.
+- 실데이터 폴더 및 docs/project-review/* 미접근, 추가 에이전트·커밋·푸시 없음. 실데이터 필드 적용과 독립 검토·통합은 Lead 후속 작업.
+- Windows 기준 PNG 덮어쓰기 오류는 임시 파일 작성 후 rename으로 해결. 미해결 구현 오류 없음.

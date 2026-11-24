@@ -86,9 +86,10 @@ test('unchanged historical worklog submissions remain ignored on merged tasks',(
 });
 test('merged tasks and updated project fields survive SQLite reload into API projection',async t=>{
  const f=fixture(t);a.equal(f.apply().ok,true);
- const delta={run_id:'API-MERGE',collected_at:f.delta.collected_at,tasks:[{task_id:'T2',project_id:'PR',title:'합친 업무',status:'in_progress'}],task_updates:[{task_id:'T',merged_into:'T2'}],worklog_updates:[{worklog_id:'W',task_id:'T2'}],project_updates:[{project_id:'PR',name:'새 프로젝트',purpose:'새 목적',display_owner:'새 담당'}]};
+ const delta={run_id:'API-MERGE',collected_at:f.delta.collected_at,tasks:[{task_id:'T2',project_id:'PR',title:'합친 업무',status:'in_progress',stage:'기획'}],task_updates:[{task_id:'T',merged_into:'T2'}],worklog_updates:[{worklog_id:'W',task_id:'T2'}],project_updates:[{project_id:'PR',name:'새 프로젝트',purpose:'새 목적',display_owner:'새 담당',kind:'ops'}]};
  a.equal(f.apply(delta).ok,true);const {server}=createServer({dir:f.dir,seedMode:'small',realDatasetFile:f.file});f.setServer(server);await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const v=await (await fetch(`http://127.0.0.1:${server.address().port}/api/view?data=real`)).json();
+ a.equal(v.projects[0].kind,'ops');a.equal(v.projects[0].tasks[0].stage,'기획');
  a.equal(v.projects[0].name,'새 프로젝트');a.equal(v.projects[0].desc,'새 목적');a.equal(v.projects[0].owner,'새 담당');a.deepEqual(v.projects[0].tasks.map(t=>t.id),['T2']);a.equal(v.projects[0].tasks[0].subtasks[0].id,'W');
 });
 function fixture(t) {
@@ -283,3 +284,4 @@ test('history_purges removes history of already-removed entities only, with purg
 test('github and ai_chats checkpoints are accepted',()=>{
  const {data}=removalCase();a.equal(merge(data,{},{run_id:'CP',collected_at:'2026-11-24T00:00:00Z',checkpoints:{github:'2026-11-24T00:00:00Z',ai_chats:'2026-11-24T00:00:00Z'}}).ok,true);
 });
+for(const table of ['projects','project_updates','tasks','task_updates'])for(const value of (table.startsWith('project')?['core','ops',null,'bad',3]:['리서치','기획','프로토타입','개발·테스트','출시·운영',null,'bad',3]))test('meeting field '+table+' '+value,()=>{const {data}=mergeCase(),project=table.startsWith('project'),field=project?'kind':'stage',id=project?'project_id':'task_id';const row={[id]:table.endsWith('updates')?(project?'PR':'A'):'NEW',[field]:value};if(table==='tasks')Object.assign(row,{project_id:'PR',status:'in_progress'});const r=merge(data,{}, {run_id:'FIELDS',collected_at:'2026-11-24T00:00:00Z',[table]:[row]});a.equal(r.ok,project?['core','ops'].includes(value):value===null||['리서치','기획','프로토타입','개발·테스트','출시·운영'].includes(value));});

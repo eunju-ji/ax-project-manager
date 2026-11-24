@@ -98,7 +98,7 @@ footer{margin-top:64px;color:var(--muted);font-size:13px;border-top:1px solid va
   <div class="meta">
     <span>작성<b>AX-Lead</b></span>
     <span>기준일<b>2026-11-24</b></span>
-    <span>버전<b>1.0</b></span>
+    <span>버전<b>1.1</b></span>
     <span>단계<b>실데이터 파일럿 운영 · 팀 공개 준비</b></span>
   </div>
 </header>
@@ -112,6 +112,8 @@ footer{margin-top:64px;color:var(--muted);font-size:13px;border-top:1px solid va
   <div class="card"><h4>하는 일</h4><p>흔적을 모아 같은 업무끼리 묶고, 업무가 아닌 것은 버리고, 완료·지연을 판단해 한 화면에 보여 준다.</p></div>
   <div class="card"><h4>다른 점</h4><p>입력 화면이 없다. 시스템이 먼저 판단하고, 사람은 애매한 것만 본다. 원문은 저장하지 않는다.</p></div>
 </div>
+
+<div class="callout ok"><b>목적 (2026-11-24 팀 회의)</b>프로젝트별로 <b>어디까지 진행됐고, 어떤 이슈가 있으며, 다음에 무엇을 해야 하는지</b>를 주간회의 등에서 정기적으로 확인한다. 화면은 "어디까지 진행됐나 · 다음 단계에 무엇이 필요한가 · 누가 도와야 하나"에 답해야 한다.</div>
 
 <h3>핵심 원칙</h3>
 <table>
@@ -198,8 +200,12 @@ flowchart LR
 <li>칸을 누르면 업무 요약이 그날의 일간 요약으로 바뀐다. 사람 탭을 고르면 그 사람 기준으로 바뀐다.</li>
 </ul></div>
 
-<div class="screen" id="f-projects"><h4>전체 프로젝트 (WBS 간트 표)</h4>
+<div class="screen" id="f-projects"><h4>프로젝트 영역 (WBS 간트 표) <span class="badge new">11/24 개편</span></h4>
 <ul>
+<li><b>핵심 프로젝트</b>와 <b>AX팀 운영</b>(채용·이관·교육·팀 운영)을 두 영역으로 나눈다. 운영 영역은 아래에 기본 접힘.</li>
+<li><b>별표</b>를 누르면 그 프로젝트가 영역 맨 위에 고정된다.</li>
+<li>프로젝트 행에 <b>단계</b>(리서치 · 기획 · 프로토타입 · 개발·테스트 · 출시·운영)별 진행, <b>다음 단계</b>(가장 가까운 미완료 태스크), <b>이슈</b>(지연·확인 필요)가 보인다.</li>
+<li>"3-1" 같은 WBS 번호는 화면에서 숨기고 드로어에만 둔다. 펼치면 태스크가 단계별로 묶여 나온다.</li>
 <li>검색(프로젝트·태스크 이름), 담당자 필터, "최근 순" 정렬, 모두 펼치기, 월 이동.</li>
 <li><b>프로젝트 행</b>: 이름, 태스크·기록 수, 담당(아바타), 기간, <b>진척률</b>(완료 ÷ 전체)과 계획 진도, 지연·확인 필요 칩, 목적 한 줄.</li>
 <li><b>묶음 행</b>: WBS의 상위 단계(예: 5.1, 5.2)를 묶음으로 보여 주고 "완료 3/4"처럼 요약.</li>
@@ -213,7 +219,7 @@ flowchart LR
 <div class="where">태스크를 누르면 오른쪽에 문서처럼 열림</div>
 <ul>
 <li>프로젝트 이름, 태스크 이름, <b>업무 설명</b>(어떤 일인지 한두 문장).</li>
-<li>속성: 상태, 담당, 기간, 산출물.</li>
+<li>속성: 상태, 단계, 담당, 기간, 산출물, WBS 번호(있으면).</li>
 <li><b>작업 내역</b>: 날짜별로 묶어 시간·수행자·제목·요약, 그리고 근거 링크(Drive 파일, GitHub 커밋 등).</li>
 <li>위·아래 화살표로 이전·다음 태스크, 닫기.</li>
 <li>프로젝트를 펼치면 아래에 "관련 자료" 카드(파일·커밋·AI 세션)가 줄지어 나온다.</li>
@@ -425,6 +431,9 @@ timeline
 <tbody>
 <tr><td>자동 수집·판별(내 계정)</td><td><span class="badge ok">운영 중</span></td><td>Drive·Chat·Gmail·GitHub·AI 세션·로컬 Git</td></tr>
 <tr><td>화면(요약·히트맵·간트·드로어)</td><td><span class="badge ok">운영 중</span></td><td>실데이터로 표시</td></tr>
+<tr><td>회의 반영: 핵심/운영 분리·단계·다음 단계·이슈</td><td><span class="badge ok">11/24 반영</span></td><td>ADR-023</td></tr>
+<tr><td>화면 배치안 3종(프로젝트 우선·이번 주 우선·단계 지도)</td><td><span class="badge blue">작성 완료</span></td><td>다음 회의에서 선택. 권고는 프로젝트 우선(<code>docs/design/m5-layout-options.html</code>)</td></tr>
+<tr><td>이번 주 예정·지원 필요 이슈</td><td><span class="badge warn">데이터 확보</span></td><td>WBS 일정·회의록 자동 반영 + 지원 요청 한 줄</td></tr>
 <tr><td>로그인·권한</td><td><span class="badge blue">구현 완료</span></td><td>배포 대기</td></tr>
 <tr><td>팀원 계정 연결</td><td><span class="badge warn">설계</span></td><td>사람별 동의, 토큰 암호화 보관, 사람별 수집</td></tr>
 <tr><td>팀 단위 판별(ADR-019)</td><td><span class="badge warn">확정 대기</span></td><td>같은 기록은 하나로, 수행자는 실제로 한 사람</td></tr>
@@ -439,6 +448,8 @@ timeline
 <table>
 <thead><tr><th style="width:30%">항목</th><th>선택지</th></tr></thead>
 <tbody>
+<tr><td>화면 배치안</td><td>프로젝트 우선(권고) / 이번 주 우선 / 단계 지도</td></tr>
+<tr><td>지원 요청 입력</td><td>담당자 한 줄 입력을 둘지, 회의록·Chat 자동 판별만 할지</td></tr>
 <tr><td>배포 위치</td><td>이 PC + 터널 / Cloudflare Workers / ChatGPT Sites(기능 시험 후) / 무료 VM</td></tr>
 <tr><td>Google 앱 방식</td><td>회사 조직 안 프로젝트(내부, 권장) / 개인 프로젝트(외부·테스트, 7일마다 재연결)</td></tr>
 <tr><td>팀원 메일 수집</td><td>각자 동의한 사람의 업무 메일만 / 처음엔 메일 제외</td></tr>

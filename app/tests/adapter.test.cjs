@@ -1,5 +1,6 @@
 ﻿const {test}=require('node:test');const assert=require('node:assert/strict');const fixture=require('./fixtures/ops-synthetic.json');const M=require('../src/model.js');
 const adapt=d=>require('../src/adapter.js').adapt(d);const clone=()=>structuredClone(fixture);const all=v=>v.projects.flatMap(p=>p.tasks.flatMap(t=>t.subtasks));
+test('kind defaults to core and stage survives projection',()=>{const d=clone();d.projects[0].kind='ops';d.tasks[0].stage='기획';let v=adapt(d);assert.equal(v.projects.find(p=>p.id===d.projects[0].project_id).kind,'ops');assert.equal(v.projects.flatMap(p=>p.tasks).find(t=>t.id===d.tasks[0].task_id).stage,'기획');delete d.projects[0].kind;assert.equal(adapt(d).projects[0].kind,'core');});
 
 test('merged tasks, logs, files and reviews never enter the screen projection',()=>{
  const d=clone(),id=d.tasks[0].task_id;d.tasks[0].merged_into=d.tasks[1].task_id;const before=structuredClone(d),v=adapt(d);

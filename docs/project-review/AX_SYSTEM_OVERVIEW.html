@@ -168,6 +168,7 @@ footer{margin-top:64px;color:var(--muted);font-size:13px;border-top:1px solid va
 <tr><td>delta 기능</td><td>추가·수정·작업 내역 이동·태스크 합치기</td><td>+ 프로젝트·사람·근거·태스크·작업 내역 삭제, 사람 이름 수정, <b>purge</b>, 지난 이력 삭제, <b>제외 목록</b>, 새 근거 종류(커밋·PR·이슈·AI 세션)</td></tr>
 <tr><td>실행 형태</td><td>사용자 PC의 로컬 서버만</td><td><b>공개 사이트용 로그인·권한 구현</b>(Google 로그인, 초대제, 관리자·구성원·보기, CSRF·보안 헤더·접근 감사, 수집 토큰 업로드, Dockerfile·배포 절차서). <span class="badge ok">보안 검토 통과</span> 배포는 호스팅 결정 대기</td></tr>
 <tr><td>화면</td><td>히트맵 6개월, 긴 이름이 표에서 겹침</td><td>히트맵 <b>3월부터(39주)</b>, 담당자 표 말줄임, GitHub·AI 근거 링크, 관리자용 사용자 관리 화면. 간트 바는 계획 기간 그대로 유지하기로 함</td></tr>
+<tr><td>화면 목적</td><td>업무 기록을 한눈에(요약·히트맵·간트)</td><td><b>프로젝트별 진행·이슈·다음 단계 정기 확인</b>(11/24 회의). 핵심/운영 분리, 별표, 단계 진행, 다음 단계, 이슈, WBS 번호 숨김. 배치안 3종 작성</td></tr>
 <tr><td>Git 운영</td><td>AX-Lead가 main 병합</td><td><b>작업 브랜치 Push까지만</b>, 병합은 사용자</td></tr>
 <tr><td>수치</td><td>프로젝트 11 · 태스크 62 · 작업 내역 267 · 근거 478</td><td>프로젝트 11 · 태스크 50 · 작업 내역 61 · 근거 187 (삭제·정리 반영, 새 프로젝트·GitHub·AI 근거 추가)</td></tr>
 </tbody>
@@ -221,6 +222,7 @@ timeline
 <tr><td>018</td><td>WBS 행을 태스크로, 진척률·완료·지연 판별, 태스크·작업 내역 기준, 히트맵</td><td><span class="badge ok">유효</span></td></tr>
 <tr><td>020</td><td>GitHub·AI 대화 연결(색인·요약만), 수집 제외 목록, 내용까지 지우는 purge</td><td><span class="badge new">신규 11/24</span></td></tr>
 <tr><td>021</td><td>프로젝트 판별: WBS 없어도 신호 두 가지 이상이면 프로젝트</td><td><span class="badge new">신규 11/24</span></td></tr>
+<tr><td>023</td><td>화면 방향(11/24 회의): 진행·다음 단계·이슈 중심, 핵심 프로젝트와 팀 운영 분리, 번호 대신 단계, 배치안 2~3개 후 상세 개발</td><td><span class="badge new">신규 11/24</span></td></tr>
 <tr><td>022</td><td>공개 사이트: Google 로그인, 초대제, 역할별 권한, 수집 토큰</td><td><span class="badge new">신규 11/24</span></td></tr>
 <tr><td>014</td><td>운영 DB 제품·배치</td><td><span class="badge warn">예정</span></td></tr>
 <tr><td>019</td><td>여러 계정·소스를 팀 단위로 한 번에 판별</td><td><span class="badge warn">결정 대기</span></td></tr>

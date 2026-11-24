@@ -125,3 +125,9 @@ worklog_updates는 기존 worklog의 task_id만 변경한다. 대상 worklog는 
 ```
 
 `project_updates`는 존재하는 project_id와 선택 문자열 필드 `name`, `purpose`, `display_owner`, `owner_id`, `deputy_id`만 허용한다. name은 유니코드 코드포인트 120자, purpose는 200자 이하이며 null은 허용하지 않는다(비우기는 빈 문자열). 생략한 필드는 유지한다. 동일 프로젝트 중복 지정·알 수 없는 필드·비밀값은 전체 delta를 거부한다. 사람의 history 교정 필드는 보호하고 동일 값은 ignored로 센다. 변경 시 `entity_type: projects`, `DELTA-<run_id>-<project_id>`, 전체 before/after, actor system, reason `scheduled-collect project update`를 기록한다. 재실행 digest·원자적 검증 규칙은 동일하다.
+
+## 프로젝트 구분과 단계 (2026-11-24)
+
+- 신규 `projects`와 `project_updates`의 `kind`는 `core`(핵심 프로젝트) 또는 `ops`(AX팀 운영)만 허용한다. 생략하면 기존 값을 유지하며 화면에서는 값이 없을 때 `core`로 취급한다. null과 다른 값은 거부한다.
+- 신규 `tasks`와 `task_updates`의 `stage`는 `리서치`, `기획`, `프로토타입`, `개발·테스트`, `출시·운영` 또는 null만 허용한다. 생략하면 기존 값 유지, null은 단계 해제다. 사람 교정 보호·전체 before/after 이력·원자적 검증을 동일하게 적용한다.
+- 화면은 단계가 있는 프로젝트를 위 순서로 묶고 단계 없는 태스크를 마지막에 표시한다. 단계가 없는 프로젝트는 기존 WBS 묶음을 유지한다. 번호는 드로어의 `WBS 번호` 속성에서 확인한다.

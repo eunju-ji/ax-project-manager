@@ -90,7 +90,12 @@ async function visual() {
           if(kind==='dev' && state==='project' && theme==='linear-notion') {await p.evaluate(()=>window.scrollTo(0,0));await p.screenshot({path:path.join(results,`wbs-table-${width}-project.png`),fullPage:true});}
           await context.close();
         }
-        if (update) await fs.writeFile(path.join(baseline, name), shots[0]);
+        if (update) {
+          // Replace existing PNGs atomically (Windows may reject in-place writes).
+          const target=path.join(baseline,name), temp=target+'.tmp';
+          await fs.writeFile(temp,shots[0]);
+          await fs.rename(temp,target);
+        }
         const baselinePixels = diff(await fs.readFile(path.join(baseline, name)), shots[0]);
         const offlinePixels = diff(shots[0], shots[1]);
         report.checks.push({ name, baselinePixels, offlinePixels });
@@ -117,6 +122,24 @@ async function nav() {
       const row=p.locator('.unified-toggle').first(); await row.click(); await expect(row).toHaveAttribute('aria-expanded','true');
       await expect(p.locator('.project-detail')).toBeVisible(); await row.click(); await expect(p.locator('.project-detail')).toHaveCount(0);
       await p.locator('.unified-timeline .timeline-summary').first().click(); await expect(p.locator('.project-detail')).toBeVisible();
+    });
+    await check('core and operations, pins and stages',async()=>{
+      await load(p,url);
+      await p.evaluate(()=>{projects[1].kind='ops';const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'stage-task',title:'5.1 단계 업무',wbsCode:'5.1',stage:'기획',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-30'}];render();});
+      await expect(p.locator('[data-kind="core"] > h2')).toContainText('핵심 프로젝트');
+      await expect(p.locator('#ops-projects')).toBeHidden();
+      await click(p,'ops-toggle');await expect(p.locator('#ops-projects')).toBeVisible();
+      const pinned=await p.evaluate(()=>projects.at(-1).id);
+      await p.locator('[data-action="project-pin"][data-id="'+pinned+'"]').click();
+      await expect(p.locator('[data-kind="core"] .project-pin').first()).toHaveAttribute('data-id',pinned);
+      await expect(p.locator('.stage-chip').first()).toHaveText('기획 · 진행');
+      const id=await p.evaluate(()=>projects[0].id);await p.locator('.unified-toggle[data-id="'+id+'"]').click();
+      await expect(p.locator('[data-gantt-task="stage-task"] .gantt-task-copy')).toHaveText('단계 업무');
+      await p.locator('[data-gantt-task="stage-task"] .gantt-task-toggle').click();
+      await expect(p.locator('.task-properties')).toContainText('단계기획');
+      await expect(p.locator('.task-properties')).toContainText('WBS 번호5.1');
+      await p.reload();await expect(p.locator('[data-action="project-pin"][data-id="'+pinned+'"]').first()).toHaveAttribute('aria-pressed','true');
+      await p.evaluate(()=>{localStorage.removeItem(pinKey);state.pins.clear();render();});
     });
     await check('monthly WBS rows align and expand at mobile width', async () => {
       await load(p,url); await p.setViewportSize({width:390,height:844});
@@ -164,7 +187,8 @@ async function nav() {
       await p.locator('[data-action="wbs-group"]').first().click();
       await expect(p.locator('[data-gantt-task="leaf"]')).toBeVisible();
       await p.locator('[data-gantt-task="leaf"] .gantt-task-toggle').click();
-      await expect(p.locator('.task-drawer-toolbar small')).toContainText('2 플랫폼 / 2.1 비교 / 2.1.1');
+      await expect(p.locator('.task-drawer-toolbar small')).toContainText('플랫폼 / 비교');
+      await expect(p.locator('.task-properties')).toContainText('WBS 번호2.1.1');
       await p.keyboard.press('Escape');
     });
     await check('open-ended WBS and description remain clear',async()=>{
@@ -210,7 +234,7 @@ async function nav() {
       await load(p,url);await p.locator('[data-action="projects-all"]').click();
       expect(await p.locator('.wbs-project-row .unified-toggle[aria-expanded="true"]').count()).toBe(await p.evaluate(()=>filtered().length));
       expect(await p.locator('.wbs-column-head>span').allTextContents()).toEqual(['이름','담당','기간','진척 / 상태']);
-      expect(await p.locator('.wbs-project-row').first().evaluate(e=>e.getBoundingClientRect().height)).toBe(56);
+      expect(await p.locator('.wbs-project-row').first().evaluate(e=>e.getBoundingClientRect().height)).toBeGreaterThanOrEqual(108);
       await p.locator('[data-action="projects-all"]').click();await expect(p.locator('.wbs-expanded')).toHaveCount(0);
     });
     await check('top people filter derives from data', async () => {

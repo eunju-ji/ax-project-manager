@@ -5,8 +5,8 @@ const { isDeepStrictEqual: equal } = require('node:util');
 
 const DEFAULT_DATASET = path.join(__dirname, '../.real/real-dataset.json');
 const KEYS = { persons:'person_id', projects:'project_id', tasks:'task_id', worklogs:'worklog_id', sources:'source_key', links:'link_id' };
-const UPDATE_FIELDS = new Set(['merged_into','wbs_groups','description','status','completed_at','completion_basis','due_date','due_basis','title','summary','category','assignee_id','project_id','wbs_code','start_date','plan_source','plan_ref']);
-const PROJECT_FIELDS = new Set(['name','purpose','display_owner','owner_id','deputy_id']);
+const UPDATE_FIELDS = new Set(['stage','merged_into','wbs_groups','description','status','completed_at','completion_basis','due_date','due_basis','title','summary','category','assignee_id','project_id','wbs_code','start_date','plan_source','plan_ref']);
+const PROJECT_FIELDS = new Set(['kind','name','purpose','display_owner','owner_id','deputy_id']);
 const SECRET = /AIza[0-9A-Za-z_-]{20,}|token=[A-Za-z0-9_-]{10,}|SMTP_PASSWORD=|KEY_JSON=|-----BEGIN/;
 const object = v => v !== null && typeof v === 'object' && !Array.isArray(v);
 const iso = v => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(v) && Number.isFinite(Date.parse(v));
@@ -22,6 +22,8 @@ const CATEGORIES = ['기획·설계','조사·분석','제작·구현','검증',
 const validCategory = row => !('category' in row) || CATEGORIES.includes(row.category);
 const validDescription = row => !('description' in row) || row.description === null || (typeof row.description === 'string' && [...row.description].length <= 200);
 const validGroups = row => !('wbs_groups' in row) || row.wbs_groups === null || (Array.isArray(row.wbs_groups) && row.wbs_groups.length <= 4 && row.wbs_groups.every(v=>typeof v==='string' && [...v].length<=120));
+const validKind = row => !('kind' in row) || ['core','ops'].includes(row.kind);
+const validStage = row => !('stage' in row) || row.stage === null || ['리서치','기획','프로토타입','개발·테스트','출시·운영'].includes(row.stage);
 function validPlan(row, nullable=false) {
  return ['wbs_code','start_date','due_date','plan_source','plan_ref'].every(k=>{
   if (!(k in row)) return true;
@@ -77,6 +79,8 @@ function merge(dataset, state, delta) {
    const loc = `${table}[${i}]`;
    if (typeof row[key] !== 'string' || !row[key].length) { reject('missing_key',loc); continue; }
    if (['projects','tasks'].includes(table) && !/^[A-Za-z0-9_-]{1,64}$/.test(row[key])) reject('invalid_key',loc);
+   if (table==='projects' && !validKind(row)) reject('invalid_kind',loc);
+   if (table==='tasks' && !validStage(row)) reject('invalid_stage',loc);
    if (table==='tasks' && !validGroups(row)) reject('invalid_wbs_groups',loc);
    if (table==='tasks' && !validDescription(row)) reject('description_limit',loc);
    if (table==='tasks' && !validCategory(row)) reject('invalid_category',loc);
@@ -114,6 +118,7 @@ function merge(dataset, state, delta) {
   if (!project || seenProjects.has(update.project_id)) {reject('missing_or_duplicate_project',loc);continue;}
   seenProjects.add(update.project_id);
   const fields=Object.keys(update).filter(k=>k!=='project_id');
+  if (!validKind(update)) {reject('invalid_kind',loc);continue;}
   if (fields.some(k=>!PROJECT_FIELDS.has(k))) {reject('invalid_update_field',loc);continue;}
   if (fields.some(k=>typeof update[k]!=='string')) {reject('invalid_update_value',loc);continue;}
   if (('name' in update && [...update.name].length>120) || ('purpose' in update && [...update.purpose].length>200)) {reject('project_text_limit',loc);continue;}
@@ -134,6 +139,7 @@ function merge(dataset, state, delta) {
   const fields = Object.keys(update).filter(k=>k!=='task_id');
   if (fields.some(k=>!UPDATE_FIELDS.has(k))) { reject('invalid_update_field',loc); continue; }
   if (fields.some(k=>k!=='wbs_groups' && update[k]!==null && typeof update[k]!=='string')) { reject('invalid_update_value',loc); continue; }
+  if (!validStage(update)) {reject('invalid_stage',loc);continue;}
   if (!validGroups(update)) { reject('invalid_wbs_groups',loc); continue; }
   if (!validDescription(update)) { reject('description_limit',loc); continue; }
   if (!validCategory(update)) { reject('invalid_category',loc); continue; }

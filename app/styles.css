@@ -133,3 +133,25 @@ body[data-keyboard-navigation] .searchbox input:focus-visible{outline:2px solid 
 @media(prefers-reduced-motion:reduce){.folder-files a[aria-current=true]{animation:none}}
 
 .weekly-owner-table tbody th{overflow:hidden;text-overflow:ellipsis}
+/* Project overview: core work and team operations. */
+.project-kind { margin-block: 24px; }
+.project-kind > h2 { font-size: 16px; margin: 0 0 12px; }
+.project-kind > h2 span { opacity: .55; margin-left: 6px; }
+.project-kind > h2 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 6px 0; }
+.project-signals { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 10px; line-height: 1.6; min-width: 0; }
+.stage-chip { border: 1px solid currentColor; border-radius: 4px; padding: 0 4px; opacity: .65; }
+.stage-chip[data-status="진행"] { color: #2563eb; opacity: 1; }
+.stage-chip[data-status="완료"] { color: #218454; opacity: 1; }
+.project-next { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.project-pin { color: inherit; background: transparent; border: 0; cursor: pointer; font-size: 18px; padding: 4px; }
+.project-pin[aria-pressed="true"] { color: #ad780a; }
+.wbs-project-row { position: relative; }
+.wbs-project-row > .project-pin { position: absolute; left: 2px; top: 8px; z-index: 6; }
+.wbs-project-row .wbs-project-name { padding-left: 18px; }
+.wbs-project-row .wbs-project-name > span:last-child { min-width: 0; }
+.unified-timeline .timeline-row.wbs-project-row { min-height: 108px; height: auto; }
+.stage-group-row { padding: 8px 20px; font-size: 12px; }
+[hidden] { display: none !important; }
+.unified-timeline .wbs-project-row > .wbs-columns { min-height: 108px; height: auto; padding-block: 12px; white-space: normal; }
+.unified-timeline .wbs-project-row > .timeline-lane > .timeline-summary { top: 49px; }
+.unified-timeline .wbs-project-row > .project-pin { width: 22px; min-height: 28px; padding: 0; border: 0; }

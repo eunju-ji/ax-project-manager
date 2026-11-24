@@ -21,6 +21,7 @@
 | [ADR-017](ADR-017-cross-source-content-digest.md) | 여러 소스 통합 취합 우선: 내용은 읽고 원문 대신 핵심만 저장 (ADR-011 확대, ADR-015 §4·ADR-016 내용 제외 변경) | 사용자 지시 |
 | [ADR-018](ADR-018-wbs-tasks-progress-heatmap.md) | WBS 행을 태스크로 들임(태스크 여부는 WBS로 가르지 않음), 진척률 = 완료 ÷ 전체 태스크, 산출물 기반 자동 완료·완료일 규칙, 지연/확인 필요, 참고 기록 구분, 히트맵 = 하루 (사람,태스크) 수 | 사용자 지시 |
 | [ADR-020](ADR-020-github-ai-chat-sources.md) | GitHub(API, 커밋·PR·이슈 색인)와 AI 대화(Claude Code 세션, claude.ai·ChatGPT 내보내기) 연결, 원문 없이 색인·요약만. 수집 제외 목록과 내용까지 지우는 purge | 사용자 지시 |
+| [ADR-021](ADR-021-project-detection.md) | 프로젝트 판별: WBS가 없어도 작업 공간·목표 문서·여러 날 작업 등 신호 두 가지 이상이면 프로젝트. 작업 공간→프로젝트 대응 유지 | 사용자 지시 |
 | [ADR-015](ADR-015-ax-tf-drive-pilot.md) | 실데이터 파일럿: 공유 드라이브 AX-TF, 사내 OAuth, 로컬 SQLite | G2 범위 |
 
 미결정 유지: OD-09 중 운영 DB 제품·배치(ADR-014 예정), OD-14 중 여러 계정·소스 팀 단위 판별(ADR-019 제안, 사용자 결정 대기). 해소: OD-11 갱신 실행 → Paseo 정기 수집(real-collect 절차서), OD-15 자동/검토 경계 → ADR-016·ADR-018.

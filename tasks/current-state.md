@@ -16,7 +16,7 @@
   - `build-real-dataset.cjs`는 최초 생성용(state.json 있으면 거부). 다시 돌리지 않는다.
   - 생성기 기록: `wbs-delta.cjs`, `samsung-backfill-delta.cjs`, `descriptions-delta.cjs`, `wbs-groups-delta.cjs`, `folder-sources-delta.cjs`, `samsung-merge-delta.cjs`, `category-fix-delta.cjs`, `remove-nonwork-delta.cjs`. 백필 요약 `backfill/`.
 - 정기 수집: Paseo 스케줄 `55620666` — 매일 09·12·15·18시 KST, Claude Code 에이전트가 `docs/runbooks/real-collect.md` 수행(체크포인트 이후 수집 → WBS 동기화 → 판별·산출물 기반 완료 → delta 반영). 점검: `mcp__paseo__inspect_schedule 55620666`, `.real/runs.log`.
-- 현재 데이터(11/24): 프로젝트 10, 태스크 49(완료 26), 작업 내역 59, 근거 172, 사람 4. 체크포인트에 github·ai_chats 추가.
+- 현재 데이터(11/24): 프로젝트 11, 태스크 50(완료 26), 작업 내역 61, 근거 187, 사람 4. 체크포인트에 github·ai_chats 추가.
 
 ## 3. 판별 기준 (요약 — 상세는 ADR)
 - ADR-016: 자동 판별 우선, 근거가 분명하면 사람 확인 없이 반영.
@@ -63,3 +63,9 @@
 - AI 대화: `collect-ai-chats.cjs`. Claude Code 세션은 자동 색인(현재 버전 세션 파일에는 제목이 없어 날짜·메시지 수·수정 파일만), 같은 날 작업 내역의 근거로 연결. claude.ai·ChatGPT는 사용자가 내보내기 파일(압축 푼 conversations.json)을 `.real/imports/claude|chatgpt/`에 넣으면 다음 정기 수집이 색인·판별.
 - apply-delta 추가: project/person/source 삭제, person_updates, purge, history_purges, excluded 거부, 새 근거 종류(commit·pull_request·issue·ai_chat), 체크포인트 github·ai_chats.
 - 화면: 담당자 표의 긴 이름 말줄임. 간트 바는 지금 방식 유지(사용자 결정 11/24).
+
+## 2026-11-24 프로젝트 판별 기준 (ADR-021)
+- 브랜치 `feat/project-detection`(`feat/github-ai-sources` 위). WBS가 없어도 작업 공간·목표 문서·여러 날 작업·회의 과제·계획 문서 중 두 가지 이상이 겹치면 프로젝트로 세운다. 도구가 아니라 목표로 이름 짓는다.
+- 첫 적용: "사내 지식 구축"(kb) 프로젝트, 태스크 KB-01 "OCR·문서 파서 실험실 구축". 근거는 로컬 `data_lab`(커밋 3, PLAN.md, Paseo로 돌린 Claude Code 세션 5·Codex 세션 6). `state.json`에 `local_repos`, `projects_map`(작업 공간→프로젝트) 추가.
+- 수집기 추가: Codex 세션 색인(`--codex-dir`, 작업 폴더별), 로컬 Git 커밋 색인(`collect-local-git.cjs`). Codex 세션의 수정 파일 목록은 실제 세션 형식에서 비어 나옴(후속 확인).
+- 공개 사이트·인증(ADR-022)은 별도 브랜치 `feat/auth-site`(Paseo 워크트리)에서 진행 중. 배포 대상(호스팅)은 사용자 결정 대기.

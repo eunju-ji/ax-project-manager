@@ -23,6 +23,8 @@
 | [ADR-020](ADR-020-github-ai-chat-sources.md) | GitHub(API, 커밋·PR·이슈 색인)와 AI 대화(Claude Code 세션, claude.ai·ChatGPT 내보내기) 연결, 원문 없이 색인·요약만. 수집 제외 목록과 내용까지 지우는 purge | 사용자 지시 |
 | [ADR-021](ADR-021-project-detection.md) | 프로젝트 판별: WBS가 없어도 작업 공간·목표 문서·여러 날 작업 등 신호 두 가지 이상이면 프로젝트. 작업 공간→프로젝트 대응 유지 | 사용자 지시 |
 | [ADR-023](ADR-023-meeting-1124-screen-direction.md) | 화면 방향(11/24 회의): 진행·다음 단계·이슈 중심, 핵심 프로젝트와 AX팀 운영 분리, 번호 대신 단계, 배치안 2~3개 후 상세 개발 | 팀 회의 |
+| [ADR-024](ADR-024-schedule-progress-criteria.md) | 일정·진척 값 정의(계획 기간·실제 작업 기간·완료·기한 준수·진척률·계획 진도·단계 진행), 완료 후 작업 규칙(보완·재작업·새 태스크), 태스크 간소화 기준 | 팀장·본부장 피드백 |
+| [ADR-025](ADR-025-deploy-and-team-collection.md) | (제안·검증 대기) 배포는 ChatGPT Sites 우선·Workers 대안, 우리 GCP 없이 로그인, 팀원별 gws-work 연결 + 수집 도우미로 하루 1회 이상 수집, 판별은 한 곳에서 | 사용자 조건 |
 | [ADR-015](ADR-015-ax-tf-drive-pilot.md) | 실데이터 파일럿: 공유 드라이브 AX-TF, 사내 OAuth, 로컬 SQLite | G2 범위 |
 
 미결정 유지: OD-09 중 운영 DB 제품·배치(ADR-014 예정), OD-14 중 여러 계정·소스 팀 단위 판별(ADR-019 제안, 사용자 결정 대기). 해소: OD-11 갱신 실행 → Paseo 정기 수집(real-collect 절차서), OD-15 자동/검토 경계 → ADR-016·ADR-018.

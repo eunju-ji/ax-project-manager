@@ -37,7 +37,7 @@ function applyDelta(delta, {dataset=DEFAULT_DATASET,dryRun=false}={}) {
    fs.unlinkSync(lock);
   }
   if (!dryRun) { const fd=fs.openSync(lock,'wx',0o600);owned=true;try{fs.writeFileSync(fd,JSON.stringify({pid:process.pid}));}finally{fs.closeSync(fd);} }
-  const original=JSON.parse(fs.readFileSync(dataset,'utf8'));
+  const original=require('../node/human-decisions.cjs').withHumanDecisions(JSON.parse(fs.readFileSync(dataset,'utf8')),dataset);
   const state=fs.existsSync(stateFile)?JSON.parse(fs.readFileSync(stateFile,'utf8')):{};
   const merged=merge(original,state,delta);
   const {dataset:next,state:nextState,replay,...summary}=merged;

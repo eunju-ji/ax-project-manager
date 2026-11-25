@@ -17,8 +17,15 @@ export function createMemoryStorage({dataset={},users=[],tokens={}}={}){
   const review=data.reviews.find(r=>r.review_id===input.review_id);if(!review||review.kind!=='completion'||review.status==='superseded')return conflict();
   if(review.status==='decided'){if(review.decision!==input.answer)return conflict();return {change_id:review.applied_change_id,state:'complete'};}
   const task=data.tasks.find(t=>t.task_id===(review.task_id||review.subject_id));if(!task||(task.version||1)!==input.expected_version)return conflict();
-  if(input.answer==='\uC644\uB8CC'){const project=data.projects.find(p=>p.project_id===task.project_id);if(!project||!transitions.canTransition(task,project,task.assignee_id,'completed','Review completion'))return conflict();task.status='completed';task.version=(task.version||1)+1;}
-  Object.assign(review,{status:'decided',decision:input.answer,applied_change_id:input.change_id});
+  let nextTask=task;const history=[...(data.history||[])];
+  if(input.answer==='\uC644\uB8CC'){
+   const project=data.projects.find(p=>p.project_id===task.project_id);if(!project||!transitions.canTransition(task,project,task.assignee_id,'completed','Review completion'))return conflict();
+   nextTask={...task,status:'completed',version:(task.version||1)+1};
+   history.push({change_id:input.change_id+'-task',entity_type:'tasks',entity_id:task.task_id,actor_id:task.assignee_id,reason:'task transition',before:{status:task.status,version:task.version||1},after:{status:nextTask.status,version:nextTask.version},result:'applied',applied_at:new Date().toISOString()});
+  }
+  const nextReview={...review,status:'decided',decision:input.answer,applied_change_id:input.change_id};
+  // Publish state and its human history together inside the same serialized operation.
+  data={...data,tasks:data.tasks.map(t=>t===task?nextTask:t),reviews:data.reviews.map(r=>r===review?nextReview:r),history};
   const result={change_id:input.change_id,state:'complete'};requests.set(input.change_id,{payload:JSON.stringify(deltaCore.canonical(input)),result});audit.push({action:'decision',actor:task.assignee_id});return structuredClone(result);
  }),
  applyDelta:(delta,{dryRun=false}={})=>atomic(async()=>{const digest=await hash(JSON.stringify(deltaCore.canonical(delta)));const r=deltaCore.merge(data,state,delta,{digest:()=>digest,equal:(a,b)=>JSON.stringify(deltaCore.canonical(a))===JSON.stringify(deltaCore.canonical(b))});if(r.ok&&!dryRun){data=r.dataset;state=r.state;}return r;}),

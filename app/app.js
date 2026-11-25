@@ -58,9 +58,11 @@ async function sendCorrection(entity, op, id, fields) {
     saveStatus = '저장 중';
     const table = entity === 'task' ? correctionData.tasks : entity === 'worklog' ? correctionData.worklogs : correctionData.reviews;
     try {
-        const response = await fetch('/api/correction' + (realMode ? '?data=real' : ''), { method: 'POST', headers: { 'Content-Type': 'application/json', ...csrfHeaders() }, body: JSON.stringify({ entity, op, id: op === 'create' ? undefined : id, version: op === 'create' ? 0 : table.find(r => r.id === id)?.version, fields }) });
-        if (!response.ok)
-            throw new Error(response.status === 409 ? '다른 변경이 먼저 저장됐습니다. 새로고침 후 다시 시도하세요.' : '저장하지 못했습니다. 입력을 확인하세요.');
+        const response = await fetch('/api/correction' + (realMode ? '?data=real' : ''), { method: 'POST', headers: { 'Content-Type': 'application/json', ...csrfHeaders() }, body: JSON.stringify({ entity, op, id: op === 'create' ? undefined : id, version: op === 'create' ? 0 : table.find(r => r.id === id)?.version, ...(entity === 'review' ? { task_version: localVersions.get(completionReviews().find(r => r.id === id)?.taskId || '') } : {}), fields }) });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.error === 'merge_target_referenced' ? '합쳐진 태스크가 참조하고 있어 변경할 수 없습니다.' : response.status === 409 ? '다른 변경이 먼저 저장됐습니다. 새로고침 후 다시 시도하세요.' : '저장하지 못했습니다. 입력을 확인하세요.');
+        }
         await loadLocal();
         correctionEditor = null;
         saveStatus = '저장됨';
@@ -512,8 +514,11 @@ function action(el) {
         if (!form || !correctionEditor)
             return;
         const fields = {};
-        for (const input of Array.from(form.querySelectorAll('input,select')))
+        for (const input of Array.from(form.querySelectorAll('input,select'))) {
+            if (correctionEditor.entity === 'worklog' && correctionEditor.op === 'update' && input instanceof HTMLInputElement && input.name === 'performed_at' && input.value === input.defaultValue)
+                continue;
             fields[input.name] = input.value || null;
+        }
         const e = correctionEditor;
         void sendCorrection(e.entity, e.op, e.id, fields);
         return;

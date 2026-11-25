@@ -12,4 +12,8 @@ test('Node correction API persists full human history, rejects Origin, conflicts
  a.equal((await post(input)).status,409);
  const d=JSON.parse(fs.readFileSync(path.join(dir,'corrected-dataset.json')));a.equal(d.history[0].actor_id,'login-user');a.equal(d.history[0].before.title,'로컬 저장 검증');a.equal(d.history[0].after.title,'changed');
  const view=await (await fetch(base+'/api/view')).json();a.equal(view.projects[0].tasks[0].title,'changed');a.equal(view.correctionData.tasks[0].version,2);
+ a.equal((await post({entity:'review',op:'decide',id:'RV-1',version:1,task_version:1,fields:{decision:'진행 중'}})).status,409);
+ d.projects.push({project_id:'other',name:'Other'});d.tasks.push({...d.tasks[0],task_id:'merged',merged_into:'TSK-LOCAL'});fs.writeFileSync(path.join(dir,'corrected-dataset.json'),JSON.stringify(d));
+ for(const [op,fields] of [['remove',{}],['update',{project_id:'other'}]]){const rejected=await post({entity:'task',op,id:'TSK-LOCAL',version:2,fields});a.equal(rejected.status,400);a.equal((await rejected.json()).error,'merge_target_referenced');}
+ a.deepEqual(JSON.parse(fs.readFileSync(path.join(dir,'corrected-dataset.json'))),d);
 });

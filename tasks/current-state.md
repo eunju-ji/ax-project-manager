@@ -143,3 +143,11 @@
 - 검증: python3.15.exe build.py·typecheck, UI 93/93, 서버 297/297, Workers 17/17 통과. 시각 기준 --update 54/54 후 재비교 54/54(픽셀 차이 0). --navigation 112/112 및 통합 합성 수정 탐색(수정·추가·삭제·재판단·충돌·viewer) 통과. 마지막 드로어 이동 시 편집 해제 후 빌드·typecheck·UI 93/93·합성 수정 탐색 재검증 통과. git diff --check 통과.
 - 제약: 커밋·푸시·추가 위임 없음. app/server/.real/ 및 docs/project-review/* 접근·변경 없음. 테스트는 합성 데이터·모의 IdP만 사용.
 - 미해결 구현 오류 없음. Workers의 메모리 지속성 한계는 기존과 동일하며 D1은 범위 밖. 다음: Lead/Reviewer가 변경을 검토하고 별도 권한으로 실제 데이터 검증.
+
+## 2026-11-25 Reviewer 후속 4건 (AX-Builder, feat/ui-1126)
+- review decide/reopen 요청에 대상 태스크 task_version 필수 검증을 추가했다. 오래된 review 요청은 409로 거부하며 최신 완료 상태·완료일을 보존한다. 화면과 API 계약도 갱신했다.
+- worklog 제목·이동·담당만 바꾸면 performed_at과 precision을 보존한다. 날짜 입력이 실제로 달라질 때만 화면이 날짜를 보내며, 명시적 변경은 한국 날짜 YYYY-MM-DD로 저장한다. UTC 11/24 16:30 작업이 KST 11/25로 표시되는 브라우저 회귀 검증을 추가했다.
+- merged_into로 참조받는 태스크의 삭제·다른 프로젝트 이동을 400 merge_target_referenced로 거부하고 짧은 오류를 표시한다. 실패 시 원장·버전은 그대로다.
+- review 완료일은 Asia/Seoul 날짜로 정한다. UTC 15:00 한국 자정 경계 테스트를 추가했다.
+- Node 파일 저장소·Workers 저장소에 동일한 네 회귀 사례를 적용했다. 검증: python3.15.exe build.py·typecheck, UI 93/93, 서버 305/305, Workers 21/21, --navigation 112/112 및 통합 합성 수정 탐색 통과. git diff --check 통과.
+- 커밋·푸시·추가 위임 없음. 실데이터·금지 경로 접근 없음. 기존 ADR 작성 변경은 유지했다. 미해결 사항 없음. 다음: Lead/Reviewer 재검토.

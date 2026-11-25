@@ -90,7 +90,7 @@ function createServer({dir,seedMode='large',reset=false,pilotProvider,realDatase
    const relative=url.pathname.slice(1)||'index.html';
    if(!/^(index\.html|app\.js|data\.js|styles\.css|src\/model\.js|assets\/[\w-]+\.png)$/.test(relative))return json(404,{error:'not found'});
    const f=path.join(__dirname,'../..',relative);res.writeHead(200,{'Content-Type':relative.endsWith('.html')?'text/html; charset=utf-8':relative.endsWith('.js')?'text/javascript; charset=utf-8':relative.endsWith('.css')?'text/css':'image/png'});res.end(fs.readFileSync(f));
-  }catch(error){json(error.status||(error.code==='conflict'?409:500),{error:'request_failed'});}
+  }catch(error){json(error.status||(error.code==='conflict'?409:500),{error:error.code==='merge_target_referenced'?error.code:'request_failed'});}
  });
  const listen=server.listen.bind(server);server.listen=(...args)=>{if(cfg.mode==='off'){const binding=typeof args[0]==='object'?args[0].host:args[1];if(!['127.0.0.1','localhost'].includes(binding))throw Error('AUTH_MODE');}return listen(...args);};
  server.on('close',()=>{db.close();pilotDb?.close();realDb?.close();});return {server,db,service};

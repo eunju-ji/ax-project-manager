@@ -1,4 +1,5 @@
 import { chromium, expect } from '@playwright/test';
+import {checkWeeklyLayout} from './weekly-layout.mjs';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import { createServer } from 'node:http';
@@ -203,7 +204,7 @@ async function nav() {
       expect(await p.locator('[data-gantt-task]').evaluateAll(rows=>rows.map(r=>r.dataset.ganttTask))).toEqual(['wbs-two','wbs-ten']);
       const projectId=await p.evaluate(()=>projects[0].id);
       expect(await p.locator(`.timeline-summary[data-id="${projectId}"] .summary-fill`).evaluate(e=>e.style.width)).toBe('50%');
-      expect(await p.locator('[data-gantt-task="wbs-two"] .gantt-task-copy').evaluate(e=>getComputedStyle(e).paddingLeft)).toBe('12px');
+      expect(await p.locator('[data-gantt-task="wbs-two"] .gantt-task-copy').evaluate(e=>getComputedStyle(e).paddingLeft)).toBe('4px');
       expect(await p.locator(`.unified-toggle[data-id="${projectId}"] .wbs-period`).textContent()).toBe('11/1–11/12');
       const bar=p.locator('[data-gantt-task="wbs-ten"] .task-gantt-bar');
       expect(await bar.evaluate(e=>({left:e.style.left,width:e.style.width}))).toEqual({left:'30%',width:'10%'});
@@ -217,29 +218,16 @@ async function nav() {
       await p.locator('[data-gantt-task="wbs-two"]').screenshot({path:path.join(results,'wbs-mobile-row.png')});
       await p.setViewportSize({width:1440,height:900});
     });
-    await check('WBS groups summarize, collapse and retain root leaves',async()=>{
-      await load(p,url);
-      await p.evaluate(()=>{
-        const p=projects[0],base=p.tasks[0];p.tasks=[
-          {...base,id:'root-nine',planSource:'wbs',wbsCode:'9',wbsGroups:[],title:'최상위 말단'},
-          {...base,id:'leaf',planSource:'wbs',wbsCode:'2.1.1',wbsGroups:['2 플랫폼','2.1 비교'],startDate:'2026-11-01',dueDate:undefined,status:'completed'}
-        ];state.project=p.id;render();
-      });
-      await expect(p.locator('[data-gantt-group]')).toHaveCount(2);
-      await expect(p.locator('[data-gantt-group]').first()).toContainText('완료 1/1');
-      await expect(p.locator('[data-gantt-group]').first().locator('.wbs-period')).toHaveText('11/1–11/16');
-      expect(await p.locator('[data-gantt-group]').first().locator('.wbs-group-summary').evaluate(e=>e.style.left)).toBe('0%');
-      await p.locator('.timeline-grid').screenshot({path:path.join(results,`wbs-groups-${kind}.png`)});
-      await p.locator('[data-action="wbs-group"]').first().click();
-      await expect(p.locator('[data-gantt-group]')).toHaveCount(1);
-      await expect(p.locator('[data-gantt-task="leaf"]')).toHaveCount(0);
-      await expect(p.locator('[data-gantt-task="root-nine"]')).toBeVisible();
-      await p.locator('[data-action="wbs-group"]').first().click();
-      await expect(p.locator('[data-gantt-task="leaf"]')).toBeVisible();
-      await p.locator('[data-gantt-task="leaf"] .gantt-task-toggle').click();
-      await expect(p.locator('.task-drawer-toolbar small')).toContainText('AX 프로젝트 관리장');
-      await expect(p.locator('.task-properties')).toContainText('WBS 번호2.1.1');
-      await p.keyboard.press('Escape');
+    await check('core and operations share flat rows; plan hierarchy remains in the drawer',async()=>{
+      await load(p,url);const equal=await p.evaluate(()=>{const p=projects[0],base=p.tasks[0];p.tasks=[{...base,id:'root-nine',title:'최상위 말단',stage:undefined,wbsCode:'9',wbsGroups:[]},{...base,id:'leaf',title:'평평한 태스크',stage:undefined,wbsCode:'2.1.1',wbsGroups:['2 플랫폼','2.1 비교'],owner:'Jason Serngwoon Choi'}];p.kind='core';const first=taskTimeline(p,M.monthRange(AX_DATA.demoAsOf));p.kind='ops';const second=taskTimeline(p,M.monthRange(AX_DATA.demoAsOf));state.project=p.id;render();return first===second;});expect(equal).toBe(true);
+      await expect(p.locator('.wbs-group-row,.wbs-group-summary,[data-gantt-group]')).toHaveCount(0);await expect(p.locator('[data-gantt-task="leaf"]')).toBeVisible();expect(await p.locator('[data-gantt-task="leaf"]').evaluate(e=>e.getBoundingClientRect().height)).toBeLessThanOrEqual(44);await p.locator('[data-gantt-task="leaf"] .gantt-task-toggle').click();await expect(p.locator('.task-properties')).toContainText('계획 문서 묶음플랫폼 / 비교');await expect(p.locator('.task-properties')).toContainText('WBS 번호2.1.1');await p.keyboard.press('Escape');
+    });
+    await check('shared design scale keeps names whole and the last owner row visible',async()=>{
+      await load(p,url);await p.evaluate(()=>{const names=['Heechang Lee','Jason Serngwoon Choi','Eunju Ji','박성진'];projects.forEach(p=>p.tasks.forEach((t,i)=>{t.owner=names[i%names.length];t.subtasks.forEach((w,j)=>w.owner=names[j%names.length]);}));state.project=projects[0].id;state.summaryOpen=true;render();});
+      await expect(p.locator('.weekly-owner-table tbody tr')).toHaveCount(4);
+      for(const width of [1440,834,390]){await p.setViewportSize({width,height:1000});await checkWeeklyLayout(p);const info=await p.evaluate(()=>{const owner=document.querySelector('.weekly-owner-table tbody th[title="Heechang Lee"]'),range=document.createRange();range.setStart(owner.firstChild,0);range.setEnd(owner.firstChild,8);const last=document.querySelector('.weekly-owner-table tbody tr:last-child'),visual=document.querySelector('.weekly-visual');return {rects:range.getClientRects().length,last:last.getBoundingClientRect().bottom,frame:visual.getBoundingClientRect().bottom,layout:visual.closest('.weekly-layout').getBoundingClientRect().bottom};});expect(info.rects).toBe(1);expect(info.last).toBeLessThanOrEqual(info.frame);}
+      await p.setViewportSize({width:1440,height:900});await expect(p.locator('[data-gantt-task] .task-status').first()).toBeVisible();const metrics=await p.evaluate(()=>{const row=document.querySelector('[data-gantt-task]'),dot=row.querySelector('.status-dot'),status=row.querySelector('.task-status'),title=row.querySelector('.gantt-task-copy strong'),owner=row.querySelector('.wbs-owner');return {dot:dot.getBoundingClientRect().width,title:getComputedStyle(title).fontSize,weight:getComputedStyle(title).fontWeight,owner:getComputedStyle(owner).whiteSpace,status:getComputedStyle(status).backgroundColor};});expect(metrics).toEqual({dot:8,title:'13px',weight:'400',owner:'nowrap',status:'rgba(0, 0, 0, 0)'});
+      for(const theme of ['linear-notion','linear','notion','attio','airtable','clickup']){await p.evaluate(theme=>{state.theme=theme;render();},theme);const style=await p.locator('.weekly-person-tabs button[aria-pressed="true"]').evaluate(e=>{const c=getComputedStyle(e);return [c.height,c.fontSize,c.fontWeight,c.backgroundColor,c.color];});expect(style).toEqual(['32px','14px','500','rgb(65, 70, 75)','rgb(255, 255, 255)']);}
     });
     await check('open-ended WBS and description remain clear',async()=>{
       await load(p,url);

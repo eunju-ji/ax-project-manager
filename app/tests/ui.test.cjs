@@ -214,7 +214,7 @@ test('heatmap counts unique owner task pairs by KST with fixed levels and record
 test('WBS table columns, planned-only project range, depth, progress fill and all expand',()=>{
  const a=app();a.run(`projects[0].tasks=[{...projects[0].tasks[0],id:'deep',planSource:'wbs',wbsCode:'1.1.1',wbsGroups:['1 상위','1.1 하위'],startDate:'2026-11-02',dueDate:'2026-11-06',status:'completed'},{...projects[0].tasks[0],id:'later',planSource:'wbs',wbsCode:'1.2',startDate:'2026-11-09',dueDate:'2026-11-10',status:'in_progress'}];state.project=projects[0].id;`);
  const html=a.run('timeline([projects[0]],false,true)');
- assert.match(html,/>이름</);assert.match(html,/진척 \/ 상태/);assert.match(html,/--wbs-depth:2/);assert.match(html,/class="summary-fill" style="width:50%"/);assert.doesNotMatch(html,/class="gantt-bar-label"/);assert.match(html,/11\/2–11\/10/);assert.match(html,/weekend/);assert.doesNotMatch(html,/inline-detail-head|project-properties/);
+ assert.match(html,/>이름</);assert.match(html,/진척 \/ 상태/);assert.match(html,/--wbs-depth:1/);assert.match(html,/class="summary-fill" style="width:50%"/);assert.doesNotMatch(html,/class="gantt-bar-label"/);assert.match(html,/11\/2–11\/10/);assert.match(html,/weekend/);assert.doesNotMatch(html,/inline-detail-head|project-properties/);
  a.run("action({dataset:{action:'projects-all'}})");assert.equal(a.run('filtered().every(projectOpen)'),true);
  a.run("action({dataset:{action:'projects-all'}})");assert.equal(a.run('filtered().some(projectOpen)'),false);
 });
@@ -224,7 +224,7 @@ test('unverified chips, activity deadlines and six-state Gantt legend are distin
  {...projects[0].tasks[0],id:'unknown',planSource:'wbs',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-02',subtasks:[]},
  {...projects[0].tasks[0],id:'late',planSource:'wbs',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-02'},
  {...projects[0].tasks[0],id:'activity',planSource:'activity',status:'in_progress',dueDate:'2026-11-02',subtasks:[]}];state.project=projects[0].id;render()`);
- const html=a.html();assert.match(html,/class="tag plan-status unverified">확인 필요 2</);assert.match(html,/class="tag plan-status late">지연</);
+ const html=a.html();assert.match(html,/class="tag plan-status unverified">확인 필요 2</);assert.match(html,/class="task-status plan-status late"><i class="status-dot"[^>]*><\/i>지연</);
  assert.match(html,/task-gantt-bar unverified/);assert.match(html,/task-gantt-bar late/);
  assert.match(a.run('taskItem(projects[0].tasks[2],projects[0])'),/확인 필요/);
  assert.doesNotMatch(html,/class="gantt-status-legend"/);
@@ -237,21 +237,9 @@ test('unverified chips, activity deadlines and six-state Gantt legend are distin
  assert.equal((html.match(/class="drawer-entry"/g)||[]).length,a.run('projects[0].tasks[0].subtasks.length'));
  assert.equal((html.match(/class="drawer-files"/g)||[]).length,1);a.run("state.theme='notion'");assert.match(a.run('taskDrawer()'),/task-drawer/);
  });
-test('WBS group rows summarize children, preserve root ordering and collapse nested tasks',()=>{
- const a=app();a.run(`projects[0].tasks=[
- {id:'nine',title:'최상위 아홉',wbsCode:'9',planSource:'wbs',subtasks:[]},
- {id:'b',title:'두번째 말단',wbsCode:'2.1.2',wbsGroups:['2 플랫폼 비교평가','2.1 비교평가'],planSource:'wbs',startDate:'2026-11-05',subtasks:[]},
- {id:'a',title:'첫번째 말단',wbsCode:'2.1.1',wbsGroups:['2 플랫폼 비교평가','2.1 비교평가'],planSource:'wbs',status:'completed',startDate:'2026-11-01',dueDate:'2026-11-03',subtasks:[]}
- ];state.project=projects[0].id;`);
- let html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');
- assert.equal((html.match(/data-gantt-group=/g)||[]).length,2);assert.match(html,/완료 1\/2/);assert.match(html,/11\/1 ~ 종료일 미정/);assert.match(html,/wbs-group-summary/);
- assert.ok(html.indexOf('2 플랫폼')<html.indexOf('2.1 비교'));assert.ok(html.indexOf('첫번째 말단')<html.indexOf('두번째 말단'));assert.ok(html.indexOf('두번째 말단')<html.indexOf('최상위 아홉'));
- assert.match(html,/--wbs-depth:2/);assert.match(html,/--wbs-depth:0/);
- a.run(`action({dataset:{action:'wbs-group',group:JSON.stringify([projects[0].id,'2 플랫폼 비교평가'])}})`);
- html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');assert.doesNotMatch(html,/첫번째 말단|두번째 말단|2.1 비교평가/);assert.match(html,/최상위 아홉/);assert.equal((html.match(/data-gantt-group=/g)||[]).length,1);
- a.run(`action({dataset:{action:'wbs-group',group:JSON.stringify([projects[0].id,'2 플랫폼 비교평가'])}})`);
- assert.match(a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))'),/첫번째 말단/);
- a.run("state.drawerTask='a'");assert.match(a.run('taskDrawer()'),/<small>AX 프로젝트 관리장<\/small>/);assert.doesNotMatch(a.run('taskDrawer()'),/계획 출처/);
+test('plan groups stay in the drawer while list tasks keep natural order',()=>{
+ const a=app();a.run(`const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'nine',title:'최상위 아홉',wbsCode:'9',stage:undefined,wbsGroups:[]},{...base,id:'b',title:'두번째 말단',wbsCode:'2.1.2',stage:undefined,wbsGroups:['2 플랫폼 비교평가','2.1 비교평가']},{...base,id:'a',title:'첫번째 말단',wbsCode:'2.1.1',stage:undefined,wbsGroups:['2 플랫폼 비교평가','2.1 비교평가']}];`);
+ const html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))');assert.doesNotMatch(html,/wbs-group-row|wbs-group-summary|data-gantt-group/);assert.ok(html.indexOf('첫번째 말단')<html.indexOf('두번째 말단'));assert.ok(html.indexOf('두번째 말단')<html.indexOf('최상위 아홉'));a.run(`state.drawerTask='a'`);assert.match(a.run('taskDrawer()'),/계획 문서 묶음/);assert.match(a.run('taskDrawer()'),/플랫폼 비교평가 \/ 비교평가/);
 });
 test('activity copy and work dots explain their meaning and daily record count',()=>{
  const a=app();a.run(`projects[0].tasks=[{id:'x',title:'합성',subtasks:[{performedAt:'2026-11-04',owner:'합성'},{performedAt:'2026-11-04',owner:'합성'}]}];state.drawerTask='x'`);
@@ -272,7 +260,7 @@ test('numberless tasks follow numbered tasks by start or first record with unifo
  assert.deepEqual(Array.from(a.run('drawerTasks(projects[0]).map(t=>t.id)')),['number','first','later']);
  const html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');
  assert.ok(html.indexOf('data-gantt-task="number"')<html.indexOf('data-gantt-task="first"'));assert.ok(html.indexOf('data-gantt-task="first"')<html.indexOf('data-gantt-task="later"'));
- assert.doesNotMatch(html,/gantt-group-label|wbs-group-row|--wbs-depth:1/);assert.equal((html.match(/<code>/g)||[]).length,0);
+ assert.doesNotMatch(html,/gantt-group-label|wbs-group-row/);assert.equal((html.match(/--wbs-depth:1/g)||[]).length,3);assert.equal((html.match(/<code>/g)||[]).length,0);
 });
 for(const kind of ['commit','pull_request','issue','ai_chat'])test('index-only source modal '+kind,()=>{
  const a=app();a.run(`const f=projects[0].files[0];Object.assign(f,{kind:'${kind}',url:'https://github.com/o/r',folderId:'ignored',folderPath:['ignored']});state.modal={project:projects[0].id,file:f.id}`);let html=a.run('modal()');assert.match(html,/https:\/\/github.com\/o\/r/);assert.doesNotMatch(html,/folder-browser|<img|Google Drive/);a.run('projects[0].files[0].url=undefined');html=a.run('modal()');assert.doesNotMatch(html,/<a |folder-browser|<img/);
@@ -357,3 +345,5 @@ test('third feedback uses uniform stage markup, persistent summary toggle and al
 });
 
 test('project tags render once in each theme and progress has a numeric hierarchy',()=>{const a=app();a.run(`projects[0].tasks[0].stage='기획'`);for(const theme of ['linear-notion','linear','notion','attio','airtable','clickup']){a.run(`state.theme='${theme}'`);const html=a.run('projectArea()');assert.equal((html.match(/class="stage-chip"/g)||[]).length,1);assert.doesNotMatch(html,/계획보다 늦음|class="results-count"/);}const html=a.run('progressMetric({percent:50,done:6,total:12})');assert.match(html,/class="progress-percent">50%/);assert.match(html,/class="progress-detail">6\/12 완료/);assert.doesNotMatch(html,/class="tag|진척 50/);});
+
+test('core and operations reuse identical flat task rows and retain plan groups only in the drawer',()=>{const a=app();a.run(`const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'flat-a',wbsCode:'1.1',stage:undefined,wbsGroups:['1 원래 계획','1.1 세부 묶음']},{...base,id:'flat-b',wbsCode:'1.2',stage:undefined}];`);let html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))');a.run(`projects[0].kind='ops'`);assert.equal(html,a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))'));assert.doesNotMatch(html,/wbs-group-row|wbs-group-summary|data-gantt-group|완료 \d+\//);assert.equal((html.match(/class="timeline-row task-gantt-row/g)||[]).length,2);a.run(`projects[0].tasks[0].stage='기획';state.drawerTask='flat-a'`);html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))');assert.match(html,/stage-group-row/);assert.doesNotMatch(html,/wbs-group-row|data-gantt-group/);assert.match(a.run('taskDrawer()'),/계획 문서 묶음/);assert.match(a.run('taskDrawer()'),/원래 계획 \/ 세부 묶음/);assert.match(html,/status-dot/);});

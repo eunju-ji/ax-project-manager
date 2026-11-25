@@ -215,3 +215,8 @@
 - 시각 검사의 Notion 태블릿 아바타 원형 가장자리에서 개발/오프라인 3픽셀 차이를 진단했다. 단독 비교는 같고 연속 비교에서만 반복됐다. 비교 쌍별로 브라우저 프로세스를 분리한 뒤 갱신·재비교 모두 차이 0을 확인했다. 픽셀 허용 오차와 AA 포함 기준은 변경하지 않았다.
 - 검증: python3.15.exe build.py·typecheck, UI 107/107, --navigation 126/126 및 합성 수정 탐색 통과. 시각 기준 --update 57/57 및 최종 재비교 57/57(픽셀 차이 0), 실제 패널 이미지 확인·git diff --check 통과.
 - 커밋·푸시·추가 위임 및 app/server/.real/·docs/project-review/* 접근·수정 없음. HEAD ae850a8 유지. 미해결 항목 없음. 다음: Lead/Reviewer 검토.
+
+## 2026-11-26 레이아웃 3안·데이터 수집 계획 (Lead)
+- docs/design/m7-layout-scenarios.html: 1안(현재 화면)·2안(현황→이번 주 할 일, 권고)·3안(이번 주 업무 중심), 안별 시나리오·배치·세 질문 점검·필요 데이터. 12/1 검토용.
+- docs/design/m7-data-sources-and-team-collection.html: 데이터별 수집 방식 표, 2인 수집 방안 1(ChatGPT 사이트)·2(Workers+D1, 권고)·3(공유 위임+정적 사이트), 확인 일정.
+- 확인 필요: Gmail 체크포인트 11/24에서 정지(다른 소스 11/25). 태스크 간소화는 사용자 확인으로 상당 부분 완료.

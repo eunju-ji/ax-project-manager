@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>관리장 레이아웃 3안 — 시나리오와 배치</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1f2328;--muted:#6b7280;--line:#e5e7eb;--soft:#f6f7f9;--accent:#3567b5;--accent-soft:#eaf1fb;--lav:#f5f3fa;--sand:#faf7f0;--green:#2f7d55;--green-soft:#e6f2e9;--red:#b24943;--red-soft:#fbecea;--amber:#9a6a0a;--amber-soft:#fdf3dc}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Noto Sans KR',sans-serif;color:var(--ink);background:#fff;line-height:1.7;word-break:keep-all;overflow-wrap:break-word}
+.layout{display:grid;grid-template-columns:240px minmax(0,1fr);max-width:1240px;margin:0 auto}
+nav{position:sticky;top:0;height:100vh;overflow:auto;padding:32px 20px;border-right:1px solid var(--line);font-size:13px}
+nav a{display:block;color:var(--muted);text-decoration:none;padding:4px 0}
+nav a:hover{color:var(--accent)}
+nav .sub{padding-left:12px;font-size:12px}
+main{padding:40px 48px 80px;min-width:0}
+h1{font-size:28px;margin:0 0 8px}
+h2{font-size:22px;margin:56px 0 12px;padding-top:12px;border-top:1px solid var(--line)}
+h3{font-size:17px;margin:28px 0 8px}
+p,li{font-size:15px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:13px;color:var(--muted);margin-bottom:24px}
+.badge{display:inline-block;font-size:12px;font-weight:500;padding:2px 8px;border-radius:4px;background:var(--soft);color:var(--muted)}
+.badge.now{background:var(--green-soft);color:var(--green)}
+.badge.new{background:var(--accent-soft);color:var(--accent)}
+table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:14px}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:500;color:var(--muted);font-size:13px}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:4px;margin:16px 0;font-size:14px}
+.callout.warn{border-color:var(--amber);background:var(--amber-soft)}
+.ok{color:var(--green);font-weight:700}.part{color:var(--amber);font-weight:700}.no{color:var(--red);font-weight:700}
+/* wireframe */
+.wf{border:1px solid #cfd6df;border-radius:8px;background:#f9fafb;padding:14px;margin:16px 0 8px;font-size:12px;line-height:1.5}
+.wf .bar{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--line);border-radius:6px;padding:6px 10px;margin-bottom:10px;font-weight:500}
+.wf .row{display:grid;gap:10px;margin-bottom:10px}
+.wf .box{background:#fff;border:1px solid var(--line);border-radius:6px;padding:10px;min-width:0}
+.wf .box.tint{background:var(--lav)}
+.wf .box.sand{background:var(--sand)}
+.wf .box.blue{background:var(--accent-soft)}
+.wf .t{font-weight:700;font-size:12px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.wf .t small{font-weight:400;color:var(--muted)}
+.wf .line{height:8px;border-radius:4px;background:#e3e7ec;margin:5px 0}
+.wf .line.s{width:60%}.wf .line.xs{width:35%}
+.wf .chip{display:inline-block;font-size:11px;padding:1px 6px;border-radius:4px;background:#eef0f3;color:#4b5563;margin:2px 2px 0 0}
+.wf .chip.red{background:var(--red-soft);color:var(--red)}.wf .chip.amb{background:var(--amber-soft);color:var(--amber)}.wf .chip.grn{background:var(--green-soft);color:var(--green)}
+.wf .gantt{position:relative;height:10px;background:#eef1f5;border-radius:3px;margin:6px 0}
+.wf .gantt i{position:absolute;top:0;bottom:0;background:#6f95cc;border-radius:3px}
+.wf .num{font-size:18px;font-weight:700}
+.wf .tag{font-size:10px;color:#fff;background:var(--accent);border-radius:3px;padding:0 5px;margin-left:4px}
+.wf .mark{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;margin-right:4px}
+.legend{font-size:12px;color:var(--muted);margin:0 0 12px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0}
+.card{border:1px solid var(--line);border-radius:8px;padding:14px}
+.card h4{margin:0 0 6px;font-size:15px}
+.card p{margin:0;font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav>
+<strong style="font-size:14px;color:var(--ink)">목차</strong>
+<a href="#base">1. 공통 기준</a>
+<a href="#a1">2. 1안 · 지금 화면</a>
+<a class="sub" href="#a1-s">시나리오</a>
+<a class="sub" href="#a1-w">배치</a>
+<a href="#a2">3. 2안 · 현황 → 이번 주</a>
+<a class="sub" href="#a2-s">시나리오</a>
+<a class="sub" href="#a2-w">배치</a>
+<a href="#a3">4. 3안 · 이번 주 업무 중심</a>
+<a class="sub" href="#a3-s">시나리오</a>
+<a class="sub" href="#a3-w">배치</a>
+<a href="#cmp">5. 세 안 비교</a>
+<a href="#data">6. 안별 필요한 데이터</a>
+<a href="#next">7. 검토 회의에서 정할 것</a>
+</nav>
+<main>
+<h1>관리장 레이아웃 3안 — 시나리오와 배치</h1>
+<div class="meta"><span>작성 AX-Lead</span><span>2026-11-26</span><span>v1.0</span><span class="badge">12/1 검토용</span><span>근거: 피드백 정리 261124, m5-meeting-scenario.md, ADR-023·024·026</span></div>
+
+<div class="callout">본부장님이 정한 순서대로 진행했습니다. <b>회의에서 쓰는 장면(시나리오)을 먼저 정하고</b>, 그 순서에 맞춰 화면을 배치했습니다. 1안은 지금 구현된 화면이고, 2안과 3안은 "이번 주 할 일"을 넣은 새 안입니다. 세 안 모두 지금 구조(요약·태스크 표·프로젝트 목록·간트·드로어·화면 수정)를 재사용합니다.</div>
+
+<h2 id="base">1. 공통 기준</h2>
+<p>모든 안은 아래 세 질문에 화면만 보고 답할 수 있어야 합니다(본부장님 검증 기준).</p>
+<div class="cards">
+<div class="card"><h4>① 어디까지 진행됐나</h4><p>단계(리서치·기획·프로토타입·개발·테스트·출시·운영), 진척률, 지연·확인 필요</p></div>
+<div class="card"><h4>② 다음 단계에 무엇이 필요한가</h4><p>다음 태스크, 이번 주 마감·예정</p></div>
+<div class="card"><h4>③ 누가 지원해야 하나</h4><p>지원 요청과 관련자(예: 개발실 협의, 경영지원실 권한)</p></div>
+</div>
+<table>
+<tr><th>장면</th><th>내용</th></tr>
+<tr><td>언제</td><td>매주 화요일 AX팀 주간회의, 약 30분, 본부장·팀장·팀원 2~3명</td></tr>
+<tr><td>어떻게</td><td>한 사람이 관리장을 화면 공유하고 위에서 아래로 내려가며 점검</td></tr>
+<tr><td>회의 밖</td><td>팀원은 회의 전날 자기 업무를 화면에서 정정, 팀장은 수시로 지연·확인 필요 처리</td></tr>
+</table>
+
+<!-- 1안 -->
+<h2 id="a1">2. 1안 · 지금 화면 <span class="badge now">구현됨</span></h2>
+<p><b>성격:</b> 기록 중심. "지난 기간에 누가 무엇을 했는가"를 먼저 보고, 그다음 프로젝트 일정과 진척을 봅니다.</p>
+
+<h3 id="a1-s">시나리오</h3>
+<table>
+<tr><th style="width:90px">순서</th><th style="width:60px">시간</th><th>보는 곳</th><th>확인할 질문</th></tr>
+<tr><td>① 지난주 정리</td><td>5분</td><td>맨 위 "한 주의 업무" 요약(사람별 문장, 업무 유형, 담당자별 작업)</td><td>지난주에 누가 무엇을 했나?</td></tr>
+<tr><td>② 태스크 확인</td><td>3분</td><td>요약 아래 태스크 상세(펼침, 상태 필터)</td><td>지연·확인 필요인 태스크는?</td></tr>
+<tr><td>③ 프로젝트별 점검</td><td>15분</td><td>핵심 프로젝트 목록 → 하나씩 펼침(단계별 태스크·간트·관련 자료)</td><td>어디까지 왔나? 늦은 곳은?</td></tr>
+<tr><td>④ 팀 운영</td><td>3분</td><td>AX팀 운영 목록</td><td>채용·이관·교육 공유</td></tr>
+<tr><td>⑤ 정리</td><td>4분</td><td>(화면 밖)</td><td>다음 할 일과 지원은 말로 정리</td></tr>
+</table>
+
+<h3 id="a1-w">배치</h3>
+<div class="wf">
+<div class="bar"><span>프로젝트 관리장</span><span class="chip">검토 필요</span></div>
+<div class="row" style="grid-template-columns:22fr 43fr 35fr">
+<div class="box"><div class="t">팀 업무 요약</div><div class="num">18</div>건의 작업 내역<div class="line s"></div><div class="box" style="margin-top:8px;padding:6px">태스크 6개 ›</div></div>
+<div class="box"><div class="t">프로젝트별 요약 문장</div><div class="line"></div><div class="line"></div><div class="line s"></div><div class="line"></div><div class="line xs"></div></div>
+<div class="box blue"><div class="t">업무 유형 · 담당자별 작업</div><div class="gantt"><i style="left:0;width:100%"></i></div><div class="line"></div><div class="line s"></div></div>
+</div>
+<div class="box tint" style="margin-bottom:10px"><div class="t">⌄ 태스크 상세 <small>전체 · 진행 중 · 지연 · 확인 필요 · 완료</small></div><div class="line"></div><div class="line"></div><div class="line s"></div></div>
+<div class="box" style="margin-bottom:10px"><div class="t">핵심 프로젝트 7 <small>이름 · 담당 · 기간 · 진척 | 간트</small></div>
+<div style="display:grid;grid-template-columns:40% 60%;gap:8px;align-items:center">
+<div><b>프로젝트 A</b> <span class="chip">기획</span><span class="chip">프로토타입</span> · <b>75%</b></div><div class="gantt"><i style="left:10%;width:70%"></i></div>
+<div><b>프로젝트 B</b> <span class="chip">개발·테스트</span><span class="chip red">지연 1</span> · <b>50%</b></div><div class="gantt"><i style="left:5%;width:80%"></i></div>
+</div></div>
+<div class="box" style="margin-bottom:10px"><div class="t">AX팀 운영 4</div><div class="line s"></div></div>
+<div class="box"><div class="t">작업 내역 히트맵(10개월)</div><div class="line"></div></div>
+</div>
+<p class="legend">옅은 라벤더 = 요약 아래 하위 영역, 옅은 하늘색 = 요약 오른쪽 보조 영역</p>
+
+<h3>세 질문 점검</h3>
+<table>
+<tr><th>질문</th><th>답할 수 있나</th><th>근거</th></tr>
+<tr><td>① 어디까지</td><td class="ok">가능</td><td>단계 태그, 진척률, 간트, 지연·확인 필요</td></tr>
+<tr><td>② 다음에 무엇이 필요</td><td class="no">어려움</td><td>"다음 단계" 줄을 프로젝트 행에서 뺐고, 이번 주 할 일 영역이 없음</td></tr>
+<tr><td>③ 누가 지원</td><td class="no">불가</td><td>지원 요청 데이터와 자리가 없음</td></tr>
+</table>
+<p><b>장점:</b> 이미 구현되어 있고 실데이터로 동작. 기록과 근거가 풍부함. <b>한계:</b> 첫 화면의 주인공이 "지난 기록"이라 본부장님이 정한 "현황 → 이번 주" 흐름과 반대. ②③을 답하지 못함.</p>
+
+<!-- 2안 -->
+<h2 id="a2">3. 2안 · 현황 → 이번 주 할 일 <span class="badge new">새 안</span></h2>
+<p><b>성격:</b> 점검 중심. 본부장님이 말한 "현 단계에서는 전체 프로젝트 현황 → 이번 주 할 일" 흐름을 그대로 화면 순서로 옮겼습니다. 프로젝트마다 세 질문이 한 카드 안에 보입니다.</p>
+
+<h3 id="a2-s">시나리오</h3>
+<table>
+<tr><th style="width:90px">순서</th><th style="width:60px">시간</th><th>보는 곳</th><th>확인할 질문</th></tr>
+<tr><td>① 전체 현황</td><td>3분</td><td>맨 위 핵심 프로젝트 현황판(카드 7개, 한 화면)</td><td>어느 프로젝트가 어느 단계인가? 문제 있는 곳은?</td></tr>
+<tr><td>② 프로젝트별 점검</td><td>15분</td><td>카드 하나씩: 단계 진행·진척률 / 다음 할 일 / 지원 요청. 근거가 필요하면 카드를 눌러 간트·태스크·자료 펼침</td><td>세 질문(어디까지·다음·누가 지원)</td></tr>
+<tr><td>③ 이번 주 할 일</td><td>7분</td><td>"이번 주 할 일" 표: 이번 주 마감·예정 태스크, 담당, 지원 요청</td><td>이번 주 누가 무엇을 끝내나? 지원은 누가?</td></tr>
+<tr><td>④ 팀 운영</td><td>3분</td><td>AX팀 운영(채용·이관·교육·일정)</td><td>공유할 것</td></tr>
+<tr><td>⑤ 정리</td><td>2분</td><td>지난주 기록(접힘, 필요할 때만)</td><td>결정 사항은 회의록 → 다음 수집에서 이번 주 할 일·지원 요청으로 반영</td></tr>
+</table>
+
+<h3 id="a2-w">배치</h3>
+<div class="wf">
+<div class="bar"><span>프로젝트 관리장</span><span><span class="chip">이번 주 11/23–29</span></span></div>
+<div class="box" style="margin-bottom:10px"><div class="t">핵심 프로젝트 현황 <small>단계 → 진척 → 다음 할 일 → 지원</small></div>
+<div class="row" style="grid-template-columns:repeat(3,1fr);margin:0">
+<div class="box"><div class="t">프로젝트 A <span class="num" style="font-size:14px">75%</span></div><span class="chip grn">기획</span><span class="chip">프로토타입</span><span class="chip" style="opacity:.5">개발·테스트</span><div style="margin-top:6px"><small>다음</small> 레이아웃 확정 · 12/1</div><div><small>지원</small> 없음</div></div>
+<div class="box"><div class="t">프로젝트 B <span class="num" style="font-size:14px">50%</span></div><span class="chip grn">기획</span><span class="chip">개발·테스트</span><span class="chip red">지연 1</span><div style="margin-top:6px"><small>다음</small> 실사용 검증 · 11/28</div><div><small>지원</small> <span class="chip amb">개발실 협의</span></div></div>
+<div class="box"><div class="t">프로젝트 C <span class="num" style="font-size:14px">63%</span></div><span class="chip grn">리서치</span><span class="chip">기획</span><span class="chip amb">확인 필요 2</span><div style="margin-top:6px"><small>다음</small> 2차 인터뷰 정리</div><div><small>지원</small> <span class="chip amb">권한 요청</span></div></div>
+</div></div>
+<div class="box sand" style="margin-bottom:10px"><div class="t">이번 주 할 일 <small>마감·예정 · 담당 · 지원</small></div>
+<div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:6px">
+<b>태스크</b><b>프로젝트</b><b>담당</b><b>마감</b>
+<span>레이아웃 확정</span><span>A</span><span>담당자1</span><span>12/1</span>
+<span>실사용 검증</span><span>B</span><span>담당자2</span><span>11/28 <span class="chip amb">지원</span></span>
+</div></div>
+<div class="box" style="margin-bottom:10px"><div class="t">일정(간트) <small>현황판 카드를 누르면 해당 프로젝트로 이동·펼침</small></div><div class="gantt"><i style="left:10%;width:60%"></i></div><div class="gantt"><i style="left:5%;width:75%"></i></div></div>
+<div class="row" style="grid-template-columns:1fr 1fr;margin:0">
+<div class="box"><div class="t">AX팀 운영</div><div class="line s"></div></div>
+<div class="box"><div class="t">› 지난주 기록 <small>요약 · 태스크 상세</small></div><div class="line xs"></div></div>
+</div>
+</div>
+<p class="legend">옅은 모래색 = 이번 주 할 일(현황과 구분)</p>
+
+<h3>세 질문 점검</h3>
+<table>
+<tr><th>질문</th><th>답할 수 있나</th><th>근거</th></tr>
+<tr><td>① 어디까지</td><td class="ok">가능</td><td>카드의 단계 진행(완료 단계는 초록, 남은 단계는 흐림), 진척률, 이슈</td></tr>
+<tr><td>② 다음에 무엇이 필요</td><td class="ok">가능</td><td>카드의 "다음" 한 줄 + 이번 주 할 일 표</td></tr>
+<tr><td>③ 누가 지원</td><td class="part">데이터 필요</td><td>자리는 있음. 지원 요청 입력(화면 한 줄)이나 회의록 반영이 있어야 채워짐</td></tr>
+</table>
+<p><b>장점:</b> 본부장님 흐름과 일치. 첫 화면만으로 7개 프로젝트를 훑을 수 있어 회의 30분 안에 맞음. 지금 구조(간트·태스크 표·드로어·수정)를 아래에 그대로 둠. <b>한계:</b> 현황판 카드 영역이 새로 필요. "다음 할 일"과 "지원 요청" 데이터 확보가 전제.</p>
+
+<!-- 3안 -->
+<h2 id="a3">4. 3안 · 이번 주 업무 중심 <span class="badge new">새 안</span></h2>
+<p><b>성격:</b> 실행 중심. 본부장님이 "팀이 익숙해진 이후 검토"라고 한 흐름입니다. 사람별로 이번 주에 할 일·하는 중·끝낸 일·막힌 일을 보고, 프로젝트 현황은 옆에서 요약으로만 봅니다.</p>
+
+<h3 id="a3-s">시나리오</h3>
+<table>
+<tr><th style="width:90px">순서</th><th style="width:60px">시간</th><th>보는 곳</th><th>확인할 질문</th></tr>
+<tr><td>① 현황 한눈에</td><td>2분</td><td>오른쪽 프로젝트 현황 레일(프로젝트별 단계·진척·이슈 한 줄)</td><td>문제 있는 프로젝트는?</td></tr>
+<tr><td>② 사람별 이번 주</td><td>18분</td><td>가운데 이번 주 보드: 사람마다 한 줄(할 일 / 진행 중 / 완료 / 막힘·지원). 한 사람씩 돌아가며 설명</td><td>이번 주 무엇을 끝내나? 막힌 것은? 누가 도와주나?</td></tr>
+<tr><td>③ 프로젝트 근거</td><td>5분</td><td>보드 카드나 레일을 누르면 드로어에 프로젝트 간트·태스크·자료</td><td>필요할 때만 근거 확인</td></tr>
+<tr><td>④ 팀 운영·정리</td><td>5분</td><td>운영 영역, 다음 주로 넘길 것</td><td>결정 사항·담당·기한</td></tr>
+</table>
+
+<h3 id="a3-w">배치</h3>
+<div class="wf">
+<div class="bar"><span>프로젝트 관리장</span><span><span class="chip">이번 주 11/23–29</span> <span class="chip">전체 · 담당자1 · 담당자2</span></span></div>
+<div class="row" style="grid-template-columns:72fr 28fr">
+<div class="box"><div class="t">이번 주 보드 <small>할 일 · 진행 중 · 완료 · 막힘/지원</small></div>
+<div style="display:grid;grid-template-columns:70px repeat(4,1fr);gap:6px;align-items:start">
+<b></b><b>할 일</b><b>진행 중</b><b>완료</b><b>막힘·지원</b>
+<span><span class="mark">1</span>담당자1</span><div class="box" style="padding:5px">레이아웃 확정<br><span class="chip">A</span></div><div class="box" style="padding:5px">D1 연결<br><span class="chip">A</span></div><div class="box" style="padding:5px">필터 추가<br><span class="chip grn">완료</span></div><div class="box sand" style="padding:5px">팀원 계정 연결<br><span class="chip amb">지원</span></div>
+<span><span class="mark">2</span>담당자2</span><div class="box" style="padding:5px">실사용 검증<br><span class="chip">B</span></div><div class="box" style="padding:5px">이관 검수<br><span class="chip">운영</span></div><div class="box" style="padding:5px">1차 미팅<br><span class="chip grn">완료</span></div><div class="box sand" style="padding:5px">개발실 협의<br><span class="chip red">지연</span></div>
+</div></div>
+<div class="box blue"><div class="t">프로젝트 현황</div>
+<div>A <b>75%</b> <span class="chip">프로토타입</span></div><div class="gantt"><i style="left:0;width:75%"></i></div>
+<div>B <b>50%</b> <span class="chip red">지연 1</span></div><div class="gantt"><i style="left:0;width:50%"></i></div>
+<div>C <b>63%</b> <span class="chip amb">확인 2</span></div><div class="gantt"><i style="left:0;width:63%"></i></div>
+</div>
+</div>
+<div class="row" style="grid-template-columns:1fr 1fr;margin:0">
+<div class="box"><div class="t">› 전체 일정(간트)</div><div class="line s"></div></div>
+<div class="box"><div class="t">› 지난주 기록</div><div class="line xs"></div></div>
+</div>
+</div>
+<p class="legend">옅은 하늘색 = 현황 레일, 옅은 모래색 = 막힘·지원</p>
+
+<h3>세 질문 점검</h3>
+<table>
+<tr><th>질문</th><th>답할 수 있나</th><th>근거</th></tr>
+<tr><td>① 어디까지</td><td class="part">요약만</td><td>레일에 단계·진척·이슈 한 줄. 단계 진행 상세는 드로어</td></tr>
+<tr><td>② 다음에 무엇이 필요</td><td class="ok">가능</td><td>사람별 "할 일" 칸</td></tr>
+<tr><td>③ 누가 지원</td><td class="ok">가능(데이터 필요)</td><td>"막힘·지원" 칸이 화면의 주인공. 지원 요청 데이터가 전제</td></tr>
+</table>
+<p><b>장점:</b> 이번 주 실행과 지원 요청이 가장 잘 보임. 사람별로 돌아가며 말하는 회의 방식에 맞음. <b>한계:</b> 프로젝트 단계 흐름이 뒤로 밀려 "프로젝트별 진척 점검"이라는 지금 목적에는 덜 맞음. 할 일·막힘 데이터가 충분하지 않으면 칸이 비어 보임.</p>
+
+<!-- 비교 -->
+<h2 id="cmp">5. 세 안 비교</h2>
+<table>
+<tr><th>기준</th><th>1안 · 지금 화면</th><th>2안 · 현황 → 이번 주</th><th>3안 · 이번 주 중심</th></tr>
+<tr><td>첫 화면의 주인공</td><td>지난 기록 요약</td><td>프로젝트 현황(세 질문)</td><td>사람별 이번 주 업무</td></tr>
+<tr><td>본부장님 흐름(현황 → 이번 주)</td><td class="no">반대</td><td class="ok">일치</td><td class="part">익숙해진 뒤 흐름</td></tr>
+<tr><td>① 어디까지</td><td class="ok">가능</td><td class="ok">가능</td><td class="part">요약만</td></tr>
+<tr><td>② 다음에 무엇이 필요</td><td class="no">어려움</td><td class="ok">가능</td><td class="ok">가능</td></tr>
+<tr><td>③ 누가 지원</td><td class="no">불가</td><td class="part">데이터 필요</td><td class="part">데이터 필요</td></tr>
+<tr><td>30분 회의에 7개 프로젝트</td><td class="part">펼쳐야 해서 빠듯함</td><td class="ok">카드로 한 화면</td><td class="part">사람 수에 따라</td></tr>
+<tr><td>지금 코드 재사용</td><td>그대로</td><td>대부분(현황판 카드·이번 주 표 추가)</td><td>절반(보드 새로, 간트·드로어 재사용)</td></tr>
+<tr><td>구현 규모</td><td>—</td><td>2~3일</td><td>3~4일</td></tr>
+</table>
+<div class="callout"><b>권고: 2안.</b> 본부장님이 정한 흐름과 세 질문 기준에 가장 잘 맞고, 지금 화면(1안)의 간트·태스크 표·드로어·화면 수정을 아래에 그대로 살립니다. 팀이 익숙해지면 3안의 "이번 주 보드"를 2안의 이번 주 할 일 자리에 바꿔 끼울 수 있게 만들면 두 단계를 모두 지원합니다.</div>
+
+<!-- 데이터 -->
+<h2 id="data">6. 안별 필요한 데이터</h2>
+<table>
+<tr><th>데이터</th><th>1안</th><th>2안</th><th>3안</th><th>지금 확보</th><th>채우는 방법</th></tr>
+<tr><td>단계·진척률·지연·확인 필요</td><td>씀</td><td>씀</td><td>씀</td><td class="ok">있음</td><td>자동 판별(ADR-024)</td></tr>
+<tr><td>작업 내역(지난 기록)</td><td>주인공</td><td>접힘</td><td>접힘</td><td class="ok">있음</td><td>Drive·Chat·Gmail·GitHub·AI 대화 수집</td></tr>
+<tr><td>다음 할 일</td><td>—</td><td>카드 한 줄</td><td>할 일 칸</td><td class="part">일부</td><td>미완료 태스크 중 마감이 가장 가까운 것(자동) + 화면에서 정정</td></tr>
+<tr><td>이번 주 마감·예정</td><td>—</td><td>표</td><td>보드</td><td class="part">일부</td><td>WBS 일정, 회의록의 "~까지"(자동). 회의록 없는 일은 팀원이 화면에서 추가</td></tr>
+<tr><td>지원 요청·막힌 점</td><td>—</td><td>카드·표</td><td>주인공</td><td class="no">없음</td><td>화면에서 한 줄 입력(누구에게·무엇을) + 회의록에서 자동 후보 → 확인 필요</td></tr>
+</table>
+<div class="callout warn">2안과 3안 모두 <b>지원 요청</b> 데이터가 있어야 ③에 답할 수 있습니다. 화면 한 줄 입력 기능은 이미 만든 화면 수정 구조(ADR-026)에 필드를 추가하는 정도라 하루 안에 붙일 수 있습니다.</div>
+
+<h2 id="next">7. 검토 회의(12/1)에서 정할 것</h2>
+<ol>
+<li>2안으로 갈지(권고), 아니면 1안 유지 또는 3안.</li>
+<li>지원 요청을 화면 한 줄 입력으로 받을지.</li>
+<li>현황판 카드에 보일 단계 수(전체 단계 흐름 / 지금 단계만).</li>
+<li>지난주 기록을 첫 화면에서 접어 둘지, 별도 탭으로 뺄지.</li>
+</ol>
+</main>
+</div>
+</body>
+</html>

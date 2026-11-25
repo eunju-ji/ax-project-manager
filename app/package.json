@@ -26,7 +26,9 @@
     "drive:secure-dirs": "node server/connectors/drive/cli.cjs secure-dirs",
     "drive:check-dirs": "node server/connectors/drive/cli.cjs check-dirs",
     "judgments:export": "node server/transfer.cjs export",
-    "judgments:import": "node server/transfer.cjs import"
+    "judgments:import": "node server/transfer.cjs import",
+    "test:workers": "node --test workers/tests/*.test.js",
+    "workers:assets": "node workers/build-assets.cjs"
   },
   "devDependencies": {
     "@playwright/test": "1.65.1",

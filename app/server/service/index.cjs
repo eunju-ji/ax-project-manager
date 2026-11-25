@@ -50,18 +50,9 @@ class Service{
  availability(input){return this.execute(input,tx=>{if(input.actor_id!=='system'||!['available','access_denied','moved','deleted','unknown'].includes(input.availability))throw new Conflict('availability');const source=row(tx,'sources',input.source_key);if(!source||source.version!==input.expected_version)throw new Conflict('source version');this.change(tx,'sources',source,{availability:input.availability,checked_at:new Date().toISOString()},input,'system','source availability');return {state:'complete'};});}
  metrics(kind,from='2026-11-01T00:00:00.000Z',until='2026-11-08T00:00:00.000Z'){return this.db.tx(tx=>{if(kind==='projects')return tx.all('SELECT display_key,owner_id,version FROM projects WHERE workspace_id=? ORDER BY display_key,id',ws);if(kind==='reviews')return tx.all("SELECT id,task_id,kind FROM reviews WHERE workspace_id=? AND status='open' ORDER BY id",ws);if(kind==='weekly')return tx.all('SELECT performer_person_id,count(*) count FROM worklogs WHERE workspace_id=? AND performed_at>=? AND performed_at<? GROUP BY performer_person_id ORDER BY performer_person_id NULLS LAST',ws,from,until);throw new Conflict('query kind');});}
  view(){return this.db.tx(tx=>{
-  const data=snapshot(tx);data.demoAsOf='2026-11-17';
-  data.tasks=data.tasks.filter(t=>!t.merged_into&&!t.split_into);
-  const visible=r=>[r.run_id,r.created_run_id].filter(Boolean).every(id=>data.runs.find(r=>r.run_id===id)?.state==='complete');
-  for(const k of Object.keys(data))if(Array.isArray(data[k])&&k!=='runs')data[k]=data[k].filter(visible);
-  const driveSources=new Map(data.sources.filter(s=>s.service==='drive').map(s=>[s.file_id,{availability:s.availability,file:s.retained_meta}]));
-  data.sources=data.sources.map(s=>s.service==='drive'&&(s.availability!=='available'||require('../connectors/drive/visibility.cjs').hiddenAncestor(s.retained_meta,driveSources,s.account_scope))?{...s,title:'',retained_meta:undefined}:s);
-  const visibility=require('../connectors/drive/visibility.cjs');
-  data.sources=data.sources.map(s=>s.retained_meta?{...s,retained_meta:{...s.retained_meta,folderPath:visibility.currentPath(s.retained_meta,driveSources,s.account_scope)}}:s);
-  data.reviews=data.reviews.map(r=>{const e=data.sourceEvents.find(e=>e.event_key===r.event_key),source=data.sources.find(s=>s.source_key===(r.source_key||e?.source_key));if(source?.service!=='drive'&&!r.pilot)return r;return visibility.presentReview(r,source?{...source,file:driveSources.get(source.file_id)?.file}:null,driveSources,source?.account_scope);});
-  const view=adapt({...data,reviews:data.reviews.map(r=>r.status==='decided'?{...r,status:'open'}:r)});
+  const view=require('../core/view.cjs').makeView(snapshot(tx));
   add(tx,'access_audit',uuid7(),{actor_id:'local-synthetic',action:'view',applied_at:new Date().toISOString()});
-  return {...view,decisions:data.reviews.filter(r=>r.status==='decided'),taskStates:data.tasks.map(t=>({id:t.task_id,status:t.status,version:t.version}))};
+  return view;
  });}
  purge(input){return this.execute(input,tx=>{if(input.actor_id!=='local-admin')throw new Conflict('purge role');const c=row(tx,'protected_contents',input.content_id);if(!c)throw new Conflict('content missing');this.change(tx,'protected_contents',c,{value:null,purged_at:new Date().toISOString()},input,input.actor_id,'protected content purge');return {state:'complete'};});}
 }

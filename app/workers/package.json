@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:assets": "node build-assets.cjs",
+    "dev": "npm run build:assets && wrangler dev",
+    "test": "node --test tests/*.test.js"
+  }
+}

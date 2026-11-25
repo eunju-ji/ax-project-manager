@@ -61,3 +61,9 @@ POST `/api/ingest/delta`는 Bearer 토큰만 사용하며 브라우저 세션과
 | C 사내 인트라넷 호스팅 | 사내 접근 정책·HTTPS·영구 볼륨·OIDC 콜백 연결 가능 여부 확인 필요 |
 
 미결정: 호스팅, 도메인, 회사 OAuth 프로젝트·등록 담당자, 최초 관리자, 데이터 반입·백업/감사 보존 정책. 운영 배포·실데이터 접근은 별도 승인 대상이다.
+
+## Workers 로컬 연결부 (ADR-025 1·2단계)
+
+설정·Access 경로 분리·실행은 [Workers README](../../app/workers/README.md)를 따른다. 합성 데이터 메모리 구현으로 운영 배포 대상이 아니다. D1과 실데이터 이전은 3단계다.
+
+향후 승인된 배포 명령은 `cd app/workers`, `npm run build:assets`, `npx wrangler deploy`이다. 이번에는 실행하지 않았다. 운영 사용 전 D1 트랜잭션/감사/재실행, 관리 API, Access 정책, CPU 측정과 백업을 검증한다.

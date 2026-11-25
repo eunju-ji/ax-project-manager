@@ -1,0 +1,2 @@
+function validDecision(input){return !!input&&typeof input==='object'&&!Array.isArray(input)&&!Object.keys(input).some(k=>!['answer','change_id','review_id','expected_version'].includes(k))&&['\uC644\uB8CC','\uC9C4\uD589 \uC911'].includes(input.answer)&&['change_id','review_id'].every(k=>typeof input[k]==='string'&&/^[A-Za-z0-9][A-Za-z0-9:_-]{0,127}$/.test(input[k]))&&Number.isSafeInteger(input.expected_version)&&input.expected_version>=1&&input.expected_version<=2147483647;}
+module.exports={validDecision};

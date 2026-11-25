@@ -27,6 +27,8 @@ async function body(req,limit=8192) {
  try {const input=JSON.parse(Buffer.concat(chunks));if(!input||typeof input!=='object'||Array.isArray(input))throw Error();return input;}catch{throw Object.assign(Error(),{status:400});}
 }
 function createAuth(db,cfg,{fetch:fetcher=globalThis.fetch,jwks,now=Date.now}={}) {
+ const core=require('../core/http.cjs');
+ const storage=require('../node/storage.cjs').createStorage(db,{dataset:require('node:path').join(cfg.env.DATA_DIR||'.','real-dataset.json'),now});
  const {env}=cfg, attempts=new Map(), pending=new Map();let discovery,keys,keysAt=0;
  const opaque=()=>{const value=random();return value+'.'+crypto.createHmac('sha256',env.SESSION_SECRET).update(value).digest('base64url');};
  const tx=fn=>db.tx(fn);
@@ -79,17 +81,13 @@ function createAuth(db,cfg,{fetch:fetcher=globalThis.fetch,jwks,now=Date.now}={}
   }
   if(!route.startsWith('/api/')&&route!=='/auth/logout'&&route!=='/admin/users')return false;
   if(route==='/api/ingest/delta'&&req.method==='POST') {
-   const bearer=/^Bearer ([A-Za-z0-9_-]{20,256})$/.exec(req.headers.authorization||'');const digest=bearer?hash(bearer[1]):'';
-   const valid=digest&&((env.INGEST_TOKEN_HASHES||'').split(',').some(h=>same(h.trim(),digest))||tx(t=>t.get('SELECT 1 FROM ingest_tokens WHERE hash=? AND revoked_at IS NULL',digest)));
-   if(!valid)return json(401,{error:'unauthorized'}),true;
-   const delta=await body(req,5*1024*1024),r=require('../real/apply-delta.cjs').applyDelta(delta,{dataset:require('node:path').join(env.DATA_DIR,'real-dataset.json'),dryRun:url.searchParams.get('dry_run')==='true'});
-   audit('ingest','token:'+digest.slice(0,12));const {ok,added,updated,removed,ignored,rejected}=r;json(ok?200:422,{ok,added,updated,removed,ignored,rejected});return true;
+   await collection(req,res,url,json);return true;
   }
   const s=session(req);if(!s)return json(401,{error:'unauthorized'}),true;
   req.auth=s;
-  if(write&&(req.headers.origin!==cfg.origin||!same(req.headers['x-csrf-token'],s.csrf)))return json(403,{error:'csrf'}),true;
+  if(write&&!core.csrf(cfg.origin,req.headers.origin,req.headers['x-csrf-token'],s.csrf))return json(403,{error:'csrf'}),true;
   if(route==='/auth/logout'&&req.method==='POST'){tx(t=>t.run('DELETE FROM sessions WHERE id=?',s.id));audit('logout',s.user_id);res.setHeader('Set-Cookie',cookie('__Host-sid','',0));json(200,{ok:true});return true;}
-  if(write&&s.role==='viewer')return json(403,{error:'forbidden'}),true;
+  if(write&&!core.allowed(s.role,'decision'))return json(403,{error:'forbidden'}),true;
   if(route==='/api/me'&&req.method==='GET'){json(200,{email:s.email,person_id:s.person_id,role:s.role,csrf:s.csrf});return true;}
   if(route.startsWith('/api/admin/')||route==='/admin/users') {
    if(s.role!=='admin')return json(403,{error:'forbidden'}),true;
@@ -111,6 +109,17 @@ function createAuth(db,cfg,{fetch:fetcher=globalThis.fetch,jwks,now=Date.now}={}
  }
  function personExists(id){try{return JSON.parse(require('node:fs').readFileSync(require('node:path').join(env.DATA_DIR,'real-dataset.json'),'utf8')).persons.some(p=>p.person_id===id);}catch{return false;}}
  function personFor(email){try{const d=JSON.parse(require('node:fs').readFileSync(require('node:path').join(env.DATA_DIR,'real-dataset.json'),'utf8'));const matches=d.persons.filter(p=>[p.email,...(Array.isArray(p.emails)?p.emails:[])].some(e=>typeof e==='string'&&e.toLowerCase()===email));return matches.length===1?matches[0].person_id:null;}catch{return null;}}
- return {handle,session,audit,verify};
+ async function collection(req,res,url,json){
+  const bearer=/^Bearer ([A-Za-z0-9_-]{20,256})$/.exec(req.headers.authorization||'');
+  const digest=bearer?hash(bearer[1]):'';let token=null;
+  if(digest){
+   if((env.INGEST_TOKEN_HASHES||'').split(',').some(h=>same(h.trim(),digest)))token={role:'admin'};
+   const personal=JSON.parse(env.INBOX_TOKEN_HASHES||'{}')[digest];if(personal)token={role:'person',person_id:personal};
+   if(!token&&await storage.getToken(digest))token={role:'admin'};
+  }
+  if(!token)return json(401,{error:'unauthorized'});
+  try{const result=await core.collection({action:core.route(req.method,url.pathname),input:req.method==='POST'?await body(req,5*1024*1024):null,since:url.searchParams.get('since'),dryRun:url.searchParams.get('dry_run')==='true',token,storage});await storage.audit('collection','token:'+digest.slice(0,12));return json(result.status,result.data);}catch(e){return json(e.status||500,{error:e.code||'request_failed'});}
+ }
+ return {handle,session,audit,verify,collection,storage};
 }
 module.exports={config,createAuth,hash,body};

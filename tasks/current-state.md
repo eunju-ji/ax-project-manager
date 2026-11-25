@@ -106,3 +106,12 @@
 - 2단계: `docs/design/m5-layout-options.html` 시나리오 기반 재작성. A 한 페이지 현황판 / B 목록+상세 패널 / C 단계 보드, 권고 A+B 상세 패널. 12/1 검토 회의에서 선택.
 - 배포·수집: ADR-025(제안·검증 대기). gws-work가 사람별 Google 연결을 가진 서버형임을 확인 → 팀원 각자 gws-work 연결 + 수집 도우미(하루 1회 이상, 색인만 /api/inbox) + 사용자 PC에서 팀 단위 판별. 배포는 ChatGPT Sites 우선(Sign in with ChatGPT+초대 목록), 대안 Workers+D1(Cloudflare Access). 검증 항목 §5.
 - 다음: 3단계 데이터 확보 점검(11/27), 4단계 마일스톤 공유·12/1 검토 제안, 5단계 대시보드 보완(Builder, 11/26~), 최하단 요소 확인 필요.
+## 2026-11-25 Workers 연결부 (AX-Builder 검증 결과)
+
+- 브랜치 `feat/workers-port`. 추가 에이전트·커밋·푸시·배포 없음. `app/server/.real/`과 `docs/project-review/*` 접근·변경 없음.
+- 핵심 분리: `app/server/core/`에 경로·라우팅 표·권한·CSRF·보안 헤더, 판단 검증/상태 전이, view projection, delta merge 및 분할 규칙. 비동기 Storage·Identity·Http JSDoc 계약 추가. Node 조립은 `server/node/`, 기존 API 진입점은 얇게 유지.
+- Workers: ES module fetch, RS256 Access JWT/JWKS 검증과 초대 대조, 메모리 Storage, Static Assets 허용 목록 빌드. Node·Workers에 사람별 inbox 업로드/관리자 커서 조회, 원문 거부·160자 제한. delta 200건 상한과 push 자동 분할.
+- 검증: `python3.15.exe build.py`, typecheck, UI 단위 84/84, 서버 288/288(새 core·Node inbox 테스트 포함), Workers fetch 14/14 통과. 시각 비교 54/54(픽셀 차이 0), 탐색 110/110. 시각 기준 이미지·화면 코드 변경 없음.
+- 설치 제한: npm 레지스트리 EACCES로 Wrangler 설치 불가. Node Fetch/WebCrypto 직접 호출로 대체했으며 workerd 번들 실행은 미검증.
+- 한계: 메모리는 isolate/재시작에 따라 초기화. Workers 사용자·토큰 관리 API/화면 전체는 미이식. push 청크 간 원자성 없음(각 청크가 참조상 유효해야 함). 무료 CPU 10ms 충족 여부 미측정.
+- 다음: Lead/Reviewer 검토. D1 저장소·실데이터 이전은 3단계로 별도 수행. 기존 ID/버전·세션/사용자/토큰/감사 스키마, inbox cursor/unique, delta 원자성·재실행, 관리 API·보존/백업과 CPU 측정 검증 필요. `app/workers/README.md`와 `docs/runbooks/deploy.md` 참고.

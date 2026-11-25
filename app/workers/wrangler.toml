@@ -1,0 +1,7 @@
+name = "ax-project-manager-local"
+main = "src/index.js"
+compatibility_date = "2026-11-25"
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+run_worker_first = true

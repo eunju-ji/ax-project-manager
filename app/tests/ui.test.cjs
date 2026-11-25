@@ -347,3 +347,13 @@ test('third feedback uses uniform stage markup, persistent summary toggle and al
 test('project tags render once in each theme and progress has a numeric hierarchy',()=>{const a=app();a.run(`projects[0].tasks[0].stage='기획'`);for(const theme of ['linear-notion','linear','notion','attio','airtable','clickup']){a.run(`state.theme='${theme}'`);const html=a.run('projectArea()');assert.equal((html.match(/class="stage-chip"/g)||[]).length,1);assert.doesNotMatch(html,/계획보다 늦음|class="results-count"/);}const html=a.run('progressMetric({percent:50,done:6,total:12})');assert.match(html,/class="progress-percent">50%/);assert.match(html,/class="progress-detail">6\/12 완료/);assert.doesNotMatch(html,/class="tag|진척 50/);});
 
 test('core and operations reuse identical flat task rows and retain plan groups only in the drawer',()=>{const a=app();a.run(`const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'flat-a',wbsCode:'1.1',stage:undefined,wbsGroups:['1 원래 계획','1.1 세부 묶음']},{...base,id:'flat-b',wbsCode:'1.2',stage:undefined}];`);let html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))');a.run(`projects[0].kind='ops'`);assert.equal(html,a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))'));assert.doesNotMatch(html,/wbs-group-row|wbs-group-summary|data-gantt-group|완료 \d+\//);assert.equal((html.match(/class="timeline-row task-gantt-row/g)||[]).length,2);a.run(`projects[0].tasks[0].stage='기획';state.drawerTask='flat-a'`);html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))');assert.match(html,/stage-group-row/);assert.doesNotMatch(html,/wbs-group-row|data-gantt-group/);assert.match(a.run('taskDrawer()'),/계획 문서 묶음/);assert.match(a.run('taskDrawer()'),/원래 계획 \/ 세부 묶음/);assert.match(html,/status-dot/);});
+
+
+test('timeline project avatars show five people, name tooltips and only the remaining count',()=>{
+ const a=app();a.run(`const names=['Jason Serngwoon Choi','Heechang Lee','Eunju Ji','김지현','박성진','이수민','A & B'];projects[0].owner=names[0];projects[0].tasks=names.map((owner,i)=>({...projects[0].tasks[0],id:'avatar-'+i,owner,subtasks:[]}));`);
+ const html=a.run('wbsTimeline([projects[0]])');
+ assert.equal((html.match(/class="avatar avatar-/g)||[]).length,5);assert.match(html,/<small>\+2<\/small>/);
+ assert.equal((html.match(/class="avatar avatar-\d+"[^>]*title="[^"]+"/g)||[]).length,5);assert.match(html,/title="Jason Serngwoon Choi"/);
+ a.run('projects[0].tasks=projects[0].tasks.slice(0,5)');assert.doesNotMatch(a.run('projectAvatars(projects[0])'),/<small>/);
+ assert.match(a.run(`avatar('A & B')`),/title="A &amp; B"/);
+});

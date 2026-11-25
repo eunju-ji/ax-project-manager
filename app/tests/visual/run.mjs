@@ -1,5 +1,6 @@
 import { chromium, expect } from '@playwright/test';
 import {checkWeeklyLayout} from './weekly-layout.mjs';
+import {checkTimelineColumns} from './timeline-columns.mjs';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import { createServer } from 'node:http';
@@ -222,6 +223,7 @@ async function nav() {
       await load(p,url);const equal=await p.evaluate(()=>{const p=projects[0],base=p.tasks[0];p.tasks=[{...base,id:'root-nine',title:'최상위 말단',stage:undefined,wbsCode:'9',wbsGroups:[]},{...base,id:'leaf',title:'평평한 태스크',stage:undefined,wbsCode:'2.1.1',wbsGroups:['2 플랫폼','2.1 비교'],owner:'Jason Serngwoon Choi'}];p.kind='core';const first=taskTimeline(p,M.monthRange(AX_DATA.demoAsOf));p.kind='ops';const second=taskTimeline(p,M.monthRange(AX_DATA.demoAsOf));state.project=p.id;render();return first===second;});expect(equal).toBe(true);
       await expect(p.locator('.wbs-group-row,.wbs-group-summary,[data-gantt-group]')).toHaveCount(0);await expect(p.locator('[data-gantt-task="leaf"]')).toBeVisible();expect(await p.locator('[data-gantt-task="leaf"]').evaluate(e=>e.getBoundingClientRect().height)).toBeLessThanOrEqual(44);await p.locator('[data-gantt-task="leaf"] .gantt-task-toggle').click();await expect(p.locator('.task-properties')).toContainText('계획 문서 묶음플랫폼 / 비교');await expect(p.locator('.task-properties')).toContainText('WBS 번호2.1.1');await p.keyboard.press('Escape');
     });
+    await check('compact timeline columns fit long names and five named avatars',async()=>{await load(p,url);await checkTimelineColumns(p);});
     await check('shared design scale keeps names whole and the last owner row visible',async()=>{
       await load(p,url);await p.evaluate(()=>{const names=['Heechang Lee','Jason Serngwoon Choi','Eunju Ji','박성진'];projects.forEach(p=>p.tasks.forEach((t,i)=>{t.owner=names[i%names.length];t.subtasks.forEach((w,j)=>w.owner=names[j%names.length]);}));state.project=projects[0].id;state.summaryOpen=true;render();});
       await expect(p.locator('.weekly-owner-table tbody tr')).toHaveCount(4);

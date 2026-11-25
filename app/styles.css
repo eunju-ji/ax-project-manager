@@ -252,13 +252,14 @@ body{font-size:var(--t4);line-height:var(--lh4);font-weight:400}
 /* Weekly card sizing: one height rule, with a content-sized mobile variant. */
 body[data-theme] .weekly-layout{height:var(--weekly-card-height,240px);min-height:0;align-items:stretch}
 body[data-theme] .summary-number,body[data-theme] .summary-meta{margin-top:8px}
-body[data-theme] .summary-task-count{margin-top:8px;flex:none}
+body[data-theme] .summary-task-count{margin-top:16px;flex:none}
 body[data-theme] .weekly-content>.weekly-report{height:100%;max-height:none;overflow-y:auto}
 .weekly-visual{overflow-y:auto;overscroll-behavior:contain}.weekly-owner-table table{table-layout:fixed}.weekly-owner-table th:first-child{width:42%}.weekly-owner-table tbody th{white-space:normal;word-break:keep-all;overflow-wrap:normal}
 @media(max-width:700px){
  body[data-theme] .weekly-layout{--weekly-card-height:auto;grid-template-rows:auto auto auto}
  body[data-theme] .week-summary{grid-template-rows:auto auto auto}
- body[data-theme] .summary-number,body[data-theme] .summary-meta,body[data-theme] .summary-task-count{margin-top:0}
+ body[data-theme] .summary-number,body[data-theme] .summary-meta{margin-top:0}
+ body[data-theme] .summary-task-count{margin-top:8px}
  body[data-theme] .weekly-content>.weekly-report{height:auto;max-height:320px}
  .weekly-visual{max-height:320px}
  .weekly-owner-table tbody th{white-space:normal}
@@ -269,3 +270,16 @@ body[data-theme] .weekly-person-tabs button[aria-pressed="true"]{background:#414
 
 .timeline-lane>.timeline-bar:not(.task-gantt-bar){top:50%;transform:translateY(-50%)}
 .wbs-project-row .avatar-group .avatar{margin-left:-6px;border-color:var(--surface2)}
+
+/* Expanded summary heading uses the existing filter component at a smaller size. */
+.summary-tasks .section-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+.summary-tasks:has(#summary-tasks-panel[hidden]) .section-top{margin-bottom:0}
+.summary-tasks .section-top h2,.summary-tasks h2 button{font-size:var(--t4);line-height:var(--lh4);font-weight:700;color:var(--ink);margin:0}
+.summary-tasks .status-filters{margin-left:auto}
+.summary-tasks .status-filters button{height:28px;padding:0 8px;font-size:var(--t3);line-height:var(--lh3)}
+@media(max-width:700px){.summary-tasks .section-top{align-items:flex-start;flex-direction:column}.summary-tasks .status-filters{margin-left:0}}
+/* User-approved truncation exception: only related resource cards. */
+.gantt-resources .source-row{height:80px;min-height:80px;max-height:80px;overflow:hidden}
+.gantt-resources .source-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px;overflow:hidden}
+.gantt-resources .source-info strong{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;max-height:calc(2 * var(--lh2));white-space:normal;overflow:hidden;text-overflow:ellipsis}
+.gantt-resources .source-info small{display:block;max-width:100%;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

@@ -357,3 +357,13 @@ test('timeline project avatars show five people, name tooltips and only the rema
  a.run('projects[0].tasks=projects[0].tasks.slice(0,5)');assert.doesNotMatch(a.run('projectAvatars(projects[0])'),/<small>/);
  assert.match(a.run(`avatar('A & B')`),/title="A &amp; B"/);
 });
+
+
+test('summary heading has no count and places filters in the expanded heading row',()=>{
+ const a=app();let html=a.run('summaryTasks()');assert.doesNotMatch(html,/<small>|class="status-filters"/);
+ a.run('state.summaryOpen=true');html=a.run('summaryTasks()');assert.doesNotMatch(html,/<small>/);assert.ok(html.indexOf('class="status-filters"')<html.indexOf('id="summary-tasks-panel"'));assert.match(html,/태스크 상세/);
+});
+test('related resource cards expose their complete title in a tooltip',()=>{
+ const a=app();a.run(`projects[0].files=[{...projects[0].files[0],name:'긴 & 자료 제목을 카드 안에 표시합니다'}]`);
+ assert.match(a.run('ganttSources(projects[0])'),/<strong title="긴 &amp; 자료 제목을 카드 안에 표시합니다">/);
+});

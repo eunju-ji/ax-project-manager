@@ -1,6 +1,7 @@
 import { chromium, expect } from '@playwright/test';
 import {checkWeeklyLayout} from './weekly-layout.mjs';
 import {checkTimelineColumns} from './timeline-columns.mjs';
+import {checkSummaryResources} from './summary-resources.mjs';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import { createServer } from 'node:http';
@@ -224,6 +225,7 @@ async function nav() {
       await expect(p.locator('.wbs-group-row,.wbs-group-summary,[data-gantt-group]')).toHaveCount(0);await expect(p.locator('[data-gantt-task="leaf"]')).toBeVisible();expect(await p.locator('[data-gantt-task="leaf"]').evaluate(e=>e.getBoundingClientRect().height)).toBeLessThanOrEqual(44);await p.locator('[data-gantt-task="leaf"] .gantt-task-toggle').click();await expect(p.locator('.task-properties')).toContainText('계획 문서 묶음플랫폼 / 비교');await expect(p.locator('.task-properties')).toContainText('WBS 번호2.1.1');await p.keyboard.press('Escape');
     });
     await check('compact timeline columns fit long names and five named avatars',async()=>{await load(p,url);await checkTimelineColumns(p);});
+    await check('summary header and bounded resource cards remain readable',async()=>{await load(p,url);await checkSummaryResources(p);});
     await check('shared design scale keeps names whole and the last owner row visible',async()=>{
       await load(p,url);await p.evaluate(()=>{const names=['Heechang Lee','Jason Serngwoon Choi','Eunju Ji','박성진'];projects.forEach(p=>p.tasks.forEach((t,i)=>{t.owner=names[i%names.length];t.subtasks.forEach((w,j)=>w.owner=names[j%names.length]);}));state.project=projects[0].id;state.summaryOpen=true;render();});
       await expect(p.locator('.weekly-owner-table tbody tr')).toHaveCount(4);

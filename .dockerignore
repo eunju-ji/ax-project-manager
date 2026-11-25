@@ -1,0 +1,10 @@
+.git
+**/.real
+**/.runtime
+**/node_modules
+**/test-results
+**/.env*
+**/*.sqlite*
+**/*.pem
+**/tests
+preview

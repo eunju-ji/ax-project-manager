@@ -1,5 +1,15 @@
 # 현재 상태 (세션 간 인수인계)
 
+## 2026-11-24 공개 사이트 인증 구현 (AX-Builder, feat/auth-site)
+- 독립 보안 검토 후속 수정: viewer 로그아웃을 Origin·CSRF 검사 후 역할 제한 전에 처리. 경로는 디코딩·정규화한 값을 모든 라우팅과 정적 허용 목록에서 공유하며 잘못된 인코딩·상위 경로·백슬래시·NUL을 400으로 거부. TRUSTED_PROXIES(IP/CIDR)로 신뢰한 peer만 XFF를 오른쪽부터 해석하고 로그인/콜백을 각각 클라이언트당 분당 20회로 제한. HS256·none 토큰을 실제 생성하는 알고리즘 치환 테스트와 각 지적의 회귀 테스트 추가. 변경 파일: 기존 auth.cjs·server.cjs·auth.test.cjs·deploy.md·이 문서 및 신규 client-ip.cjs. 후속 검증: `npm.cmd run test:server` 253/253, `npm.cmd test` 80/80, `git diff --check` 통과. 합성 데이터·모의 IdP만 사용했으며 커밋·푸시·추가 위임 없음.
+- ADR-022 구현: OIDC Code+PKCE, RS256/JWKS 검증, 초대·도메인 제한, 해시 저장 세션(12h/7d), CSRF·Origin·역할 인가, 관리자 초대/역할/비활성/담당자 연결, 수집 토큰 발급·폐기와 delta API, 감사·보안 헤더·시도 제한.
+- 운영은 DATA_DIR의 준비된 데이터만 사용하고 예시·파일럿 모드를 차단한다. off는 설정과 실제 listen 모두 루프백만 허용한다. 초대 상태는 첫 로그인 시 active로 전환한다. persons의 email/emails가 유일하게 일치하면 자동 연결하고 관리자 수동 person_id 연결도 지원한다.
+- 변경 파일: `app/server/api/{server.cjs,auth.cjs,admin.html,admin.js}`, `app/server/db/migrations/0003_auth.sqlite.sql`, `app/server/real/push-delta.cjs`, `app/server/tests/auth.test.cjs`, `app/src/app.ts`, `app/app.js`, `app/README.md`, `Dockerfile`, `.dockerignore`, `docs/runbooks/deploy.md`, 이 상태 문서. ADR-022는 Lead가 준비한 입력 문서이며 수정하지 않음.
+- 외부 라이브러리 추가 없음. 개발 의존성은 기존 프로젝트 app/node_modules를 로컬 junction으로 재사용했다(저장소 제외). Python 실행 파일이 없어 동일한 기존 JS/CSS/assets를 Node로 묶어 무시되는 preview HTML을 준비했다.
+- 실데이터 접근·실제 Google 인증 호출·배포·에이전트 추가 호출·커밋·푸시 없음. 테스트는 임시 폴더 합성 원장과 서명된 테스트 JWT/주입 fetch·JWKS만 사용한다.
+- 최종 검증: `npm.cmd test` 80/80, `npm.cmd run test:server` 246/246(신규 인증·수집·브라우저 검증 20개 포함), `npm.cmd run typecheck` 통과, `node tests/visual/run.mjs` 54/54(이미지 차이 0), `node tests/visual/run.mjs --navigation` 108/108, `git diff --check` 통과. npm.ps1 실행 정책 때문에 동일한 npm.cmd를 사용했다. 테스트 생략/비활성화 없음. Docker 이미지는 빌드·실행하지 않음.
+- 다음 단계는 Lead/Reviewer의 독립 검토 후 호스팅·도메인·회사 OAuth 등록·첫 관리자·백업/감사 보존 정책 결정 및 G3 승인이다. Cloud Run은 현재 파일 기반 저장 구조를 그대로 다중 인스턴스로 배포할 수 없으며 ADR-014 후속 설계가 필요하다. 프록시에서는 Host 보존과 별도 IP 제한이 필요하고 Node 직접 접근을 막는다. 로그인 state/제한이 메모리 기반이므로 단일 프로세스로 운영한다.
+
 갱신: 2026-11-23 · AX-Lead. 새 세션은 이 파일부터 읽는다. 지난 경위는 Git 기록(`git log`)과 `docs/home-ui-verification.md`에 있다.
 
 ## 1. 단계와 브랜치

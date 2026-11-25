@@ -117,6 +117,39 @@ async function nav() {
       catch (e) { report.checks.push({ kind, name, status: 'fail', evidence: e.message }); console.log(e.message); }
       console.log(`${kind}: ${name}: ${report.checks.at(-1).status}`);
     }
+    await check('period table, folder pin and status filters', async () => {
+      await load(p,url);
+      for(const actionName of ['summary-status','project-status']){
+        const chips=p.locator('[data-action="'+actionName+'"]');
+        await expect(chips).toHaveCount(7);
+        const counts=await chips.evaluateAll(els=>els.map(el=>({value:el.dataset.value,count:Number(el.querySelector('span').textContent)})));
+        expect(counts.filter(c=>c.value!=='all').reduce((n,c)=>n+c.count,0)).toBe(counts.find(c=>c.value==='all').count);
+        await p.locator('[data-action="'+actionName+'"][data-value="undated"]').click();
+        await expect(p.locator('[data-action="'+actionName+'"][data-value="undated"]')).toHaveAttribute('aria-pressed','true');
+        await p.locator('[data-action="'+actionName+'"][data-value="all"]').click();
+      }
+      const id=await p.locator('.project-pin').first().getAttribute('data-id');
+      const pin=p.locator('.project-pin[data-id="'+id+'"]');
+      await pin.focus();await p.keyboard.press('Enter');await expect(pin).toHaveAttribute('aria-pressed','true');
+      await pin.click();await expect(pin).toHaveAttribute('aria-pressed','false');
+      await expect(p.locator('.summary-task-row').first()).toBeVisible();
+      await p.locator('.summary-task-row').first().focus();await p.keyboard.press('Enter');
+      await expect(p.locator('.task-drawer')).toBeVisible();
+      for(const label of ['계획 기간','실제 작업 기간','완료일','기한 준수'])await expect(p.locator('.task-properties dt').filter({hasText:label})).toHaveCount(1);
+      await p.locator('.task-drawer button[data-action="drawer-close"]').click();
+      for(const unit of ['day','week','month']){
+        await p.locator('[data-action="summary-unit"][data-value="'+unit+'"]').click();
+        const expected=await p.evaluate(()=>Math.min(periodTasks().length,state.summaryLimit));
+        await expect(p.locator('.summary-task-row')).toHaveCount(expected);
+      }
+      await p.evaluate(()=>{projects[0].tasks[0].status='completed';render();});
+      await p.locator('[data-action="summary-status"][data-value="completed"]').click();
+      await expect(p.locator('.summary-task-row .plan-status:not(.completed)')).toHaveCount(0);
+      await p.locator('[data-action="project-status"][data-value="completed"]').click();
+      await click(p,'projects-all');
+      await expect(p.locator('[data-gantt-task] .expand-chevron')).toHaveCount(0);
+      await expect(p.locator('[data-gantt-task] .plan-status:not(.completed)')).toHaveCount(0);
+    });
     await check('home timeline expands and preserves filter', async () => {
       await load(p,url); await expect(p.locator('.project-right-rail')).toHaveCount(0);
       const row=p.locator('.unified-toggle').first(); await row.click(); await expect(row).toHaveAttribute('aria-expanded','true');

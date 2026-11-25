@@ -236,7 +236,7 @@ test('unverified chips, activity deadlines and six-state Gantt legend are distin
  const a=app();a.run("state.drawerTask=projects[0].tasks[0].id;projects[0].tasks[0].completedAt='2026-11-17';projects[0].tasks[0].completionBasis='산출물 승인';");
  const html=a.run('taskDrawer()');assert.match(html,/role="dialog" aria-modal="true" aria-labelledby="task-drawer-title"/);for(const text of ['상태','담당','기간','완료일','산출물 승인','산출물','작업 내역','관련 자료'])assert.ok(html.includes(text));
  assert.equal((html.match(/class="drawer-entry"/g)||[]).length,a.run('projects[0].tasks[0].subtasks.length'));
- assert.equal((html.match(/class="drawer-files"/g)||[]).length,1);a.run("state.theme='notion'");assert.equal(a.run('taskDrawer()'),'');
+ assert.equal((html.match(/class="drawer-files"/g)||[]).length,1);a.run("state.theme='notion'");assert.match(a.run('taskDrawer()'),/task-drawer/);
  });
 test('WBS group rows summarize children, preserve root ordering and collapse nested tasks',()=>{
  const a=app();a.run(`projects[0].tasks=[
@@ -292,4 +292,53 @@ test('stages summarize status, group in order, hide numbers, and expose drawer p
 test('next step prefers earliest active due, then earliest upcoming, then undated active',()=>{
  const a=app();a.run(`const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'undated',status:'in_progress',startDate:undefined,dueDate:undefined},{...base,id:'future2',status:'in_progress',startDate:'2026-12-02',dueDate:'2026-12-03'},{...base,id:'future1',status:'in_progress',startDate:'2026-12-01',dueDate:undefined},{...base,id:'active2',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-22'},{...base,id:'active1',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-19'}]`);
  assert.equal(a.run('nextTask(projects[0]).id'),'active1');a.run(`projects[0].tasks=projects[0].tasks.filter(t=>!t.id.startsWith('active'))`);assert.equal(a.run('nextTask(projects[0]).id'),'future1');a.run(`projects[0].tasks=projects[0].tasks.filter(t=>!t.id.startsWith('future'))`);assert.equal(a.run('nextTask(projects[0]).id'),'undated');
+});
+
+test('period table follows overlapping plans, period, owner and pagination',()=>{
+ const a=app();a.run(`const p=projects[0],base=p.tasks[0];p.tasks=Array.from({length:14},(_,i)=>({...base,id:'period-'+i,title:'기간 업무 '+i,owner:'합성 담당',startDate:'2026-11-16',dueDate:'2026-11-18',subtasks:[]}));`);
+ assert.equal(a.run("periodTasks().filter(r=>r.project.id===projects[0].id).length"),14);
+ assert.equal((a.run('summaryTasks()').match(/class="summary-task-row"/g)||[]).length,10);
+ a.run('state.summaryLimit=20');assert.match(a.run('summaryTasks()'),/기간 업무 13/);
+ a.run("state.summaryUnit='day'");assert.match(a.run('summaryTasks()'),/기간 업무 13/);
+ a.run('state.week=-10');assert.doesNotMatch(a.run('summaryTasks()'),/기간 업무 13/);
+ a.run("state.week=0;state.weekOwner='다른 담당'");assert.doesNotMatch(a.run('summaryTasks()'),/기간 업무 13/);
+});
+test('folder pins have one folder per project in every theme and toggle pressed state',()=>{
+ const a=app();a.run('togglePin(projects[0].id)');assert.match(a.run('pinButton(projects[0])'),/aria-pressed="true"/);assert.doesNotMatch(a.run('pinButton(projects[0])'),/☆|★/);
+ for(const theme of ['linear-notion','notion','attio','airtable','clickup']){a.run(`state.theme='${theme}'`);assert.equal((a.run('projectArea()').match(/data-action="project-pin"/g)||[]).length,a.run('filtered().length'));}
+ a.run('togglePin(projects[0].id)');assert.match(a.run('pinButton(projects[0])'),/aria-pressed="false"/);
+});
+test('schedule filters hide unmatched projects and rows and drawer tasks have no chevrons',()=>{
+ const a=app();a.run("state.projectStatus='completed';state.summaryStatus='completed'");assert.ok(a.run("filtered().every(p=>p.tasks.some(t=>matchesStatus(t,'completed')))"));
+ assert.doesNotMatch(a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))'),/plan-status (active|late|unverified|upcoming)/);
+ assert.doesNotMatch(a.run('summaryTasks()'),/plan-status (active|late|unverified|upcoming)/);
+ a.run("state.projectStatus='all'");assert.doesNotMatch(a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))').split('data-gantt-task=')[1]?.split('</button>')[0]||'',/expand-chevron/);
+});
+test('ADR-024 actual range ends at completion rather than subsequent work',()=>{
+ const a=app();a.run(`const t=projects[0].tasks[0];Object.assign(t,{status:'completed',startDate:'2026-11-01',dueDate:'2026-11-10',completedAt:'2026-11-12',subtasks:[{performedAt:'2026-11-03'},{performedAt:'2026-11-15'}]});`);
+ assert.equal(a.run('actualLabel(projects[0].tasks[0])'),'11/3 ~ 11/12');assert.equal(a.run('adherence(projects[0].tasks[0])'),'기한 후 2일');
+});
+
+test('all schedule chip states are filterable and status counts partition each filter total',()=>{
+ const a=app();
+ a.run(`const base=projects[0].tasks[0];globalThis.filterFixture=[
+ {...base,id:'undated',status:'in_progress',startDate:undefined,dueDate:undefined,subtasks:[]},
+ {...base,id:'active',status:'in_progress',startDate:'2026-11-17',dueDate:'2026-11-20',subtasks:[]},
+ {...base,id:'late',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-10',subtasks:[{performedAt:'2026-11-09'}]},
+ {...base,id:'unverified',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-10',subtasks:[]},
+ {...base,id:'upcoming',status:'in_progress',startDate:'2026-11-20',dueDate:'2026-11-25',subtasks:[]},
+ {...base,id:'completed',status:'completed',startDate:undefined,dueDate:undefined,subtasks:[]}
+ ];`);
+ for(const actionName of ['summary-status','project-status']){
+  for(const fixture of ['filterFixture','periodTasks().map(r=>r.task)','projectFilterTasks()']){
+   const html=a.run(`statusFilters(${fixture},'all','${actionName}')`);
+   const counts=[...html.matchAll(/data-value="([^"]+)"[^>]*>[^<]*<span>(\d+)<\/span>/g)];
+   assert.equal(counts.length,7);assert.equal(counts.filter(m=>m[1]!=='all').reduce((sum,m)=>sum+Number(m[2]),0),Number(counts.find(m=>m[1]==='all')[2]));
+   assert.match(html,/data-value="undated"[^>]*>일정 미정/);
+  }
+ }
+ a.run("state.summaryStatus='undated';state.projectStatus='undated'");
+ assert.doesNotMatch(a.run('summaryTasks()'),/plan-status (active|late|unverified|upcoming|completed)/);
+ assert.ok(a.run("filtered().every(p=>p.tasks.some(t=>matchesStatus(t,'undated')))"));
+ assert.match(a.run("statusFilters([], 'undated', 'summary-status')"),/data-value="undated" aria-pressed="true">일정 미정 <span>0/);
 });

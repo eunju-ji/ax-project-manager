@@ -206,3 +206,12 @@
 - 회귀 검사: 상세 제목 숫자 없음·펼침 필터 위치·전체 제목 툴팁 단위 검사, 1440/834/390px에서 제목·필터 크기/간격·닫힘 필터 숨김·카드 고정 높이/두 줄 제목/한 줄 출처/내부 경계·상자 16px 간격을 검증한다. 실제 상세 머리와 긴 자료 카드 이미지를 확인했다.
 - 검증: python3.15.exe build.py·typecheck, UI 107/107, --navigation 124/124 및 합성 수정 탐색 통과. 시각 기준 --update 57/57 및 최종 재비교 57/57(픽셀 차이 0), git diff --check 통과.
 - Lead의 아바타 규칙을 유지했다. 커밋·푸시·추가 위임 및 app/server/.real/·docs/project-review/* 접근·수정 없음. HEAD 464dc4b 유지. 미해결 항목 없음. 다음: Lead/Reviewer 검토.
+
+
+## 2026-11-25 사용자 9차 화면 피드백·방향 수정 (AX-Builder, feat/ui-1126)
+- 사용자 방향 수정에 따라 전체 팔레트 변경을 제거했다. styles.css의 기존 내용은 ae850a8 그대로 보존하고 기본 테마의 상세 패널에만 규칙 두 개를 추가했다. 페이지·카드·요약 오른쪽·프로젝트 행·태스크 행·단계 줄·강조색·글자색은 기존 값이다.
+- 추가 변수: body[data-theme=linear][data-palette=notion]의 --bg-summary-panel: #f8f7ff. 변경 선택자: body[data-theme=linear][data-palette=notion] .summary-tasks. 배경은 해당 변수, 위 경계는 2px solid var(--line)(기존 #e8e7e4)이다. 오른쪽 요약 열 #f8f7f5와 붙어 보이지 않도록 패널만 옅은 라벤더로 구분한다. 패널 제목은 기존 #302f2c를 유지하며 새 배경과의 대비는 약 12.58:1이다.
+- 새 summary-boundary.mjs 탐색 검사에서 기본 배경·카드·프로젝트·태스크·단계·강조색·보조색이 원래 값임을 고정하고, 새 패널 배경과 경계를 확인한다. 다른 5개 테마의 페이지 배경도 유지된다. Lead의 꺽쇠 아이콘은 변경하지 않았다.
+- 시각 검사의 Notion 태블릿 아바타 원형 가장자리에서 개발/오프라인 3픽셀 차이를 진단했다. 단독 비교는 같고 연속 비교에서만 반복됐다. 비교 쌍별로 브라우저 프로세스를 분리한 뒤 갱신·재비교 모두 차이 0을 확인했다. 픽셀 허용 오차와 AA 포함 기준은 변경하지 않았다.
+- 검증: python3.15.exe build.py·typecheck, UI 107/107, --navigation 126/126 및 합성 수정 탐색 통과. 시각 기준 --update 57/57 및 최종 재비교 57/57(픽셀 차이 0), 실제 패널 이미지 확인·git diff --check 통과.
+- 커밋·푸시·추가 위임 및 app/server/.real/·docs/project-review/* 접근·수정 없음. HEAD ae850a8 유지. 미해결 항목 없음. 다음: Lead/Reviewer 검토.

@@ -283,3 +283,7 @@ body[data-theme] .weekly-person-tabs button[aria-pressed="true"]{background:#414
 .gantt-resources .source-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px;overflow:hidden}
 .gantt-resources .source-info strong{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;max-height:calc(2 * var(--lh2));white-space:normal;overflow:hidden;text-overflow:ellipsis}
 .gantt-resources .source-info small{display:block;max-width:100%;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Separate only the adjoining summary panel; retain every original theme color. */
+body[data-theme=linear][data-palette=notion]{--bg-summary-panel:#f8f7ff}
+body[data-theme=linear][data-palette=notion] .summary-tasks{background:var(--bg-summary-panel);border-top:2px solid var(--line)}

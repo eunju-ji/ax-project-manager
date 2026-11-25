@@ -2,6 +2,7 @@ import { chromium, expect } from '@playwright/test';
 import {checkWeeklyLayout} from './weekly-layout.mjs';
 import {checkTimelineColumns} from './timeline-columns.mjs';
 import {checkSummaryResources} from './summary-resources.mjs';
+import {checkSummaryBoundary} from './summary-boundary.mjs';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import { createServer } from 'node:http';
@@ -83,17 +84,21 @@ async function visual() {
       for (const state of states) {
         const name = `${theme}-${width}x${height}-${state}.png`;
         const shots = [];
-        for (const [kind, url] of Object.entries(urls)) {
-          const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, locale: 'ko-KR', timezoneId: 'Asia/Seoul', reducedMotion: 'reduce' });
-          const p = await context.newPage();
-          p.on('pageerror', e => report.errors.push(`${name}/${kind}: ${e.message}`));
-          await p.route('**/*', route => /^(http:\/\/127\.0\.0\.1:8765\/|file:|data:)/.test(route.request().url()) ? route.continue() : route.abort());
-          await load(p, url, theme);
-          await prepare(p, state);
-          shots.push(await p.screenshot({ animations: 'disabled' }));
-          if(kind==='dev' && state==='project' && theme==='linear-notion') {await p.evaluate(()=>window.scrollTo(0,0));await p.screenshot({path:path.join(results,`wbs-table-${width}-project.png`),fullPage:true});}
-          await context.close();
-        }
+        // Avoid shared raster caches between independent screenshot pairs.
+        const captureBrowser = await chromium.launch();
+        try {
+          for (const [kind, url] of Object.entries(urls)) {
+            const context = await captureBrowser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, locale: 'ko-KR', timezoneId: 'Asia/Seoul', reducedMotion: 'reduce' });
+            const p = await context.newPage();
+            p.on('pageerror', e => report.errors.push(`${name}/${kind}: ${e.message}`));
+            await p.route('**/*', route => /^(http:\/\/127\.0\.0\.1:8765\/|file:|data:)/.test(route.request().url()) ? route.continue() : route.abort());
+            await load(p, url, theme);
+            await prepare(p, state);
+            shots.push(await p.screenshot({ animations: 'disabled' }));
+            if(kind==='dev' && state==='project' && theme==='linear-notion') {await p.evaluate(()=>window.scrollTo(0,0));await p.screenshot({path:path.join(results,`wbs-table-${width}-project.png`),fullPage:true});}
+            await context.close();
+          }
+        } finally { await captureBrowser.close(); }
         if (update) {
           // Replace existing PNGs atomically (Windows may reject in-place writes).
           const target=path.join(baseline,name), temp=target+'.tmp';
@@ -226,6 +231,7 @@ async function nav() {
     });
     await check('compact timeline columns fit long names and five named avatars',async()=>{await load(p,url);await checkTimelineColumns(p);});
     await check('summary header and bounded resource cards remain readable',async()=>{await load(p,url);await checkSummaryResources(p);});
+    await check('original theme colors remain intact and the adjoining summary panel is separated',async()=>{await load(p,url);await checkSummaryBoundary(p);});
     await check('shared design scale keeps names whole and the last owner row visible',async()=>{
       await load(p,url);await p.evaluate(()=>{const names=['Heechang Lee','Jason Serngwoon Choi','Eunju Ji','박성진'];projects.forEach(p=>p.tasks.forEach((t,i)=>{t.owner=names[i%names.length];t.subtasks.forEach((w,j)=>w.owner=names[j%names.length]);}));state.project=projects[0].id;state.summaryOpen=true;render();});
       await expect(p.locator('.weekly-owner-table tbody tr')).toHaveCount(4);

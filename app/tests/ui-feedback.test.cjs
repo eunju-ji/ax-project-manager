@@ -16,6 +16,12 @@ test('period target requires work by selected person within selected dates',()=>
 });
 test('summary joins work per task with subject and no colon or remainder shorthand',()=>{
  const rows=['서버 분리','Workers 연결부 추가','테스트 작성','화면 정리'].map(title=>({task:{id:'t'},subtask:{owner:'Eunju Ji',title}}));
- a.match(M.workSummary(rows),/Eunju Ji가 .*등 4건의 작업을 했습니다\./);a.doesNotMatch(M.workSummary(rows),/:|외 \d+건/);
+ a.match(M.workSummary(rows),/Eunju Ji는 .*등 4건을 처리했습니다\./);a.doesNotMatch(M.workSummary(rows),/:|외 \d+건/);
  a.doesNotMatch(M.workSummary(rows,'Eunju Ji'),/Eunju Ji/);
 });
+
+test('summary replaces development titles with task context and readable actions',()=>{
+ const project={name:'관리장'},task={id:'t',title:'관리장 구조 개선',description:'다른 무료 서버에도 올릴 수 있게 구조를 정리'};const rows=['core adapter 분리','Workers delta API 연결','OIDC JWT D1 검증','core 테스트'].map(title=>({project,task,subtask:{owner:'Eunju Ji',title}}));const text=M.workSummary(rows);a.match(text,/Eunju Ji는/);a.match(text,/다른 무료 서버에도/);a.match(text,/등 4건을 처리했습니다/);a.doesNotMatch(text,/core|adapter|Workers|delta|API|OIDC|JWT|D1|:|외 \d+건/);a.doesNotMatch(M.workSummary(rows,'Eunju Ji'),/Eunju Ji/);
+});
+
+test('summary falls back to the plain task name when UI acronyms appear',()=>{const text=M.workSummary([{project:{name:'관리장'},task:{id:'t',title:'작업 내역 펼쳐 보기'},subtask:{title:'인라인 펼침 UI',owner:'김지현'}}]);a.doesNotMatch(text,/\bUI\b/);a.match(text,/김지현은 작업 내역 펼쳐 보기/);});

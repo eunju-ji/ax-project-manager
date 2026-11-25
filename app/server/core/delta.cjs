@@ -160,16 +160,19 @@ function merge(dataset, state, delta, {digest, equal}) {
  const seenWorklogs = new Set();
  for (const [i,update] of (delta.worklog_updates||[]).entries()) {
   const loc=`worklog_updates[${i}]`;
-  if(Object.keys(update).some(k=>!['worklog_id','task_id'].includes(k)) || typeof update.worklog_id!=='string' || typeof update.task_id!=='string') {reject('invalid_worklog_update',loc);continue;}
+  const fields=Object.keys(update).filter(k=>k!=='worklog_id');
+  if(fields.length===0||fields.some(k=>!['task_id','title'].includes(k)||typeof update[k]!=='string')||typeof update.worklog_id!=='string') {reject('invalid_worklog_update',loc);continue;}
+  if('title'in update&&(!update.title.trim()||[...update.title].length>160)){reject('title_limit',loc);continue;}
   const worklog=(dataset.worklogs||[]).find(w=>w.worklog_id===update.worklog_id);
   if(!worklog||seenWorklogs.has(update.worklog_id)){reject('missing_or_duplicate_worklog',loc);continue;}
   seenWorklogs.add(update.worklog_id);
-  if(!next.tasks.some(t=>t.task_id===update.task_id)){reject('missing_task',loc);continue;}
-  if(worklog.task_id===update.task_id){result.ignored++;continue;}
-  if(humanChanged(dataset,'worklogs',update.worklog_id,'task_id',equal)){reject('human_correction_protected',loc);continue;}
+  if('task_id'in update&&!next.tasks.some(t=>t.task_id===update.task_id)){reject('missing_task',loc);continue;}
+  const changed=fields.filter(k=>!equal(worklog[k],update[k]));
+  if(!changed.length){result.ignored++;continue;}
+  if(changed.some(k=>humanChanged(dataset,'worklogs',update.worklog_id,k,equal))){reject('human_correction_protected',loc);continue;}
   const target=next.worklogs.find(w=>w.worklog_id===update.worklog_id);
-  const before={task_id:target.task_id};target.task_id=update.task_id;target.version=(target.version||1)+1;
-  next.history.push({change_id:`DELTA-${delta.run_id}-${update.worklog_id}`,entity_type:'worklogs',entity_id:update.worklog_id,before,after:{task_id:target.task_id},actor_id:'system',reason:'scheduled-collect worklog update',run_id:delta.run_id,result:'applied',applied_at:delta.collected_at});
+  const before=structuredClone(target);Object.assign(target,Object.fromEntries(changed.map(k=>[k,update[k]])));target.version=(target.version||1)+1;
+  next.history.push({change_id:`DELTA-${delta.run_id}-${update.worklog_id}`,entity_type:'worklogs',entity_id:update.worklog_id,before,after:structuredClone(target),actor_id:'system',reason:'scheduled-collect worklog update',run_id:delta.run_id,result:'applied',applied_at:delta.collected_at});
   result.updated++;
  }
  // Apply removals after all additions and updates, before final reference validation.
@@ -221,7 +224,7 @@ function merge(dataset, state, delta, {digest, equal}) {
   if (!existingLogs.has(w.worklog_id) && taskIndex.get(next.worklogs.find(row=>row.worklog_id===w.worklog_id)?.task_id)?.merged_into != null) reject('merged_task_worklog',`worklogs[${i}]`);
  }
  for (const [i,w] of (delta.worklog_updates||[]).entries()) {
-  if (existingLogs.get(w.worklog_id)?.task_id!==w.task_id && taskIndex.get(next.worklogs.find(row=>row.worklog_id===w.worklog_id)?.task_id)?.merged_into != null) reject('merged_task_worklog',`worklog_updates[${i}]`);
+  if ('task_id'in w && existingLogs.get(w.worklog_id)?.task_id!==w.task_id && taskIndex.get(next.worklogs.find(row=>row.worklog_id===w.worklog_id)?.task_id)?.merged_into != null) reject('merged_task_worklog',`worklog_updates[${i}]`);
  }
  for (const w of next.worklogs) {
   if (!['exact','date','unknown'].includes(w.performed_at_precision) || (w.performed_at_precision==='exact'&&!iso(w.performed_at)) || (w.performed_at_precision==='date' && (typeof w.performed_at!=='string'||!/^\d{4}-\d{2}-\d{2}/.test(w.performed_at)))) reject('invalid_worklog_time','worklogs');

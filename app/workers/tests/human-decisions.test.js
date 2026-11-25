@@ -33,3 +33,8 @@ test('failed decision leaves status and human history unchanged',async()=>{
  assert.equal(result.ok,true);
  assert.equal(result.dataset.history.filter(h=>h.actor_id!=='system').length,0);
 });
+
+test('worklog title delta uses shared validation and protects a human title',async()=>{
+ const storage=createMemoryStorage({dataset:{...dataset,runs:[{run_id:'seed',state:'complete'}],worklogs:[{worklog_id:'W',task_id:'T1',title:'core adapter 변경',summary:'Work',performer_id:'P1',performed_at:'2026-11-25',performed_at_precision:'date',version:1,run_id:'seed'}]}});const delta={run_id:'rename-title',collected_at:'2026-11-25T00:00:00Z',worklog_updates:[{worklog_id:'W',title:'무료 서버에서도 관리장을 쓸 수 있게 정리'}]};
+ const changed=await storage.applyDelta(delta);assert.equal(changed.ok,true);assert.equal(changed.dataset.history[0].actor_id,'system');assert.equal((await storage.view()).projects[0].tasks[0].subtasks[0].title,delta.worklog_updates[0].title);await storage.correct({entity:'worklog',op:'update',id:'W',version:2,fields:{title:'사람이 고친 제목'}},'human');const rejected=await storage.applyDelta({...delta,run_id:'try-again'});assert.equal(rejected.ok,false);assert.equal(rejected.errors[0].code,'human_correction_protected');
+});

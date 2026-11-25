@@ -26,16 +26,29 @@
   };
   const periodTasks=(projects,range,owner='전체')=>projects.flatMap(project=>project.tasks.filter(t=>(t.subtasks||[]).some(s=>s.performedAtPrecision!=='unknown'&&day(s.performedAt)>=range.start&&day(s.performedAt)<=range.end&&(owner==='전체'||s.owner===owner))).map(task=>({project,task})));
   const particle=(name,vowel,consonant)=>{const c=name.charCodeAt(name.length-1);return c>=44032&&c<=55203?(c-44032)%28?consonant:vowel:vowel;};
-  const workSummary=(rows,owner='전체')=>[...new Set(rows.map(r=>r.task.id))].map(id=>{
-    const work=rows.filter(r=>r.task.id===id),names=[...new Set(work.map(r=>r.subtask.owner).filter(Boolean))],subject=owner==='전체'&&names.length?names.join(', ')+particle(names.at(-1),'가','이')+' ':'';
-    const titles=[...new Set(work.map(r=>r.subtask.title.replace(/[:：]/g,' ').trim()).filter(Boolean))],shown=titles.slice(0,work.length>3?2:3);
-    const text=shown.map(t=>t.replace(/[.。]$/,'').replace(/했습니다$/,'').trim()).join(', ');
-    return subject+text+(work.length>3?' 등 '+work.length+'건의 작업을 했습니다.':particle(text,'를','을')+' 했습니다.');
+  const technical=/\b(ui|ux|sql|oauth|react|node|ci|cd|core|adapters?|workers?|delta|api|oidc|d1|jwt|csrf|mcp|sdk|sqlite|typescript|javascript|webhook|backend|frontend|cjs|json)\b|[\w-]+\.(?:js|ts|cjs|mjs)\b/i;
+  const plain=value=>String(value||'').replace(/[:：]/g,' ').trim();
+  const summaryVerbs={
+    '기획·설계':['정리했습니다','정리하고'],'조사·분석':['조사했습니다','조사하고'],
+    '제작·구현':['만들었습니다','만들고'],'검증':['확인했습니다','확인하고'],'운영·지원':['처리했습니다','처리하고']
+  };
+  const joinLabels=labels=>labels.length<2?labels[0]:[...labels.slice(0,-2),labels.at(-2)+particle(labels.at(-2),'와','과')+' '+labels.at(-1)].join(', ');
+  const summaryLabel=r=>{
+    const title=plain(r.subtask.title);if(title&&!technical.test(title))return title.replace(/[.。]$/,'');
+    const fallback=[r.task.description,r.task.title].map(plain).find(t=>t&&!technical.test(t))||'관련 업무';
+    return fallback.replace(/[.。]$/,'').replace(/\s*(?:정리|개발|구현|분리|검토|작성|추가|확인|분석|수정|연결|설정|설계|개선|조사|검증)(?:했습니다)?$/,'').replace(/[을를]$/,'').trim()||'관련 업무';
+  };
+  const workSummary=(rows,owner='전체')=>[...new Set(rows.map(r=>r.subtask.owner||''))].map(person=>{
+    const work=rows.filter(r=>(r.subtask.owner||'')===person),subject=owner==='전체'?(person?person+particle(person,'는','은'):'담당자 미정은')+' ':'';
+    const topic=r=>summaryVerbs[r.task.topic]?r.task.topic:'운영·지원';
+    if(work.length>3){const labels=[...new Set(work.map(summaryLabel))].slice(0,2),types=[...new Set(work.map(topic))];return subject+joinLabels(labels)+' 등 '+work.length+'건을 '+types.map((type,i)=>summaryVerbs[type][i===types.length-1?0:1]).join(', ')+'.';}
+    const types=[...new Set(work.map(topic))];
+    return subject+types.map((type,i)=>{const labels=[...new Set(work.filter(r=>topic(r)===type).map(summaryLabel))];return joinLabels(labels)+particle(labels.at(-1),'를','을')+' '+summaryVerbs[type][i===types.length-1?0:1];}).join(', ')+'.';
   }).join(' ');
   const plannedRange=(p,asOf)=>{
     const ranges=p.tasks.filter(t=>t.planSource!=='reference'&&!t.merged_into).map(t=>taskSchedule(t,asOf)).filter(r=>r&&!r.invalid);
     return ranges.length?{start:ranges.map(r=>r.start).sort()[0],end:ranges.map(r=>r.end).sort().at(-1),...(ranges.some(r=>r.openEnd)?{openEnd:true}:{})}:projectRange(p);
   };
-  const api={periodTasks,workSummary,taskSchedule,plannedRange,categories,day,addDays,weekRange,latestTask,sortProjects,weekRecords,sortedSources,projectRange,monthRange,owners,progress,taskState,deadline,summaryRange};
+  const api={particle,periodTasks,workSummary,taskSchedule,plannedRange,categories,day,addDays,weekRange,latestTask,sortProjects,weekRecords,sortedSources,projectRange,monthRange,owners,progress,taskState,deadline,summaryRange};
   if(typeof module!=='undefined')module.exports=api;else root.AXModel=api;
 })(globalThis);

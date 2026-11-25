@@ -105,7 +105,7 @@ dataset.history에 해당 대상의 actor_id가 system이 아닌 이력이 하�
 {"run_id":"WBS-DEMO","collected_at":"2026-11-20T21:00:00+09:00","tasks":[{"task_id":"DEMO-T2","project_id":"DEMO-PR","title":"계획 태스크","status":"in_progress","wbs_code":"1.1.1","start_date":"2026-11-01","due_date":"2026-11-30","plan_source":"wbs","plan_ref":"drive:demo-wbs"}],"worklog_updates":[{"worklog_id":"DEMO-W","task_id":"DEMO-T2"}]}
 ```
 
-worklog_updates는 기존 worklog의 task_id만 변경한다. 대상 worklog는 실행 전 데이터셋에, 대상 task는 병합 후 데이터셋에 존재해야 한다. 같은 실행에서 동일 worklog를 두 번 보내거나 다른 필드를 보내면 전체 delta를 거부한다. 사람이 history에서 교정한 task_id는 덮어쓸 수 없다. 같은 값은 ignored로 집계한다. 변경하면 entity_type=worklogs, change_id=DELTA-<run_id>-<worklog_id>, actor_id=system과 before/after task_id를 history에 남긴다. 재실행 digest와 원자적 검증 규칙도 동일하게 적용된다.
+worklog_updates는 기존 worklog의 task_id와 title을 선택적으로 변경한다(둘 중 하나 이상). title은 빈 문자열을 허용하지 않으며 유니코드 160자 이하 문자열이다. 대상 worklog는 실행 전 데이터셋에, task_id를 보냈다면 대상 task는 병합 후 데이터셋에 존재해야 한다. 같은 실행에서 동일 worklog를 두 번 보내거나 title·task_id 외 필드(원문 본문 포함)를 보내면 전체 delta를 거부한다. 사람이 history에서 고친 필드는 human_correction_protected로 보호하고, 다른 필드의 독립적인 변경은 허용한다. 같은 값은 ignored로 집계한다. 변경 시 버전을 올리고 entity_type=worklogs, change_id=DELTA-<run_id>-<worklog_id>, actor_id=system과 전체 before/after를 history에 남긴다. 제목 변경은 기존 summary·performed_at·precision을 바꾸지 않는다. 재실행 digest와 원자적 검증 규칙도 동일하게 적용된다.
 
 ## 업무 설명
 

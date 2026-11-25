@@ -49,6 +49,7 @@ async function opened(p) {
 }
 async function prepare(p, state) {
   if (['project', 'episode', 'sources-bottom', 'image'].includes(state)) await opened(p);
+  if (state === 'summary') {await p.locator('.summary-task-count').click();await p.locator('.summary-tasks').scrollIntoViewIfNeeded();}
   if (state === 'episode') await p.locator('.gantt-task-toggle').first().click();
   if (state === 'sources-bottom') {
     await click(p, 'project-files');
@@ -75,7 +76,7 @@ function diff(a, b) {
 async function visual() {
   for (const [width, height] of [[1440,900], [834,1112], [390,844]]) {
     for (const theme of ['linear-notion', 'linear', 'notion', 'attio', 'airtable', 'clickup']) {
-      const states = theme === 'linear-notion' ? ['home','project','episode','sources-bottom','empty','review','settings','image'] : ['home','project'];
+      const states = theme === 'linear-notion' ? ['home','summary','project','episode','sources-bottom','empty','review','settings','image'] : ['home','project'];
       for (const state of states) {
         const name = `${theme}-${width}x${height}-${state}.png`;
         const shots = [];
@@ -117,8 +118,25 @@ async function nav() {
       catch (e) { report.checks.push({ kind, name, status: 'fail', evidence: e.message }); console.log(e.message); }
       console.log(`${kind}: ${name}: ${report.checks.at(-1).status}`);
     }
+    await check('readable project hierarchy and centered Gantt survive wrapped rows',async()=>{
+      await load(p,url);await p.evaluate(()=>{const p=projects[0],base=p.tasks[0];p.name='긴 프로젝트 이름 '.repeat(8);p.tasks=[{...base,id:'long',title:'여러 줄로 펼쳐지는 긴 태스크 이름 '.repeat(8),stage:'기획',owner:'Long English Name '.repeat(4),status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-10'},{...base,id:'done',stage:'리서치',status:'completed',startDate:'2026-11-01',dueDate:'2026-11-10'}];state.pins.clear();state.pins.add(p.id);state.project=p.id;state.summaryOpen=true;render();});
+      const project=p.locator('.wbs-project-row').first();await expect(project.locator('.progress-percent')).toHaveText('50%');await expect(project.locator('.progress-detail')).toHaveText('1/2 완료');await expect(project.locator('.wbs-progress .tag')).toHaveCount(0);await expect(p.locator('.behind-chip,.results-count')).toHaveCount(0);expect(await project.locator('.wbs-project-name .stage-chip').count()).toBe(2);
+      for(const width of [1440,834,390]){await p.setViewportSize({width,height:1000});const geometry=await p.evaluate(()=>{const row=document.querySelector('.wbs-project-row'),bar=row.querySelector('.timeline-summary'),task=document.querySelector('[data-gantt-task="long"]'),taskBar=task.querySelector('.task-gantt-bar'),dot=task.querySelector('.task-work-tick'),center=e=>{const r=e.getBoundingClientRect();return r.top+r.height/2;};return [center(bar)-center(row),center(taskBar)-center(task),dot?center(dot)-center(task):8];});expect(Math.abs(geometry[0])).toBeLessThan(1);expect(Math.abs(geometry[1]+4)).toBeLessThan(1);expect(Math.abs(geometry[2]-8)).toBeLessThan(1);}
+      await p.setViewportSize({width:1440,height:900});const typography=await p.evaluate(()=>{const row=document.querySelector('.wbs-project-row'),font=s=>parseFloat(getComputedStyle(row.querySelector(s)).fontSize);const tiny=[...document.querySelectorAll('body *')].filter(e=>e instanceof HTMLElement&&!['SCRIPT','STYLE'].includes(e.tagName)&&e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden'&&[...e.childNodes].some(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim())&&parseFloat(getComputedStyle(e).fontSize)<12&&!(parseFloat(getComputedStyle(e).fontSize)===0&&!['none','normal','\"\"'].includes(getComputedStyle(e,'::after').content)&&parseFloat(getComputedStyle(e,'::after').fontSize)>=12)).map(e=>e.className);return {tiny,name:font('.wbs-project-name strong'),percent:font('.progress-percent'),detail:font('.progress-detail'),table:parseFloat(getComputedStyle(document.querySelector('.summary-tasks td')).fontSize)};});expect(typography.tiny).toEqual([]);expect(typography.name).toBeGreaterThanOrEqual(15);expect(typography.percent).toBeGreaterThan(typography.name);expect(typography.detail).toBeGreaterThanOrEqual(12);expect(typography.table).toBeGreaterThanOrEqual(13);
+    });
+    await check('subordinate task panel toggles, preserves state and keeps focus',async()=>{
+      await load(p,url);const card=p.locator('.summary-task-count'),heading=p.locator('#summary-tasks-heading button'),panel=p.locator('#summary-tasks-panel');await expect(panel).toBeHidden();await expect(card).toHaveAttribute('aria-expanded','false');await card.focus();await p.keyboard.press('Enter');await expect(panel).toBeVisible();await expect(card).toBeFocused();await expect(heading).toHaveAttribute('aria-expanded','true');
+      await p.locator('[data-action="summary-unit"][data-value="day"]').click();await p.locator('[data-action="week-person"]').nth(1).click();await expect(panel).toBeVisible();await expect(card).toHaveAttribute('aria-expanded','true');await heading.focus();await p.keyboard.press('Space');await expect(panel).toBeHidden();await expect(heading).toBeFocused();await expect(card).toHaveAttribute('aria-expanded','false');
+      expect(await p.locator('.summary-tasks').evaluate(e=>e.parentElement.classList.contains('weekly-section')&&e.previousElementSibling.classList.contains('weekly-layout'))).toBe(true);
+    });
+    await check('stage and pin styles do not vary by state',async()=>{
+      await load(p,url);await p.evaluate(()=>{const p=projects[0],base=p.tasks[0];p.tasks=[{...base,id:'research',stage:'리서치',status:'completed'},{...base,id:'planning',stage:'기획',status:'in_progress',startDate:'2026-11-01'},{...base,id:'prototype',stage:'프로토타입',status:'in_progress',startDate:'2026-12-01'}];state.pins.clear();render();});
+      const styles=await p.locator('.project-signals .stage-chip').evaluateAll(els=>els.map(e=>{const c=getComputedStyle(e);return JSON.stringify([c.backgroundColor,c.color,c.borderWidth,c.opacity,c.padding]);}));expect(new Set(styles).size).toBe(1);await expect(p.locator('.stage-chip[data-status]')).toHaveCount(0);await expect(p.locator('.project-next')).toHaveCount(0);
+      const equal=await p.evaluate(()=>{const id=projects[0].id,read=()=>{const e=document.querySelector('.project-pin[data-id="'+id+'"]'),c=getComputedStyle(e);return JSON.stringify([e.innerHTML,c.backgroundColor,c.color,c.borderRadius]);};const before=read();togglePin(id);render();return before===read();});expect(equal).toBe(true);await expect(p.locator('.project-pin[aria-pressed="true"]').first()).toHaveAttribute('title','고정됨');
+      await p.evaluate(()=>{localStorage.removeItem(pinKey);state.pins.clear();render();});
+    });
     await check('period table, folder pin and status filters', async () => {
-      await load(p,url);
+      await load(p,url);await p.locator('.summary-task-count').click();
       for(const actionName of ['summary-status','project-status']){
         const chips=p.locator('[data-action="'+actionName+'"]');
         await expect(chips).toHaveCount(7);
@@ -160,8 +178,8 @@ async function nav() {
       await load(p,url);
       await p.evaluate(()=>{projects[1].kind='ops';const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'stage-task',title:'5.1 단계 업무',wbsCode:'5.1',stage:'기획',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-30'}];render();});
       await expect(p.locator('[data-kind="core"] > h2')).toContainText('핵심 프로젝트');
-      await expect(p.locator('#ops-projects')).toBeHidden();
-      await click(p,'ops-toggle');await expect(p.locator('#ops-projects')).toBeVisible();
+      await expect(p.locator('#ops-projects')).toBeVisible();
+      await expect(p.locator('[data-action="ops-toggle"]')).toHaveCount(0);
       const pinned=await p.evaluate(()=>projects.at(-1).id);
       await p.locator('[data-action="project-pin"][data-id="'+pinned+'"]').click();
       await expect(p.locator('[data-kind="core"] .project-pin').first()).toHaveAttribute('data-id',pinned);

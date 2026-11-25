@@ -10,6 +10,6 @@ function makeView(snapshot){
   data.sources=data.sources.map(s=>s.retained_meta?{...s,retained_meta:{...s.retained_meta,folderPath:visibility.currentPath(s.retained_meta,driveSources,s.account_scope)}}:s);
   data.reviews=data.reviews.map(r=>{const e=data.sourceEvents.find(e=>e.event_key===r.event_key),source=data.sources.find(s=>s.source_key===(r.source_key||e?.source_key));if(source?.service!=='drive'&&!r.pilot)return r;return visibility.presentReview(r,source?{...source,file:driveSources.get(source.file_id)?.file}:null,driveSources,source?.account_scope);});
   const view=adapt({...data,reviews:data.reviews.map(r=>r.status==='decided'?{...r,status:'open'}:r)});
-  return {...view,decisions:data.reviews.filter(r=>r.status==='decided'),taskStates:data.tasks.map(t=>({id:t.task_id,status:t.status,version:t.version}))};
+  return {...view,correctionData:{persons:data.persons.map(p=>({id:p.person_id,name:p.display_name})),tasks:data.tasks.map(t=>({id:t.task_id,project:t.project_id,owner:t.assignee_id,version:t.version||1})),worklogs:data.worklogs.map(w=>({id:w.worklog_id,owner:w.performer_id,version:w.version||1})),reviews:data.reviews.map(r=>({id:r.review_id,version:r.version||1,status:r.status}))},decisions:data.reviews.filter(r=>r.status==='decided'),taskStates:data.tasks.map(t=>({id:t.task_id,status:t.status,version:t.version||1}))};
 }
 module.exports={makeView};

@@ -25,3 +25,12 @@ test('member decision shares transition rule, csrf and idempotency',async()=>{
  const r=await req({csrf:await hash(jwt),input});assert.equal(r.status,200);assert.equal((await req({csrf:await hash(jwt),input})).status,200);assert.equal((await req({csrf:'wrong',input})).status,403);
  const view=await storage.view();assert.equal(view.taskStates[0].status,'completed');
 });
+
+test('correction requires member, CSRF and version, with actor audit and delta protection',async()=>{
+ for(const role of ['viewer','member']){const f=await fixture(role),jwt=token(),input={entity:'task',op:'create',version:0,fields:{title:'Manual',project_id:'p',owner:'P1'}};const r=await f.request('/api/correction',{method:'POST',headers:{'Cf-Access-Jwt-Assertion':jwt,'Content-Type':'application/json'},body:JSON.stringify(input)});assert.equal(r.status,403);}
+ const storage=createMemoryStorage({users:[{id:'u',email:'member@example.test',role:'member',status:'active'}],dataset:{persons:[{person_id:'P1',display_name:'Synthetic'}],projects:[{project_id:'p',name:'Synthetic'}],tasks:[{task_id:'T1',title:'Before',project_id:'p',version:1}]}});
+ const handler=createHandler({ACCESS_TEAM_DOMAIN:'team.cloudflareaccess.com',ACCESS_AUD:'app'},{storage,jwks:{keys:[key]}}),jwt=token();
+ const send=input=>handler(new Request('https://app.test/api/correction',{method:'POST',headers:{'Cf-Access-Jwt-Assertion':jwt,Origin:'https://app.test','x-csrf-token':awaitedCsrf,'Content-Type':'application/json'},body:JSON.stringify(input)}));const awaitedCsrf=await hash(jwt);
+ const input={entity:'task',op:'update',id:'T1',version:1,fields:{title:'After'}};assert.equal((await send(input)).status,200);assert.equal((await send(input)).status,409);
+ const d=await storage.applyDelta({run_id:'collect',collected_at:'2026-11-25T00:00:00Z',task_updates:[{task_id:'T1',title:'Automated'}]});assert.equal(d.ok,false);assert.equal(d.errors[0].code,'human_correction_protected');assert.equal((await storage.view()).projects[0].tasks[0].title,'After');
+});

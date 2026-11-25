@@ -36,6 +36,7 @@ export function createHandler(env,{storage=createMemoryStorage(),...deps}={}){
    const csrf=await hash(request.headers.get('Cf-Access-Jwt-Assertion'));
    if(!core.csrf(u.origin,request.headers.get('origin'),request.headers.get('x-csrf-token'),csrf))return json(403,{error:'csrf'});
   }
+  if(action==='correction')return json(200,await storage.correct(await readJSON(request,8192),user.id));
   if(action==='decision'){const input=await readJSON(request,8192);if(!decisionCore.validDecision(input))return json(400,{error:'invalid decision'});return json(200,await storage.decide(input));}
   if(action==='view'){await storage.audit('view',user.id);return json(200,await storage.view());}
   if(url.pathname==='/data.js')return new Response('const AX_DATA = {projects:[],reviews:[],persons:[],folders:{},demoAsOf:"",demoNotice:""}; const AX_ASSETS = {};',{headers:{...headers,'Content-Type':'text/javascript'}});

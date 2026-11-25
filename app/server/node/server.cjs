@@ -53,14 +53,33 @@ function createServer({dir,seedMode='large',reset=false,pilotProvider,realDatase
     if(url.pathname==='/api/decision'&&url.searchParams.get('data')!=='real')return json(403,{error:'real_only'});
     if(url.pathname==='/api/pilot-decision')return json(403,{error:'real_only'});
    }else if(url.pathname==='/api/me')return json(200,{role:'admin',csrf:null,local:true});
-   if(action==='view'){const mode=url.searchParams.get('data');return json(200,mode==='pilot'?pilot().view():mode==='real'?{...real().view(),...realMeta,demoAsOf:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date())}:await storage.view());}
+   if(action==='view'&&fs.existsSync(path.join(dir,'corrected-dataset.json'))&&!['real','pilot'].includes(url.searchParams.get('data')))return json(200,require('./correction-store.cjs').view(path.join(dir,'corrected-dataset.json')));
+   if(action==='view'){const mode=url.searchParams.get('data');return json(200,mode==='pilot'?pilot().view():mode==='real'?{...require('./correction-store.cjs').view(realDataset),demoAsOf:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date())}:await storage.view());}
    if(req.method==='POST'&&url.pathname==='/api/pilot-decision'){
     if(req.headers['content-type']!=='application/json')return json(415,{error:'json required'});let body='';for await(const part of req){body+=part;if(Buffer.byteLength(body)>8192)return json(413,{error:'too large'});}let input;try{input=JSON.parse(body);}catch{return json(400,{error:'invalid json'});}
     if(!input||Object.keys(input).some(k=>!['answer','change_id','review_id','expected_version','task_id'].includes(k))||!['accepted','corrected','unable'].includes(input.answer)||!['change_id','review_id'].every(k=>typeof input[k]==='string'&&/^[A-Za-z0-9:_-]{1,128}$/.test(input[k]))||!Number.isSafeInteger(input.expected_version)||input.expected_version<1)return json(400,{error:'invalid decision'});
     if((input.answer==='corrected'||input.task_id!==undefined)&&(!require('../domain/display-key.cjs').validKey(input.task_id)))return json(400,{error:'invalid_task_id'});
     try{return json(200,await pilot().decideProposal(input));}catch{return json(409,{error:'pilot_decision_failed'});}
    }
+   if(action==='correction'){
+    const user=await identity.identify(req);if(!user)return json(401,{error:'unauthorized'});
+    const guard=require('../core/http.cjs');
+    if(!guard.allowed(user.role,'correction'))return json(403,{error:'forbidden'});
+    if(cfg.mode==='oidc'&&!guard.csrf(cfg.origin,req.headers.origin,req.headers['x-csrf-token'],user.csrf))return json(403,{error:'csrf'});
+    if(cfg.mode==='off'&&req.headers.origin&&req.headers.origin!==`http://${req.headers.host}`)return json(403,{error:'origin'});
+    if(cfg.mode==='oidc'&&url.searchParams.get('data')!=='real')return json(403,{error:'real_only'});
+    if(req.headers['content-type']!=='application/json')return json(415,{error:'json required'});
+    let body='';for await(const part of req){body+=part;if(Buffer.byteLength(body)>8192)return json(413,{error:'too large'});}
+    let input;try{input=JSON.parse(body);}catch{return json(400,{error:'invalid json'});}
+    const realMode=url.searchParams.get('data')==='real',target=realMode?realDataset:path.join(dir,'corrected-dataset.json');
+    if(!realMode&&!fs.existsSync(target))fs.writeFileSync(target,JSON.stringify(require('./correction-store.cjs').normalize(db.tx(tx=>require('../repo/sqlite/records.cjs').snapshot(tx)))),{mode:0o600});
+    const actor=user.user_id||user.id||env.DEFAULT_USER_ID||data.persons?.[0]?.person_id;
+    const result=require('./correction-store.cjs').save(target,input,actor);
+    if(realMode){realDb?.close();realDb=undefined;realService=undefined;realDigest=undefined;}
+    return json(200,result);
+   }
    if(req.method==='POST'&&url.pathname==='/api/decision'){
+
     if(req.headers['content-type']!=='application/json')return json(415,{error:'json required'});
     let body='';for await(const part of req){body+=part;if(Buffer.byteLength(body)>8192)return json(413,{error:'too large'});}
     let input;try{input=JSON.parse(body);}catch{return json(400,{error:'invalid json'});}

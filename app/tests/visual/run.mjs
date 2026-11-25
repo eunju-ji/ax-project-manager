@@ -165,7 +165,7 @@ async function nav() {
       const pinned=await p.evaluate(()=>projects.at(-1).id);
       await p.locator('[data-action="project-pin"][data-id="'+pinned+'"]').click();
       await expect(p.locator('[data-kind="core"] .project-pin').first()).toHaveAttribute('data-id',pinned);
-      await expect(p.locator('.stage-chip').first()).toHaveText('기획 · 진행');
+      await expect(p.locator('.stage-chip').first()).toHaveText('기획');
       const id=await p.evaluate(()=>projects[0].id);await p.locator('.unified-toggle[data-id="'+id+'"]').click();
       await expect(p.locator('[data-gantt-task="stage-task"] .gantt-task-copy')).toHaveText('단계 업무');
       await p.locator('[data-gantt-task="stage-task"] .gantt-task-toggle').click();
@@ -189,9 +189,8 @@ async function nav() {
       expect(await p.locator(`.unified-toggle[data-id="${projectId}"] .wbs-period`).textContent()).toBe('11/1–11/12');
       const bar=p.locator('[data-gantt-task="wbs-ten"] .task-gantt-bar');
       expect(await bar.evaluate(e=>({left:e.style.left,width:e.style.width}))).toEqual({left:'30%',width:'10%'});
-      const label=bar.locator('.gantt-bar-label');
-      expect(await label.evaluate(e=>getComputedStyle(e).position)).toBe('absolute');
-      expect(await label.evaluate(e=>e.getBoundingClientRect().left>=e.parentElement.getBoundingClientRect().right)).toBe(true);
+      await expect(bar).toHaveAttribute('title','계획 11/10–11/12');
+      await expect(bar.locator('.gantt-bar-label')).toHaveCount(0);
       await p.locator('[data-gantt-task="wbs-two"] .gantt-task-toggle').click();
       await expect(p.locator('.task-drawer .drawer-entry').first()).toBeVisible();
       await expect(p.locator('.project-detail .work-section')).toHaveCount(0);
@@ -210,7 +209,7 @@ async function nav() {
       });
       await expect(p.locator('[data-gantt-group]')).toHaveCount(2);
       await expect(p.locator('[data-gantt-group]').first()).toContainText('완료 1/1');
-      await expect(p.locator('[data-gantt-group]').first().locator('.wbs-period')).toHaveText('11/1 ~ 종료일 미정');
+      await expect(p.locator('[data-gantt-group]').first().locator('.wbs-period')).toHaveText('11/1–11/16');
       expect(await p.locator('[data-gantt-group]').first().locator('.wbs-group-summary').evaluate(e=>e.style.left)).toBe('0%');
       await p.locator('.timeline-grid').screenshot({path:path.join(results,`wbs-groups-${kind}.png`)});
       await p.locator('[data-action="wbs-group"]').first().click();
@@ -220,7 +219,7 @@ async function nav() {
       await p.locator('[data-action="wbs-group"]').first().click();
       await expect(p.locator('[data-gantt-task="leaf"]')).toBeVisible();
       await p.locator('[data-gantt-task="leaf"] .gantt-task-toggle').click();
-      await expect(p.locator('.task-drawer-toolbar small')).toContainText('플랫폼 / 비교');
+      await expect(p.locator('.task-drawer-toolbar small')).toContainText('AX 프로젝트 관리장');
       await expect(p.locator('.task-properties')).toContainText('WBS 번호2.1.1');
       await p.keyboard.press('Escape');
     });
@@ -233,7 +232,7 @@ async function nav() {
       const row=p.locator('[data-gantt-task="open-task"]');
       await expect(row.locator('.wbs-period')).toHaveText('11/4 ~ 종료일 미정');
       await expect(row.locator('.gantt-task-copy')).toHaveAttribute('title',/어떤 업무인지 설명/);
-      await expect(row.locator('.is-open-ended .gantt-bar-label')).toContainText('· 종료일 미정');
+      await expect(row.locator('.is-open-ended')).toHaveAttribute('title','계획 11/4–11/17');
       const projectId=await p.evaluate(()=>projects[0].id);
       await expect(p.locator('.unified-toggle[data-id="'+projectId+'"] .wbs-period')).toHaveText('11/4 ~ 진행 중');
       expect(await row.locator('.task-gantt-bar').evaluate(e=>parseFloat(e.style.width))).toBeCloseTo(14/30*100);
@@ -267,7 +266,7 @@ async function nav() {
       await load(p,url);await p.locator('[data-action="projects-all"]').click();
       expect(await p.locator('.wbs-project-row .unified-toggle[aria-expanded="true"]').count()).toBe(await p.evaluate(()=>filtered().length));
       expect(await p.locator('.wbs-column-head>span').allTextContents()).toEqual(['이름','담당','기간','진척 / 상태']);
-      expect(await p.locator('.wbs-project-row').first().evaluate(e=>e.getBoundingClientRect().height)).toBeGreaterThanOrEqual(108);
+      expect(await p.locator('.wbs-project-row').first().evaluate(e=>e.getBoundingClientRect().height)).toBeGreaterThanOrEqual(56);
       await p.locator('[data-action="projects-all"]').click();await expect(p.locator('.wbs-expanded')).toHaveCount(0);
     });
     await check('top people filter derives from data', async () => {
@@ -490,3 +489,4 @@ finally {
 console.log(JSON.stringify({ checks: report.checks.length, failures: report.checks.filter(c => c.status === 'fail').length, errors: report.errors.length }));
 // Both navigation failures and visual mismatches fail the gate.
 if (report.errors.length || report.checks.some(c => c.status === 'fail')) process.exitCode = 1;
+if(navigation&&!process.exitCode)await import('./correction.mjs');

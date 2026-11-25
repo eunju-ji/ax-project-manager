@@ -137,7 +137,7 @@ test('no exclusive project phase classification and summary uses prose with opti
  const a=app();for(const theme of ['linear','notion','attio','airtable','clickup']){
   a.run(`state.theme='${theme}';render()`);assert.doesNotMatch(a.html(),/data-action="type"|class="project-type-tabs"/);
  }
- assert.match(a.run('weekly()'),/class="weekly-details"/);assert.match(a.run('weekly()'),/정리했습니다|만들었습니다|확인했습니다/);
+ assert.match(a.run('weekly()'),/class="weekly-details"/);assert.match(a.run('weekly()'),/했습니다/);
 });
 test('long-running example starts before October and monthly bar signals continuation',()=>{
  const a=app();assert.ok(a.run("projects.some(p=>M.projectRange(p).start<'2026-10-01')"));
@@ -189,7 +189,7 @@ test('expanded monthly WBS rows share dates, natural order and reusable task det
  assert.ok(html.indexOf('data-gantt-task="two"')<html.indexOf('data-gantt-task="ten"'));
  assert.match(html,/class="timeline-summary/);assert.doesNotMatch(html,/gantt-group-label/);
  assert.match(html,/left:30%;width:10%/);assert.match(html,/left:0%;width:10%/);
- assert.match(html,/left:96.66666666666667%;width:3.3333333333333286%/);
+ assert.match(html,/class="deadline-marker"/);
  assert.match(html,/일정 미정/);assert.match(html,/12\/1 — 12\/3/);
  assert.doesNotMatch(a.run('projectDetail(projects[0])'),/class="work-section"/);
  a.run("state.drawerTask='two'");assert.doesNotMatch(a.run('timeline([projects[0]],false,true)'),/gantt-task-details/);assert.match(a.run('taskDrawer()'),/drawer-day/);
@@ -203,7 +203,7 @@ test('heatmap counts unique owner task pairs by KST with fixed levels and record
  {owner:'가',performedAt:'',performedAtPrecision:'unknown'}]},
  {id:'two',subtasks:[{owner:'가',performedAt:'2026-11-17'}]}]});`);
  let html=a.run('heatmap()');assert.match(html,/level-3"[^>]*data-value="2026-11-17"[^>]*태스크 3개 · 기록 7건/);
- assert.match(html,/최근 6개월/);assert.match(html,/적음/);assert.match(html,/많음/);assert.doesNotMatch(html,/태스크·일|하루에 손댄/);
+ assert.match(html,/최근 10개월/);assert.match(html,/적음/);assert.match(html,/많음/);assert.doesNotMatch(html,/태스크·일|하루에 손댄/);
  a.run("state.owner='가'");html=a.run('heatmap()');assert.match(html,/level-2"[^>]*data-value="2026-11-17"[^>]*태스크 2개 · 기록 6건/);
  for(const [n,level] of [[0,0],[1,1],[2,2],[3,3],[4,3],[5,4],[8,4]]) {
   a.run(`state.owner='전체';projects[0].tasks=Array.from({length:${n}},(_,i)=>({id:String(i),subtasks:[{owner:'가',performedAt:'2026-11-17'}]}));`);
@@ -214,7 +214,7 @@ test('heatmap counts unique owner task pairs by KST with fixed levels and record
 test('WBS table columns, planned-only project range, depth, progress fill and all expand',()=>{
  const a=app();a.run(`projects[0].tasks=[{...projects[0].tasks[0],id:'deep',planSource:'wbs',wbsCode:'1.1.1',wbsGroups:['1 상위','1.1 하위'],startDate:'2026-11-02',dueDate:'2026-11-06',status:'completed'},{...projects[0].tasks[0],id:'later',planSource:'wbs',wbsCode:'1.2',startDate:'2026-11-09',dueDate:'2026-11-10',status:'in_progress'}];state.project=projects[0].id;`);
  const html=a.run('timeline([projects[0]],false,true)');
- assert.match(html,/>이름</);assert.match(html,/진척 \/ 상태/);assert.match(html,/--wbs-depth:2/);assert.match(html,/class="summary-fill" style="width:50%"/);assert.match(html,/class="gantt-bar-label"/);assert.match(html,/11\/2–11\/10/);assert.match(html,/weekend/);assert.doesNotMatch(html,/inline-detail-head|project-properties/);
+ assert.match(html,/>이름</);assert.match(html,/진척 \/ 상태/);assert.match(html,/--wbs-depth:2/);assert.match(html,/class="summary-fill" style="width:50%"/);assert.doesNotMatch(html,/class="gantt-bar-label"/);assert.match(html,/11\/2–11\/10/);assert.match(html,/weekend/);assert.doesNotMatch(html,/inline-detail-head|project-properties/);
  a.run("action({dataset:{action:'projects-all'}})");assert.equal(a.run('filtered().every(projectOpen)'),true);
  a.run("action({dataset:{action:'projects-all'}})");assert.equal(a.run('filtered().some(projectOpen)'),false);
 });
@@ -227,8 +227,7 @@ test('unverified chips, activity deadlines and six-state Gantt legend are distin
  const html=a.html();assert.match(html,/class="tag plan-status unverified">확인 필요 2</);assert.match(html,/class="tag plan-status late">지연</);
  assert.match(html,/task-gantt-bar unverified/);assert.match(html,/task-gantt-bar late/);
  assert.match(a.run('taskItem(projects[0].tasks[2],projects[0])'),/확인 필요/);
- const legend=html.match(/<div class="gantt-status-legend"[^>]*>(.*?)<\/div>/)[1];
- for(const label of ['완료','진행 중','지연','확인 필요','예정','일정 미정'])assert.ok(legend.includes('>'+label+'<'));
+ assert.doesNotMatch(html,/class="gantt-status-legend"/);
  const css=fs.readFileSync(path.join(root,'styles.css'),'utf8');assert.match(css,/plan-status.unverified[^}]*dashed/);assert.match(css,/task-gantt-bar.unverified[^}]*repeating-linear-gradient/);
 });
 
@@ -252,12 +251,12 @@ test('WBS group rows summarize children, preserve root ordering and collapse nes
  html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');assert.doesNotMatch(html,/첫번째 말단|두번째 말단|2.1 비교평가/);assert.match(html,/최상위 아홉/);assert.equal((html.match(/data-gantt-group=/g)||[]).length,1);
  a.run(`action({dataset:{action:'wbs-group',group:JSON.stringify([projects[0].id,'2 플랫폼 비교평가'])}})`);
  assert.match(a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))'),/첫번째 말단/);
- a.run("state.drawerTask='a'");assert.match(a.run('taskDrawer()'),/플랫폼 비교평가 \/ 비교평가/);assert.doesNotMatch(a.run('taskDrawer()'),/계획 출처/);
+ a.run("state.drawerTask='a'");assert.match(a.run('taskDrawer()'),/<small>AX 프로젝트 관리장<\/small>/);assert.doesNotMatch(a.run('taskDrawer()'),/계획 출처/);
 });
 test('activity copy and work dots explain their meaning and daily record count',()=>{
  const a=app();a.run(`projects[0].tasks=[{id:'x',title:'합성',subtasks:[{performedAt:'2026-11-04',owner:'합성'},{performedAt:'2026-11-04',owner:'합성'}]}];state.drawerTask='x'`);
  const html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');
- assert.doesNotMatch(html,/gantt-group-label|activity-bar/);assert.doesNotMatch(html,/<code>/);assert.match(html,/title="11월 4일 · 기록 2건" aria-label="11월 4일 · 기록 2건"/);
+ assert.doesNotMatch(html,/gantt-group-label/);assert.doesNotMatch(html,/<code>/);assert.match(html,/title="11월 4일 · 작업 2건" aria-label="11월 4일 · 작업 2건"/);
  assert.match(a.run('statusLegend()'),/● 작업한 날/);assert.doesNotMatch(a.run('taskDrawer()'),/계획 출처|WBS에 없/);
 });
 
@@ -273,7 +272,7 @@ test('numberless tasks follow numbered tasks by start or first record with unifo
  assert.deepEqual(Array.from(a.run('drawerTasks(projects[0]).map(t=>t.id)')),['number','first','later']);
  const html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf,0))');
  assert.ok(html.indexOf('data-gantt-task="number"')<html.indexOf('data-gantt-task="first"'));assert.ok(html.indexOf('data-gantt-task="first"')<html.indexOf('data-gantt-task="later"'));
- assert.doesNotMatch(html,/activity-bar|gantt-group-label|wbs-group-row|--wbs-depth:1/);assert.equal((html.match(/<code>/g)||[]).length,0);
+ assert.doesNotMatch(html,/gantt-group-label|wbs-group-row|--wbs-depth:1/);assert.equal((html.match(/<code>/g)||[]).length,0);
 });
 for(const kind of ['commit','pull_request','issue','ai_chat'])test('index-only source modal '+kind,()=>{
  const a=app();a.run(`const f=projects[0].files[0];Object.assign(f,{kind:'${kind}',url:'https://github.com/o/r',folderId:'ignored',folderPath:['ignored']});state.modal={project:projects[0].id,file:f.id}`);let html=a.run('modal()');assert.match(html,/https:\/\/github.com\/o\/r/);assert.doesNotMatch(html,/folder-browser|<img|Google Drive/);a.run('projects[0].files[0].url=undefined');html=a.run('modal()');assert.doesNotMatch(html,/<a |folder-browser|<img/);
@@ -287,15 +286,15 @@ test('project sections separate core and collapsed operations; pins sort and per
 test('stages summarize status, group in order, hide numbers, and expose drawer properties',()=>{
  const a=app();a.run(`const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'dev',title:'5.1 구현',wbsCode:'5.1',wbsGroups:['5 구현'],stage:'개발·테스트',status:'in_progress',startDate:'2026-11-01'},{...base,id:'research',stage:'리서치',status:'completed'},{...base,id:'plan',stage:'기획',status:'in_progress',startDate:'2026-12-01'},{...base,id:'none',stage:null}];`);
  assert.equal(a.run('stageStates(projects[0]).map(s=>s.status).join()'),'완료,예정,진행');let html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))');assert.ok(html.indexOf('리서치')<html.indexOf('개발·테스트'));assert.ok(html.indexOf('data-gantt-task="none"')>html.indexOf('data-gantt-task="dev"'));assert.doesNotMatch(html,/<code>|>5\.1 구현</);
- a.run(`state.drawerTask='dev'`);html=a.run('taskDrawer()');assert.match(html,/<dt>단계<\/dt><dd>개발·테스트/);assert.match(html,/<dt>WBS 번호<\/dt><dd>5.1/);
+ a.run(`state.drawerTask='dev'`);html=a.run('taskDrawer()');assert.match(html,/<dt>단계<\/dt><dd><span class="stage-chip"[^>]*>개발·테스트/);assert.match(html,/<dt>WBS 번호<\/dt><dd>5.1/);
 });
 test('next step prefers earliest active due, then earliest upcoming, then undated active',()=>{
  const a=app();a.run(`const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'undated',status:'in_progress',startDate:undefined,dueDate:undefined},{...base,id:'future2',status:'in_progress',startDate:'2026-12-02',dueDate:'2026-12-03'},{...base,id:'future1',status:'in_progress',startDate:'2026-12-01',dueDate:undefined},{...base,id:'active2',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-22'},{...base,id:'active1',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-19'}]`);
  assert.equal(a.run('nextTask(projects[0]).id'),'active1');a.run(`projects[0].tasks=projects[0].tasks.filter(t=>!t.id.startsWith('active'))`);assert.equal(a.run('nextTask(projects[0]).id'),'future1');a.run(`projects[0].tasks=projects[0].tasks.filter(t=>!t.id.startsWith('future'))`);assert.equal(a.run('nextTask(projects[0]).id'),'undated');
 });
 
-test('period table follows overlapping plans, period, owner and pagination',()=>{
- const a=app();a.run(`const p=projects[0],base=p.tasks[0];p.tasks=Array.from({length:14},(_,i)=>({...base,id:'period-'+i,title:'기간 업무 '+i,owner:'합성 담당',startDate:'2026-11-16',dueDate:'2026-11-18',subtasks:[]}));`);
+test('period table follows work dates, owner and pagination',()=>{
+ const a=app();a.run(`const p=projects[0],base=p.tasks[0];p.tasks=Array.from({length:14},(_,i)=>({...base,id:'period-'+i,title:'기간 업무 '+i,owner:'합성 담당',startDate:'2026-11-16',dueDate:'2026-11-18',subtasks:[{owner:'합성 담당',performedAt:AX_DATA.demoAsOf}]}));`);
  assert.equal(a.run("periodTasks().filter(r=>r.project.id===projects[0].id).length"),14);
  assert.equal((a.run('summaryTasks()').match(/class="summary-task-row"/g)||[]).length,10);
  a.run('state.summaryLimit=20');assert.match(a.run('summaryTasks()'),/기간 업무 13/);
@@ -341,4 +340,13 @@ test('all schedule chip states are filterable and status counts partition each f
  assert.doesNotMatch(a.run('summaryTasks()'),/plan-status (active|late|unverified|upcoming|completed)/);
  assert.ok(a.run("filtered().every(p=>p.tasks.some(t=>matchesStatus(t,'undated')))"));
  assert.match(a.run("statusFilters([], 'undated', 'summary-status')"),/data-value="undated" aria-pressed="true">일정 미정 <span>0/);
+});
+
+test('feedback display uses stage names, uniform path, ten months, markers and accessible operations',()=>{
+ const a=app();a.run(`const b=projects[0].tasks[0];projects[0].tasks=[{...b,id:'deadline',stage:'기획',startDate:undefined,dueDate:'2026-11-10'},{...b,id:'bad',startDate:'2026-11-20',dueDate:'2026-11-10'},{...b,id:'worked',startDate:undefined,dueDate:undefined}];state.drawerTask='deadline'`);
+ assert.match(a.run('projectSignals(projects[0])'),/aria-label="기획 · [^"]+">기획<\/span>/);
+ assert.match(a.run('taskDrawer()'),/<small>AX 프로젝트 관리장 \/ 기획<\/small>/);
+ const html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))');assert.match(html,/deadline-marker/);assert.match(html,/일정 확인 필요/);assert.match(html,/activity-bar/);assert.doesNotMatch(html,/gantt-bar-label/);
+ assert.match(a.run('heatmap()'),/최근 10개월/);assert.doesNotMatch(a.run('timeline(projects,false,true)'),/gantt-status-legend|계획 일정과 작업 기록/);
+ a.run(`projects[0].kind='ops'`);assert.match(a.run('projectArea()'),/aria-expanded="false" aria-controls="ops-projects"><span aria-hidden="true">›/);
 });

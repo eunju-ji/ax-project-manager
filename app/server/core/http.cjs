@@ -11,8 +11,9 @@ function requestUrl(target){
 
 const fail=(code,status=400)=>{throw Object.assign(Error(code),{code,status});};
 const routes={'GET /api/view':'view','GET /api/me':'me','POST /api/decision':'decision','POST /api/pilot-decision':'pilot-decision','POST /api/ingest/delta':'ingest','POST /api/inbox':'inbox-put','GET /api/inbox':'inbox-get'};
+routes['POST /api/correction']='correction';
 const route=(method,path)=>routes[method+' '+path]||null;
-const allowed=(role,action)=>['admin','member','viewer'].includes(role)&&(action.startsWith('admin')?role==='admin':['decision','pilot-decision'].includes(action)?role!=='viewer':true);
+const allowed=(role,action)=>['admin','member','viewer'].includes(role)&&(action.startsWith('admin')?role==='admin':['decision','pilot-decision','correction'].includes(action)?role!=='viewer':true);
 const csrf=(expected,origin,token,actual)=>origin===expected&&typeof token==='string'&&token.length>0&&token===actual;
 const securityHeaders=(secure=true)=>({'X-Content-Type-Options':'nosniff','X-Frame-Options':'DENY','Referrer-Policy':'no-referrer','Content-Security-Policy':"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",...(secure?{'Strict-Transport-Security':'max-age=31536000','Cache-Control':'no-store'}:{})});
 const staticPath=p=>/^(index\.html|app\.js|data\.js|styles\.css|src\/model\.js|assets\/[\w-]+\.png)$/.test(p.slice(1)||'index.html');

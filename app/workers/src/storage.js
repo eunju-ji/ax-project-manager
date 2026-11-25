@@ -2,6 +2,7 @@ import transitions from '../../server/core/transitions.cjs';
 import deltaCore from '../../server/core/delta.cjs';
 import viewCore from '../../server/core/view.cjs';
 import {hash} from './crypto.js';
+import correctionCore from '../../server/core/correction.cjs';
 /** Local synthetic implementation only. No durability across isolates/restarts.
  * TODO stage 3: D1 transaction + idempotency + audit, retain SQLite schema IDs/versions.
  */
@@ -11,6 +12,7 @@ export function createMemoryStorage({dataset={},users=[],tokens={}}={}){
  const userMap=new Map(users.map(u=>[u.email,u])),sessions=new Map(),tokenMap=new Map(Object.entries(tokens)),inbox=[],seen=new Set(),audit=[];let queue=Promise.resolve();
  const atomic=fn=>{const next=queue.then(fn);queue=next.catch(()=>{});return next;};
  return {
+ correct:(input,actor)=>atomic(()=>{const r=correctionCore.correct(data,input,actor,globalThis.crypto.randomUUID(),new Date().toISOString());data=r.dataset;return r.result;}),
  view:async()=>({...viewCore.makeView(data),collectedOn:String(data.demoAsOf||''),demoNotice:String(data.demoNotice||''),demoAsOf:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul'}).format(new Date())}),
  decide:input=>atomic(()=>{
   const conflict=()=>{throw Object.assign(Error(),{status:409});};const prior=requests.get(input.change_id);if(prior){if(prior.payload!==JSON.stringify(deltaCore.canonical(input)))return conflict();return structuredClone(prior.result);}

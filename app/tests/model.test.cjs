@@ -28,7 +28,7 @@ test('source sorting preserves category order and newest first without hiding fi
   assert.equal(files[0].id,'0');
 });
 test('timeline dates come only from recorded work', () => {
-  assert.deepEqual(M.projectRange({tasks:[{createdAt:'2026-11-03',subtasks:[{performedAt:'2026-11-17'}]}]}),{start:'2026-11-03',end:'2026-11-17'});
+  assert.deepEqual(M.projectRange({tasks:[{createdAt:'2026-11-03',subtasks:[{performedAt:'2026-11-17'}]}]}),{start:'2026-11-17',end:'2026-11-17'});
   assert.equal(M.projectRange({tasks:[]}),null);
 });
 test('creation order respects equivalent ISO timestamps with different offsets',()=>{

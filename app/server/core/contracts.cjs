@@ -3,6 +3,7 @@
  * @typedef {Object} Storage
  * @property {function():Promise<Object>} view Read a projected snapshot.
  * @property {function(Object):Promise<Object>} decide Atomic judgment + audit + idempotency.
+ * @property {function(Object,string):Promise<Object>} correct Atomic human correction with actor, version and history.
  * @property {function(Object,Object):Promise<Object>} applyDelta Atomic dataset/state/audit transaction; dryRun never persists.
  * @property {function(string):Promise<Object|null>} getUser Lookup invited/active user by normalized email.
  * @property {function(Object):Promise<void>} saveUser Persist role/status changes.

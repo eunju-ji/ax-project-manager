@@ -136,3 +136,10 @@
 - `feat/workers-port`: f860a23 Workers 이전 1·2단계, dcf3705 Reviewer 지적(사람 결정 이력 미기록) 수정. 서버 290·Workers 16 통과. Push 완료. 3단계(D1·실데이터 이전) 미착수.
 - `feat/ui-1126`(workers-port 기반): eae0f61 폴더 고정·접힘 통일·태스크 상세 표·상태 필터·ADR-024 칸 분리. Push 완료. 화면 안 수정·삭제 저장은 다음 작업.
 - 작업 폴더는 `feat/ui-1126`에 둠(정기 수집이 읽는 기준). dcf3705의 apply-delta 수정은 ui-1126에 아직 없음 — 병합 시 함께 반영.
+
+## 2026-11-25 화면 피드백 A·B (AX-Builder, feat/ui-1126)
+- A: 기간·실행 담당자 작업이 있는 태스크만 표에 포함, 단계 이름 칩·상태 모양, 간트 범례 제거와 툴팁, 완료·마감만·작업 기간·역전 일정 처리, 제목 줄바꿈, 최근 10개월 히트맵, 규칙 기반 요약, 프로젝트/단계 경로, 운영 펼침 꺾쇠.
+- B: core/correction.cjs 공통 규칙, Node 원자 JSON 교체와 기존 delta 잠금, Workers 큐 저장, task/worklog 생성·수정·제거·이동, review 재판단·reopen. 엔티티 버전·입력 검증·사람 before/after 이력·suppression·delta 보호. 자동 갱신도 버전을 올리며, 삭제 억제는 이벤트의 원본 자료까지 추적한다. 화면 폼·취소·삭제 확인·409 문구·저장 후 재조회, 정적 예시/viewer 숨김. API 계약: docs/ui-corrections-api.md.
+- 검증: python3.15.exe build.py·typecheck, UI 93/93, 서버 297/297, Workers 17/17 통과. 시각 기준 --update 54/54 후 재비교 54/54(픽셀 차이 0). --navigation 112/112 및 통합 합성 수정 탐색(수정·추가·삭제·재판단·충돌·viewer) 통과. 마지막 드로어 이동 시 편집 해제 후 빌드·typecheck·UI 93/93·합성 수정 탐색 재검증 통과. git diff --check 통과.
+- 제약: 커밋·푸시·추가 위임 없음. app/server/.real/ 및 docs/project-review/* 접근·변경 없음. 테스트는 합성 데이터·모의 IdP만 사용.
+- 미해결 구현 오류 없음. Workers의 메모리 지속성 한계는 기존과 동일하며 D1은 범위 밖. 다음: Lead/Reviewer가 변경을 검토하고 별도 권한으로 실제 데이터 검증.

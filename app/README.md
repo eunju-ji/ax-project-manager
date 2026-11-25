@@ -9,3 +9,5 @@ Workers 로컬 연결부는 [Workers README](workers/README.md)를 참고한다.
 실행은 [개발 서버](http://127.0.0.1:8765), 수정 위치와 명령은 [개발 안내](../docs/legacy-context/06_DEVELOPMENT.md), 화면 기준은 [UI 기준](../docs/legacy-context/05_UI_SPEC.md)을 따릅니다.
 
 `data.json`에서 데이터·`src/app.ts`에서 동작·`styles.css`에서 디자인을 수정하고 빌드로 HTML을 갱신합니다. 생성된 `app.js`와 `data.js`는 개발용 실행에 필요하므로 포함합니다. `npm run build`를 실행하면 `preview/AX_Project_Manager.html`이 생성됩니다.
+
+화면에서 태스크·작업 내역을 고치는 API와 검증 방법은 [수정 API 계약](../docs/ui-corrections-api.md)을 참고한다.

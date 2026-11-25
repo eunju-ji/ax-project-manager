@@ -65,6 +65,7 @@ function merge(dataset, state, delta, {digest, equal}) {
   if (state.checkpoints?.[k] && (!iso(state.checkpoints[k]) || Date.parse(v)<Date.parse(state.checkpoints[k]))) reject('checkpoint_regression',`checkpoints.${k}`);
  }
  const next = structuredClone(dataset);
+ const suppressedEvidence=(s,l)=>[l.evidence_key,...(dataset.sourceEvents||[]).filter(e=>l.evidence_type==='event'&&e.event_key===l.evidence_key).map(e=>e.source_key)].some(k=>(s.source_keys||[]).includes(k));
  const stamp = r => ({...r,run_id:delta.run_id,created_run_id:delta.run_id});
  for (const [table,key] of Object.entries(KEYS)) {
   next[table] ||= [];
@@ -72,6 +73,8 @@ function merge(dataset, state, delta, {digest, equal}) {
   for (const [i,row] of (delta[table]||[]).entries()) {
    const loc = `${table}[${i}]`;
    if (typeof row[key] !== 'string' || !row[key].length) { reject('missing_key',loc); continue; }
+   if((dataset.suppressions||[]).some(s=>!s.released_at&&s.human_decision&&(s.target_id===row[key]&&s.target_type===({tasks:'task',worklogs:'worklog'}[table])||['tasks','worklogs'].includes(table)&&(s.source_keys||[]).includes(row.source_key)))){reject('human_correction_protected',loc);continue;}
+   if((dataset.suppressions||[]).some(s=>!s.released_at&&s.human_decision&&(table==='links'&&suppressedEvidence(s,row)||(delta.links||[]).some(l=>l.target_id===row[key]&&suppressedEvidence(s,l))))){reject('human_correction_protected',loc);continue;}
    if (['projects','tasks'].includes(table) && !/^[A-Za-z0-9_-]{1,64}$/.test(row[key])) reject('invalid_key',loc);
    if (table==='projects' && !validKind(row)) reject('invalid_kind',loc);
    if (table==='tasks' && !validStage(row)) reject('invalid_stage',loc);
@@ -150,6 +153,7 @@ function merge(dataset, state, delta, {digest, equal}) {
   if (!changed.length) {result.ignored++;continue;}
   const before=structuredClone(task);
   Object.assign(task,Object.fromEntries(changed.map(k=>[k,update[k]])));
+  task.version=(task.version||1)+1;
   next.history.push({change_id:`DELTA-${delta.run_id}-${update.task_id}`,entity_type:'tasks',entity_id:update.task_id,before,after:structuredClone(task),actor_id:'system',reason:'scheduled-collect task update',run_id:delta.run_id,result:'applied',applied_at:delta.collected_at});
   result.updated++;
  }
@@ -164,7 +168,7 @@ function merge(dataset, state, delta, {digest, equal}) {
   if(worklog.task_id===update.task_id){result.ignored++;continue;}
   if(humanChanged(dataset,'worklogs',update.worklog_id,'task_id',equal)){reject('human_correction_protected',loc);continue;}
   const target=next.worklogs.find(w=>w.worklog_id===update.worklog_id);
-  const before={task_id:target.task_id};target.task_id=update.task_id;
+  const before={task_id:target.task_id};target.task_id=update.task_id;target.version=(target.version||1)+1;
   next.history.push({change_id:`DELTA-${delta.run_id}-${update.worklog_id}`,entity_type:'worklogs',entity_id:update.worklog_id,before,after:{task_id:target.task_id},actor_id:'system',reason:'scheduled-collect worklog update',run_id:delta.run_id,result:'applied',applied_at:delta.collected_at});
   result.updated++;
  }

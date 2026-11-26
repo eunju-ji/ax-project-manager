@@ -68,7 +68,7 @@ pre{background:#f6f8fa;border:1px solid var(--line);border-radius:6px;padding:12
 </nav>
 <main>
 <h1>데이터 수집 방식과 2인 수집 계획</h1>
-<div class="meta"><span>작성 AX-Lead</span><span>2026-11-26</span><span>v2.0</span><span class="badge a">제안 · 승인 대기</span><span>근거: real-collect 절차서, ADR-017·019·020·021·025·026</span></div>
+<div class="meta"><span>작성 AX-Lead</span><span>2026-11-26</span><span>v2.1</span><span class="badge a">제안 · 승인 대기</span><span>근거: real-collect 절차서, ADR-017·019·020·021·025·026</span></div>
 
 <div class="callout">조건: 우리 GCP OAuth를 쓸 수 없고 <b>gws-work MCP</b>만 쓸 수 있다. 화면은 <b>ChatGPT 사이트 또는 무료 사이트</b>에 올리고 주소가 바뀌면 안 된다. 여러 사람의 데이터를 <b>하루 1번 이상</b> 가져와야 한다.<br>
 v2.0 변경: 팀원 데이터를 <b>각자의 Claude·Codex가 정리해 공유 드라이브에 올리고, 사용자 쪽이 그것을 읽어 판별</b>하는 방법(A)을 기본안으로 추가했습니다. 160자 요약 대신 <b>항목당 최대 2,000자 상세 요약</b>을 제안합니다.</div>
@@ -191,9 +191,58 @@ flowchart LR
 </ul>
 
 <h3 id="c2">B. 수집 도우미 + 팀 수집함</h3>
-<p>팀원 PC에 수집 도우미(Claude Code·Codex 예약 실행 + gws-work 연결)를 두고, 결과를 관리장 사이트의 팀 수집함 <code>/api/inbox</code>로 보낸다. 사람마다 다른 비밀 열쇠(<b>사람별 토큰</b>)로 "누구의 수집분인지"를 증명한다. 이 열쇠로는 넣기만 할 수 있고, 꺼내기는 사용자 PC의 관리자 열쇠만 가능하다. 코드는 준비되어 있다(Workers 1·2단계).</p>
+<p>팀원 PC에 수집 도우미를 두고, 팀원 계정으로 gws-work를 불러 모은 기록을 관리장 사이트의 팀 수집함 <code>/api/inbox</code>로 보낸다. 사용자 PC의 판별 에이전트가 수집함을 가져와 판별하고 delta를 사이트에 올린다. 코드는 준비되어 있다(Workers 1·2단계: 수집함, 사람별 토큰, 원문 거부·길이 제한, delta 200건 분할).</p>
+<div class="mermaid">
+flowchart LR
+  subgraph T["팀원 PC"]
+    TG["gws-work<br/>(팀원 계정)"] --> TH["수집 도우미<br/>하루 1~2번"]
+    TL["AI 대화·로컬 Git"] --> TH
+  end
+  subgraph SITE["관리장 사이트"]
+    IN["/api/inbox<br/>사람별 토큰"]
+    DB[("사이트 DB")]
+    VIEW["화면"]
+  end
+  subgraph U["사용자 PC"]
+    UG["gws-work<br/>(사용자 계정)"] --> JU["판별 에이전트<br/>하루 4번"]
+  end
+  TH -->|색인 또는 요약| IN
+  IN -->|관리자 열쇠로 가져오기| JU
+  JU -->|delta 200건씩| DB
+  DB --> VIEW
+</div>
+<ol>
+<li><b>팀원 1회 준비</b>: gws-work에 본인 Google 계정 연결, 관리장 사이트에서 개인 수집 토큰 발급, 수집 도우미 설치 스크립트 1회 실행(폴더 복사·토큰 저장·예약 등록).</li>
+<li><b>수집 도우미(팀원 PC, 하루 1번 이상)</b>: 작업 스케줄러가 정해진 시각(예: 09:00·13:00)에 실행. gws-work를 팀원 계정으로 불러 체크포인트 이후 기록을 모으고, PC 안의 AI 대화·로컬 Git도 함께 모아 <code>/api/inbox</code>로 보낸다. <b>판별은 하지 않는다.</b></li>
+<li><b>판별(사용자 PC, 하루 4번)</b>: 판별 에이전트가 팀 수집함을 한 번에 가져와 자기 수집분과 합쳐 판별한다. 같은 메일·파일·메시지는 고유 ID로 한 건, 수행자는 실제 한 사람(ADR-019). 결과 delta를 <code>/api/ingest/delta</code>로 올린다.</li>
+<li><b>GitHub</b>: 공개 저장소는 팀원 사용자명만으로, 비공개는 팀원의 읽기 전용 토큰을 사이트에 등록(암호화 보관)해 판별 실행 때 함께 가져온다.</li>
+<li><b>하루 1번을 지키는 장치</b>: 공유 드라이브·팀 스페이스는 사용자 계정의 정기 수집이 이미 읽으므로 팀원 PC가 꺼져도 팀 공용 기록은 빠지지 않는다. 사이트가 사람별 "마지막 수집 시각"을 관리하고 24시간이 넘으면 관리자 화면에 표시한다. 체크포인트 방식이라 하루 건너뛰어도 다음 실행에서 이어 받는다.</li>
+</ol>
+
+<p><b>사람별 토큰</b></p>
 <ul>
-<li>A와 차이: 받는 곳이 공유 드라이브가 아니라 사이트이고, 팀원 PC에 gws-work 연결이 필요하다(팀원 계정 연결 가능 여부 미확인). 사이트에 서버 API가 있어야 하므로 정적 사이트와는 조합할 수 없다.</li>
+<li>수집 도우미는 사람이 로그인하지 않고 혼자 돌기 때문에, 로그인 대신 사람마다 다른 비밀 열쇠로 "이건 ○○의 수집분"이라고 증명한다.</li>
+<li>사이트는 열쇠로 보낸 사람을 정한다. 보낸 쪽이 다른 사람 기록이라고 적어도 열쇠 주인으로 처리한다.</li>
+<li>이 열쇠로는 <b>넣기만</b> 할 수 있다. 화면 보기·꺼내기는 안 되고, 꺼내기는 사용자 PC의 관리자 열쇠만 가능하다. 사이트에는 원래 값이 아닌 변환값(해시)만 저장하고, 언제든 폐기할 수 있다.</li>
+</ul>
+
+<p><b>수집 도우미 형태</b></p>
+<table>
+<tr><th style="width:160px">형태</th><th>구성</th><th>보내는 내용</th><th>조건</th></tr>
+<tr><td><b>B-1. AI 에이전트 예약 실행</b>(기본)</td><td>팀원 PC의 Claude Code 또는 Codex(본인 로그인) + gws-work 연결 + 예약(Paseo 또는 Windows 작업 스케줄러) + 수집 도우미 폴더(<code>team-collect.md</code> 절차서, <code>config.json</code>, <code>token</code>, <code>collect-ai-chats.cjs</code>·<code>collect-local-git.cjs</code>, <code>push-inbox.cjs</code>)</td><td>색인 + 요약(팀원 PC에서 본문을 읽고 요약만 전송, 본문은 PC 밖으로 나가지 않음)</td><td>팀원 PC에 AI 도구와 사용 계정, PC가 켜져 있어야 함</td></tr>
+<tr><td><b>B-2. 단순 스크립트</b></td><td>Node 스크립트 하나를 Windows 작업 스케줄러로 실행</td><td>색인만(요약 못 만듦)</td><td>gws-work에 예약 호출 방법(명령어·API 키)이 있을 때만</td></tr>
+</table>
+
+<p><b>보내는 내용 수준</b></p>
+<table>
+<tr><th>수준</th><th>보내는 것</th><th>판별</th></tr>
+<tr><td>색인만</td><td>파일 이름·종류·폴더·수정한 사람·시각, 메일 제목·보낸 사람·시각, 메시지 방·보낸 사람·시각</td><td>이름·제목만으로 판단해 정확도 낮음(사용자 계정으로는 팀원 개인 파일 본문을 열 수 없음)</td></tr>
+<tr><td>요약 포함(권고)</td><td>위 + 팀원 PC에서 만든 요약(4장 기준 길이)</td><td>사용자 데이터와 비슷한 정확도</td></tr>
+</table>
+
+<ul>
+<li><b>A와 차이</b>: 받는 곳이 공유 드라이브가 아니라 사이트이고, 팀원 PC에 gws-work 연결이 필요하다(팀원 계정 연결 가능 여부·예약 호출 가능 여부 미확인). 사이트에 서버 API가 있어야 하므로 정적 사이트와는 조합할 수 없다. 팀원 PC가 꺼지면 그날 수집은 멈춘다.</li>
+<li><b>먼저 확인할 것</b>: 팀원 1명이 gws-work에 연결해 <code>artiws_whoami</code>로 자기 계정이 보이는지, gws-work를 사람 없이 예약 호출할 수 있는지(운영 쪽 확인).</li>
 </ul>
 
 <h3 id="c3">C. 공유 위임(팀원 설치 없음)</h3>

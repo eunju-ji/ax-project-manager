@@ -27,5 +27,13 @@ try{
  const renameRequest=page.waitForRequest(r=>r.url().endsWith('/api/correction'));await page.locator('[data-action="correction-save"]').click();expect((await renameRequest).postDataJSON().fields).not.toHaveProperty('performed_at');await expect(page.locator('.drawer-entry strong')).toHaveText('제목만 변경');let exact=JSON.parse(fs.readFileSync(path.join(dir,'corrected-dataset.json'))).worklogs.find(w=>w.worklog_id==='exact');expect(exact.performed_at).toBe('2026-11-24T16:30:00Z');expect(exact.performed_at_precision).toBe('exact');await expect(page.locator('.drawer-day h4')).toContainText('11월 25일');
  await page.locator('.drawer-entry [data-op="update"]').first().click();await page.locator('#correction-form input[name="performed_at"]').fill('2026-11-26');await page.locator('[data-action="correction-save"]').click();await expect(page.locator('#correction-form')).toHaveCount(0);exact=JSON.parse(fs.readFileSync(path.join(dir,'corrected-dataset.json'))).worklogs.find(w=>w.worklog_id==='exact');expect(exact.performed_at).toBe('2026-11-26');expect(exact.performed_at_precision).toBe('date');await expect(page.locator('.drawer-day h4')).toContainText('11월 26일');
  const data=JSON.parse(fs.readFileSync(path.join(dir,'corrected-dataset.json')));expect(data.history.every(h=>h.actor_id==='logged-in')).toBe(true);
- console.log('Synthetic correction navigation: pass');await page.close();
+ console.log('Synthetic correction navigation: pass');
+ const synthetic=await page.evaluate(()=>({projects,reviews:[],taskStates:[],decisions:[],demoAsOf:'2026-11-26'}));
+ const real=await browser.newPage();
+ await real.route('**/api/me',route=>route.fulfill({json:{role:'viewer',csrf:null}}));
+ await real.route('**/api/view?data=real',route=>route.fulfill({json:synthetic}));
+ await real.goto(origin+'/?data=real');await expect(real.locator('.wbs-project-row')).toHaveCount(synthetic.projects.length);
+ for(const theme of ['linear','linear-notion','layout-2','layout-3']){await real.locator('[data-action="themes"]').click();await real.locator('[data-action="theme"][data-value="'+theme+'"]').click();await expect(real.locator('body')).toHaveAttribute('data-layout',theme);await expect(real.locator('[data-action="correction"]')).toHaveCount(0);}
+ await real.locator('.week-board-card').first().click();await expect(real.locator('.task-drawer')).toBeVisible();await expect(real.locator('[data-action="correction"]')).toHaveCount(0);
+ console.log('Synthetic real-mode four themes and viewer: pass');await real.close();await page.close();
 }finally{await browser.close();await new Promise(r=>server.close(r));fs.rmSync(dir,{recursive:true,force:true});}

@@ -49,36 +49,20 @@
       "sha256": "6e1027373e986a5acdb709e0d9a416b9ed87e8aaa0bb8d54ff8fa5ef0ad351ea"
     },
     {
-      "name": "notion-1440x900-home.png",
-      "sha256": "03ff673eeb0313875dfaae4a0c7a11191d85940494d65a4d70c30692fc521983"
+      "name": "layout-2-1440x900-home.png",
+      "sha256": "e0a8e7c2560103c3154475e689f8d31c7ecd8ed3b5a3dd35a8efb88ce269c519"
     },
     {
-      "name": "notion-1440x900-project.png",
-      "sha256": "10dcb373148b286d889317552a8a70c0f74fa243f9695aa4e83e37898b555fa8"
+      "name": "layout-2-1440x900-project.png",
+      "sha256": "d713ceebd85541634911d52af3f17057bb6da95305fa7b7c0db67e35abed59da"
     },
     {
-      "name": "attio-1440x900-home.png",
-      "sha256": "8b561c23608eef52406043480963de1c04d8fb225b692f5d890744542b21c9d1"
+      "name": "layout-3-1440x900-home.png",
+      "sha256": "c3522171d4e1d67979c98a418f8a789c0bbf4e30cf54e2e69dd404dc15264fcf"
     },
     {
-      "name": "attio-1440x900-project.png",
-      "sha256": "e6a169f81c9c54cce0e85b365d030de98dd52892ddd31d9ad8029ad80f1e78f5"
-    },
-    {
-      "name": "airtable-1440x900-home.png",
-      "sha256": "2d15d2bb1eaef4a3f75e4cee3b018bede10e500d55bb4c0797acbee07e8af09f"
-    },
-    {
-      "name": "airtable-1440x900-project.png",
-      "sha256": "e0076cbfd278389125e030cde42de5ae453cb31a377e9ba37b836be0f0e6dada"
-    },
-    {
-      "name": "clickup-1440x900-home.png",
-      "sha256": "169b63705abe46da18dc2abbdd09ffc98bdbc5cda9d547d3e7843d85217d5ccc"
-    },
-    {
-      "name": "clickup-1440x900-project.png",
-      "sha256": "1bbb59195d9dabf3eb3fb0c7ccc0146ff8fd266d94fadf5ed3581d64b200027b"
+      "name": "layout-3-1440x900-project.png",
+      "sha256": "1613180b81be61b8a97811f9459b8d6a0f61805bed4836d0a4524eaf8587a086"
     },
     {
       "name": "linear-notion-834x1112-home.png",
@@ -118,43 +102,27 @@
     },
     {
       "name": "linear-834x1112-home.png",
-      "sha256": "b4cc566755053ad546d51a3907ae63725cd15c13614fb3008df8928615ceacec"
+      "sha256": "7cc945c5e7a79dea54ebda313b42ac77467cf0746c2ecdfe22eb0f8c5d59e847"
     },
     {
       "name": "linear-834x1112-project.png",
       "sha256": "666e284632ab2e0fdbe49bc0a62698ef79e118d5fcf584a3e769f5c25ccd3382"
     },
     {
-      "name": "notion-834x1112-home.png",
-      "sha256": "5f1c028280528eb3f946a86c67da0d9547018c0a30bea9d3f90bcecd0251915c"
+      "name": "layout-2-834x1112-home.png",
+      "sha256": "e83585d47ac4d10811487e242f9d1f6293a13e6ca56c7fcb8ebf23146afb466b"
     },
     {
-      "name": "notion-834x1112-project.png",
-      "sha256": "b1fb89d09e01ccb77e69b19f7c091a3e72d8db0cb65f1a89e5956feb84873c24"
+      "name": "layout-2-834x1112-project.png",
+      "sha256": "180b09df9ef63abe7dd358c013aedf26ee61ce271f7aba6e35ba101fdd69af1f"
     },
     {
-      "name": "attio-834x1112-home.png",
-      "sha256": "448725bc89ff1d950434a5cbf15116c4e1dc00db4a730a3a827ce7fe0fe116d1"
+      "name": "layout-3-834x1112-home.png",
+      "sha256": "c02450287c34013b4fbde84396fdd93f9303c42e1786e1a35451fc9aa0fa03c3"
     },
     {
-      "name": "attio-834x1112-project.png",
-      "sha256": "18f5ec40c1bdbdddf9d26aca232410582114d6004f9a2d88f5d310a941bda0f2"
-    },
-    {
-      "name": "airtable-834x1112-home.png",
-      "sha256": "aad3ee382a1e3debc321e3d8a10b08befad8a1ebd5a15ddca26b8df1af953bb2"
-    },
-    {
-      "name": "airtable-834x1112-project.png",
-      "sha256": "37d211cf797b838e211578631fe26da529d5577d7eeb3d9cfc48519b41c0b763"
-    },
-    {
-      "name": "clickup-834x1112-home.png",
-      "sha256": "14bfbdd2375debfc6067abf443cb00b7bb60cf0d67c04b09efb95756ad36d1d3"
-    },
-    {
-      "name": "clickup-834x1112-project.png",
-      "sha256": "ead2b14d555120a92eef80c2f5f1525c3cb3d25e7abc77de6b22570b22b4dd4a"
+      "name": "layout-3-834x1112-project.png",
+      "sha256": "9a3274823b70d6798414504070e891ae1e214bc8661653b0207fad10d15854d3"
     },
     {
       "name": "linear-notion-390x844-home.png",
@@ -201,36 +169,20 @@
       "sha256": "d380025387976263bdd7bbf729e05836f215f65b68e5c733f39d05608e1a7e29"
     },
     {
-      "name": "notion-390x844-home.png",
-      "sha256": "92d1d16df02ba43533810839f6ec107e60f43adb90b5ac962d6ba6b960a744c8"
+      "name": "layout-2-390x844-home.png",
+      "sha256": "498df17878a3fe511c6b942a8b812c285604e21b2a84cc63551b57cc1eea3590"
     },
     {
-      "name": "notion-390x844-project.png",
-      "sha256": "f970990da58f42049e6cb077673be5bcd0ed0abbdcd8fe283b522f2da612518c"
+      "name": "layout-2-390x844-project.png",
+      "sha256": "3095b0a35030afd95f053b5453d2330ab244a1bf4876dc4e96e9c90d44533dd8"
     },
     {
-      "name": "attio-390x844-home.png",
-      "sha256": "ef458deff958a9b8169566111ad2753a76abc8b9523c555b43fec20faa3bbe9e"
+      "name": "layout-3-390x844-home.png",
+      "sha256": "e5a5f70d3e11c7e760dec852196c809a77ac1007ee28390f36f1cba0c481da65"
     },
     {
-      "name": "attio-390x844-project.png",
-      "sha256": "bd3d70df3890370e901732f4683805b6e76bd342df6fabc709b65b629de80218"
-    },
-    {
-      "name": "airtable-390x844-home.png",
-      "sha256": "84606d985c528feef7e52612f52b9a6ceb12bc615bcb53d8dcbd2394ea82069c"
-    },
-    {
-      "name": "airtable-390x844-project.png",
-      "sha256": "930cb86fd0a2f5ae95c6c8f9c010302b1ac0a5bad748e0d9a5a0991604ac2b19"
-    },
-    {
-      "name": "clickup-390x844-home.png",
-      "sha256": "40bc3c140cb2bbe94b7620baa85734131fb7e70a91a45112072adb05b200b2b4"
-    },
-    {
-      "name": "clickup-390x844-project.png",
-      "sha256": "64719c83968203ab65a670967554242ea566d9a506a621e47fddac4710a1f35d"
+      "name": "layout-3-390x844-project.png",
+      "sha256": "024808df8d0d0ead514bbebb6fef6bf4633e10b42b6e1e9768887a74c7e5cc70"
     }
   ]
 }

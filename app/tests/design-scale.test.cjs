@@ -3,7 +3,7 @@ test('only related resource cards may truncate titles and metadata',()=>{
  const css=fs.readFileSync(path.join(__dirname,'../styles.css'),'utf8');a.doesNotMatch(css,/word-break\s*:\s*break-all|overflow-wrap\s*:\s*anywhere/);
  // 사용자 요청 예외: 관련 자료 카드 제목 2줄, 출처·날짜 1줄 말줄임.
  for(const [,selector,body] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)){
-  if(/text-overflow\s*:\s*ellipsis|(?:-webkit-)?line-clamp\s*:/.test(body))for(const part of selector.split(','))a.match(part.trim(),/^\.gantt-resources \.source-info (strong|small)$/);
+  if(/text-overflow\s*:\s*ellipsis|(?:-webkit-)?line-clamp\s*:/.test(body))for(const part of selector.split(','))a.match(part.trim(),/^(\.gantt-resources \.source-info (strong|small)|\.week-board-card strong)$/);
  }
  a.match(css,/\.gantt-resources \.source-info strong\{[^}]*-webkit-line-clamp:2/);a.match(css,/word-break:\s*keep-all/);a.match(css,/overflow-wrap:\s*break-word/);
 });

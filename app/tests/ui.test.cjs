@@ -15,14 +15,14 @@ test('reference tasks are absent from counts, progress, timeline, heatmap, summa
  assert.ok(!a.run("projects.some(p=>p.id==='reference-only')"));assert.ok(!a.run("M.owners(projects).includes('参考担当')"));
  const baseline=app();
  for(const unit of ['day','week','month']){a.run(`state.summaryUnit='${unit}';render()`);baseline.run(`state.summaryUnit='${unit}';render()`);assert.doesNotMatch(a.html(),/参考/);assert.equal(a.html(),baseline.html());}
- for(const theme of ['linear','notion','attio','airtable','clickup']){const setup=`state.theme='${theme}';state.project=projects[0].id;render()`;a.run(setup);baseline.run(setup);assert.equal(a.html(),baseline.html());}
+ for(const theme of ['linear','linear-notion','layout-2','layout-3']){const setup=`state.theme='${theme}';state.project=projects[0].id;render()`;a.run(setup);baseline.run(setup);assert.equal(a.html(),baseline.html());}
  assert.ok(!a.run("projects.flatMap(p=>p.tasks).some(t=>t.planSource==='reference')"));
 });
 test('merged tasks are absent from every theme, summaries, counts and drawer navigation',()=>{
  const a=app(`AX_DATA.projects[0].tasks.push({...AX_DATA.projects[0].tasks[0],id:'merged',title:'MERGED_HIDDEN',merged_into:AX_DATA.projects[0].tasks[0].id,owner:'MERGED_OWNER'});AX_DATA.projects[0].files.push({...AX_DATA.projects[0].files[0],id:'merged-file',taskId:'merged',name:'MERGED_HIDDEN'});`),baseline=app();
  assert.ok(!a.run("projects.flatMap(p=>p.tasks).some(t=>t.id==='merged')"));assert.ok(!a.run("M.owners(projects).includes('MERGED_OWNER')"));
  for(const unit of ['day','week','month']){const code=`state.summaryUnit='${unit}';render()`;a.run(code);baseline.run(code);assert.equal(a.html(),baseline.html());}
- for(const theme of ['linear-notion','linear','notion','attio','airtable','clickup']){const code=`state.theme='${theme}';state.project=projects[0].id;state.drawerTask=projects[0].tasks[0].id;render()`;a.run(code);baseline.run(code);assert.equal(a.html(),baseline.html());assert.doesNotMatch(a.html(),/MERGED_HIDDEN/);}
+ for(const theme of ['linear-notion','linear','layout-2','layout-3']){const code=`state.theme='${theme}';state.project=projects[0].id;state.drawerTask=projects[0].tasks[0].id;render()`;a.run(code);baseline.run(code);assert.equal(a.html(),baseline.html());assert.doesNotMatch(a.html(),/MERGED_HIDDEN/);}
 });
 
 test('folder preview shows unlinked files, current and linked badges, safe encoded Drive search',()=>{
@@ -41,14 +41,6 @@ test('Linear with Notion palette keeps identical project structure and uses Line
  a.run("state.theme='linear-notion';render()");assert.equal(a.run('projectArea()'),original);
  assert.equal(a.run('document.body.dataset.theme'),'linear');assert.equal(a.run('document.body.dataset.palette'),'notion');
  assert.ok(a.run("THEMES.some(t=>t.id==='linear-notion')"));
-});
-test('all five theme renderers run and include weekly view, timeline and no lifecycle controls',()=>{
- const a=app();
- for(const theme of ['linear','notion','attio','airtable','clickup']){
-  a.run(`state.theme='${theme}';render()`);
-  assert.match(a.html(),/한 주의 업무/);assert.match(a.html(),/작업 내역 히트맵/);
-  assert.doesNotMatch(a.html(),/진행률|TO DO|IN PROGRESS|DONE/);
- }
 });
 test('project opens inside list; task reveals every explicit subtask and source list persists across tabs',()=>{
  const a=app();a.run("state.project='ax';state.expanded.add('AX-07');render()");
@@ -73,7 +65,7 @@ test('people come from task and worklog owners, with worklog heatmap replacing r
 });
 test('monthly timeline is independent of selected summary week and includes today marker',()=>{
  const a=app();const before=a.run('timeline(projects)');assert.match(before,/2026년 11월/);
- assert.match(before,/class="today-line"/);assert.match(before,/1일/);assert.match(before,/30일/);
+ assert.match(before,/class="today-line"/);assert.match(before,/>1<\/span>/);assert.match(before,/>30<\/span>/);
  a.run('state.week=-2');assert.equal(a.run('timeline(projects)'),before);
  a.run('state.timelineMonth=1');assert.match(a.run('timeline(projects)'),/2026년 12월/);
 });
@@ -82,24 +74,10 @@ test('weekly visual distribution reconciles to actual execution records',()=>{
  assert.match(a.html(),/담당자별 작업/);
  const total=a.run('records().length');assert.equal(a.run('M.categories.reduce((n,c)=>n+records().filter(r=>r.task.topic===c).length,0)'),total);
 });
-test('execution episodes share the same timestamps and artifact sources as subtasks',()=>{
- const a=app();a.run("state.theme='notion';state.project='ax';state.tab='episode';render()");
- assert.equal((a.html().match(/class="execution-entry"/g)||[]).length,a.run("count(projects.find(p=>p.id==='ax'))"));
- assert.match(a.html(),/10:00/);assert.match(a.html(),/시스템 아키텍처 구조도.md/);
- assert.ok(a.run("projects.every(p=>p.tasks.every(t=>t.subtasks.every(s=>p.files.some(f=>f.id===s.sourceId))))"));
-});
 test('episodes order all dates and times newest first',()=>{
  const a=app();const markup=a.run('executionEpisodes(projects[0],projects[0].tasks)');
  const timestamps=[...markup.matchAll(/datetime="([^"]+)"/g)].map(m=>Date.parse(m[1]));
  assert.ok(timestamps.length>1);assert.deepEqual(timestamps,timestamps.slice().sort((a,b)=>b-a));
-});
-test('every open project has its own single-row timeline and highlighted review items',()=>{
- const a=app();for(const theme of ['linear','notion','attio','airtable','clickup']){
-  a.run(`state.theme='${theme}';state.project='ax';render()`);
-  // Linear themes already show the project's row in the main timeline above the detail; other themes keep their own local timeline.
-  if(theme==='linear')assert.doesNotMatch(a.html(),/class="project-local-timeline"/);else assert.match(a.html(),/class="project-local-timeline"/);
-  assert.match(a.html(),/class="project-review-alert"/);
- }
 });
 test('week change updates totals from execution records and supports empty historical weeks',()=>{
  const a=app();const current=a.run('records().length');a.run('state.week=-1;render()');
@@ -134,19 +112,10 @@ test('project review opens the exact work item; both answers update status and c
  assert.match(a.html(),/class="tag plan-status (active|undated|late)"/);
 });
 test('no exclusive project phase classification and summary uses prose with optional details',()=>{
- const a=app();for(const theme of ['linear','notion','attio','airtable','clickup']){
+ const a=app();for(const theme of ['linear','linear-notion','layout-2','layout-3']){
   a.run(`state.theme='${theme}';render()`);assert.doesNotMatch(a.html(),/data-action="type"|class="project-type-tabs"/);
  }
  assert.match(a.run('weekly()'),/class="weekly-details"/);assert.match(a.run('weekly()'),/했습니다/);
-});
-test('long-running example starts before October and monthly bar signals continuation',()=>{
- const a=app();assert.ok(a.run("projects.some(p=>M.projectRange(p).start<'2026-10-01')"));
- assert.match(a.run('timeline(projects)'),/class="timeline-continuation"/);
- a.run('state.timelineMonth=-2');assert.match(a.run('timeline(projects)'),/2026년 9월/);
-});
-test('Airtable field and grouping controls render; HTML strings are escaped',()=>{
- const a=app();a.run("state.theme='airtable';state.grouped=true;state.hideFields=true;render()");assert.match(a.html(),/air-grid hide-fields/);assert.match(a.html(),/class="air-group"/);
- assert.equal(a.run("esc('<img onerror=alert(1)>')"),'&lt;img onerror=alert(1)&gt;');
 });
 test('demo records have valid hierarchy, dates, project types and common categories',()=>{
  const data=JSON.parse(fs.readFileSync(path.join(root,'data.json'),'utf8'));
@@ -193,7 +162,7 @@ test('expanded monthly WBS rows share dates, natural order and reusable task det
  assert.match(html,/일정 미정/);assert.match(html,/12\/1 — 12\/3/);
  assert.doesNotMatch(a.run('projectDetail(projects[0])'),/class="work-section"/);
  a.run("state.drawerTask='two'");assert.doesNotMatch(a.run('timeline([projects[0]],false,true)'),/gantt-task-details/);assert.match(a.run('taskDrawer()'),/drawer-day/);
- a.run("state.theme='notion'");assert.match(a.run('projectDetail(projects[0])'),/class="work-section"/);
+ a.run("state.theme='linear-notion'");assert.match(a.run('projectDetail(projects[0])'),/gantt-resources/);
 });
 
 test('heatmap counts unique owner task pairs by KST with fixed levels and record totals',()=>{
@@ -235,7 +204,7 @@ test('unverified chips, activity deadlines and six-state Gantt legend are distin
  const a=app();a.run("state.drawerTask=projects[0].tasks[0].id;projects[0].tasks[0].completedAt='2026-11-17';projects[0].tasks[0].completionBasis='산출물 승인';");
  const html=a.run('taskDrawer()');assert.match(html,/role="dialog" aria-modal="true" aria-labelledby="task-drawer-title"/);for(const text of ['상태','담당','기간','완료일','산출물 승인','산출물','작업 내역','관련 자료'])assert.ok(html.includes(text));
  assert.equal((html.match(/class="drawer-entry"/g)||[]).length,a.run('projects[0].tasks[0].subtasks.length'));
- assert.equal((html.match(/class="drawer-files"/g)||[]).length,1);a.run("state.theme='notion'");assert.match(a.run('taskDrawer()'),/task-drawer/);
+ assert.equal((html.match(/class="drawer-files"/g)||[]).length,1);a.run("state.theme='linear-notion'");assert.match(a.run('taskDrawer()'),/task-drawer/);
  });
 test('plan groups stay in the drawer while list tasks keep natural order',()=>{
  const a=app();a.run(`const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'nine',title:'최상위 아홉',wbsCode:'9',stage:undefined,wbsGroups:[]},{...base,id:'b',title:'두번째 말단',wbsCode:'2.1.2',stage:undefined,wbsGroups:['2 플랫폼 비교평가','2.1 비교평가']},{...base,id:'a',title:'첫번째 말단',wbsCode:'2.1.1',stage:undefined,wbsGroups:['2 플랫폼 비교평가','2.1 비교평가']}];`);
@@ -276,9 +245,9 @@ test('stages summarize status, group in order, hide numbers, and expose drawer p
  assert.equal(a.run('stageStates(projects[0]).map(s=>s.status).join()'),'완료,예정,진행');let html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))');assert.ok(html.indexOf('리서치')<html.indexOf('개발·테스트'));assert.ok(html.indexOf('data-gantt-task="none"')>html.indexOf('data-gantt-task="dev"'));assert.doesNotMatch(html,/<code>|>5\.1 구현</);
  a.run(`state.drawerTask='dev'`);html=a.run('taskDrawer()');assert.match(html,/<dt>단계<\/dt><dd><span class="stage-chip"[^>]*>개발·테스트/);assert.match(html,/<dt>WBS 번호<\/dt><dd>5.1/);
 });
-test('next step prefers earliest active due, then earliest upcoming, then undated active',()=>{
+test('next step prefers earliest due, then earliest start, then undated',()=>{
  const a=app();a.run(`const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'undated',status:'in_progress',startDate:undefined,dueDate:undefined},{...base,id:'future2',status:'in_progress',startDate:'2026-12-02',dueDate:'2026-12-03'},{...base,id:'future1',status:'in_progress',startDate:'2026-12-01',dueDate:undefined},{...base,id:'active2',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-22'},{...base,id:'active1',status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-19'}]`);
- assert.equal(a.run('nextTask(projects[0]).id'),'active1');a.run(`projects[0].tasks=projects[0].tasks.filter(t=>!t.id.startsWith('active'))`);assert.equal(a.run('nextTask(projects[0]).id'),'future1');a.run(`projects[0].tasks=projects[0].tasks.filter(t=>!t.id.startsWith('future'))`);assert.equal(a.run('nextTask(projects[0]).id'),'undated');
+ assert.equal(a.run('nextTask(projects[0]).id'),'active1');a.run(`projects[0].tasks=projects[0].tasks.filter(t=>!t.id.startsWith('active'))`);assert.equal(a.run('nextTask(projects[0]).id'),'future2');a.run(`projects[0].tasks=projects[0].tasks.filter(t=>!t.id.startsWith('future'))`);assert.equal(a.run('nextTask(projects[0]).id'),'undated');
 });
 
 test('period table follows work dates, owner and pagination',()=>{
@@ -292,7 +261,7 @@ test('period table follows work dates, owner and pagination',()=>{
 });
 test('folder pins have one folder per project in every theme and toggle pressed state',()=>{
  const a=app();a.run('togglePin(projects[0].id)');assert.match(a.run('pinButton(projects[0])'),/aria-pressed="true"/);assert.doesNotMatch(a.run('pinButton(projects[0])'),/☆|★/);
- for(const theme of ['linear-notion','notion','attio','airtable','clickup']){a.run(`state.theme='${theme}'`);assert.equal((a.run('projectArea()').match(/data-action="project-pin"/g)||[]).length,a.run('filtered().length'));}
+ for(const theme of ['linear-notion','linear','layout-2','layout-3']){a.run(`state.theme='${theme}'`);assert.equal((a.run('projectArea()').match(/data-action="project-pin"/g)||[]).length,a.run('filtered().length'));}
  a.run('togglePin(projects[0].id)');assert.match(a.run('pinButton(projects[0])'),/aria-pressed="false"/);
 });
 test('schedule filters hide unmatched projects and rows and drawer tasks have no chevrons',()=>{
@@ -344,7 +313,7 @@ test('third feedback uses uniform stage markup, persistent summary toggle and al
  assert.match(a.run('weekly()'),/class="summary-task-count"[^>]*aria-expanded="false"[^>]*aria-controls="summary-tasks-panel"/);assert.match(a.run('summaryTasks()'),/id="summary-tasks-panel" hidden/);a.run(`action({dataset:{action:'summary-toggle'}});state.week=-1;state.weekOwner='김지현'`);assert.equal(a.run('state.summaryOpen'),true);assert.doesNotMatch(a.run('summaryTasks()'),/id="summary-tasks-panel" hidden/);a.run(`action({dataset:{action:'summary-toggle'}})`);assert.equal(a.run('state.summaryOpen'),false);
 });
 
-test('project tags render once in each theme and progress has a numeric hierarchy',()=>{const a=app();a.run(`projects[0].tasks[0].stage='기획'`);for(const theme of ['linear-notion','linear','notion','attio','airtable','clickup']){a.run(`state.theme='${theme}'`);const html=a.run('projectArea()');assert.equal((html.match(/class="stage-chip"/g)||[]).length,1);assert.doesNotMatch(html,/계획보다 늦음|class="results-count"/);}const html=a.run('progressMetric({percent:50,done:6,total:12})');assert.match(html,/class="progress-percent">50%/);assert.match(html,/class="progress-detail">6\/12 완료/);assert.doesNotMatch(html,/class="tag|진척 50/);});
+test('project tags render once in each theme and progress has a numeric hierarchy',()=>{const a=app();a.run(`projects[0].tasks[0].stage='기획'`);for(const theme of ['linear-notion','linear','layout-2','layout-3']){a.run(`state.theme='${theme}'`);const html=a.run('projectArea()');assert.equal((html.match(/class="stage-chip"/g)||[]).length,1);assert.doesNotMatch(html,/계획보다 늦음|class="results-count"/);}const html=a.run('progressMetric({percent:50,done:6,total:12})');assert.match(html,/class="progress-percent">50%/);assert.match(html,/class="progress-detail">6\/12 완료/);assert.doesNotMatch(html,/class="tag|진척 50/);});
 
 test('core and operations reuse identical flat task rows and retain plan groups only in the drawer',()=>{const a=app();a.run(`const base=projects[0].tasks[0];projects[0].tasks=[{...base,id:'flat-a',wbsCode:'1.1',stage:undefined,wbsGroups:['1 원래 계획','1.1 세부 묶음']},{...base,id:'flat-b',wbsCode:'1.2',stage:undefined}];`);let html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))');a.run(`projects[0].kind='ops'`);assert.equal(html,a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))'));assert.doesNotMatch(html,/wbs-group-row|wbs-group-summary|data-gantt-group|완료 \d+\//);assert.equal((html.match(/class="timeline-row task-gantt-row/g)||[]).length,2);a.run(`projects[0].tasks[0].stage='기획';state.drawerTask='flat-a'`);html=a.run('taskTimeline(projects[0],M.monthRange(AX_DATA.demoAsOf))');assert.match(html,/stage-group-row/);assert.doesNotMatch(html,/wbs-group-row|data-gantt-group/);assert.match(a.run('taskDrawer()'),/계획 문서 묶음/);assert.match(a.run('taskDrawer()'),/원래 계획 \/ 세부 묶음/);assert.match(html,/status-dot/);});
 

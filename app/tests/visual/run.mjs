@@ -48,6 +48,7 @@ async function load(p, url, theme = 'linear-notion') {
   await p.evaluate(() => document.fonts.ready);
 }
 async function opened(p) {
+  if(await p.evaluate(()=>state.theme==='layout-3'&&!state.scheduleOpen)){await click(p,'layout-schedule');}
   await click(p, 'project');
   await p.locator('.project-detail').scrollIntoViewIfNeeded();
 }
@@ -79,7 +80,7 @@ function diff(a, b) {
 }
 async function visual() {
   for (const [width, height] of [[1440,900], [834,1112], [390,844]]) {
-    for (const theme of ['linear-notion', 'linear', 'notion', 'attio', 'airtable', 'clickup']) {
+    for (const theme of ['linear-notion', 'linear', 'layout-2', 'layout-3']) {
       const states = theme === 'linear-notion' ? ['home','summary','project','episode','sources-bottom','empty','review','settings','image'] : ['home','project'];
       for (const state of states) {
         const name = `${theme}-${width}x${height}-${state}.png`;
@@ -126,6 +127,33 @@ async function nav() {
       catch (e) { report.checks.push({ kind, name, status: 'fail', evidence: e.message }); console.log(e.message); }
       console.log(`${kind}: ${name}: ${report.checks.at(-1).status}`);
     }
+
+    await check('four themes, dashboard schedule, resource cards and collapsed panels',async()=>{
+      for(const theme of ['linear','linear-notion','layout-2','layout-3']){
+        await load(p,url,theme);await expect(p.locator('body')).toHaveAttribute('data-layout',theme);
+        await click(p,'themes');await expect(p.locator('[data-action="theme"]')).toHaveCount(4);await p.keyboard.press('Escape');await expect(p.locator('.task-drawer')).toHaveCount(0);
+      }
+      await load(p,url,'layout-2');await p.evaluate(()=>{const t=projects[0].tasks[0];t.dueDate=AX_DATA.demoAsOf;t.status='in_progress';render();});
+      await p.locator('.status-card [data-action="layout-project"]').first().focus();await p.keyboard.press('Enter');await expect(p.locator('.wbs-expanded').first()).toBeVisible();await expect(p.locator('#layout-schedule .unified-toggle').first()).toBeFocused();expect(await p.evaluate(()=>scrollY)).toBeGreaterThan(100);
+      await p.locator('.layout-todo [data-action="summary-task"]').first().click();await expect(p.locator('.task-drawer')).toBeVisible();await p.keyboard.press('Escape');await expect(p.locator('.task-drawer')).toHaveCount(0);
+      await expect(p.locator('#layout-history')).toBeHidden();await click(p,'layout-history');await expect(p.locator('#layout-history')).toBeVisible();await click(p,'layout-history');await expect(p.locator('#layout-history')).toBeHidden();
+      await load(p,url,'layout-3');await expect(p.locator('#layout-schedule')).toBeHidden();await p.locator('.week-board-card').first().click();await expect(p.locator('.task-drawer')).toBeVisible();await p.keyboard.press('Escape');await expect(p.locator('.task-drawer')).toHaveCount(0);
+      await p.locator('.status-rail [data-action="layout-project"]').first().click();await expect(p.locator('#layout-schedule')).toBeVisible();await expect(p.locator('#layout-schedule .unified-toggle').first()).toBeFocused();expect(await p.evaluate(()=>scrollY)).toBeGreaterThan(100);
+      await click(p,'layout-schedule');await expect(p.locator('#layout-schedule')).toBeHidden();
+      const date=await p.locator('.layout-period strong').textContent();await p.locator('[data-action="layout-week"][data-step="1"]').click();expect(await p.locator('.layout-period strong').textContent()).not.toBe(date);
+      await p.locator('[data-action="layout-owner"]').nth(1).click();await expect(p.locator('.resource-person')).toHaveCount(1);
+      for(const theme of ['layout-2','layout-3'])for(const width of [1440,834,390]){await p.setViewportSize({width,height:900});await load(p,url,theme);expect(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth)).toBe(false);await p.screenshot({path:path.join(results,theme+'-'+width+'-review.png'),fullPage:true});}
+      await p.setViewportSize({width:1440,height:900});
+    });
+
+    await check('resource date floor, stale work folds, five-card limits and undated deduplication',async()=>{
+      await load(p,url,'layout-3');await p.evaluate(()=>{AX_DATA.demoAsOf='2026-11-26';const base=projects[0],t=base.tasks[0],task=(id,fields)=>({...t,id,title:id,owner:'Synthetic A',status:'in_progress',startDate:undefined,dueDate:undefined,subtasks:[],...fields});projects.splice(0,projects.length,{...base,id:'resource-fixture',tasks:[...Array.from({length:6},(_,i)=>task('current-'+i,{dueDate:i===0?'2026-11-23':undefined,subtasks:[{owner:'Synthetic A',performedAt:'2026-11-26'}]})),...Array.from({length:6},(_,i)=>task('next-'+i,{startDate:'2026-11-30',dueDate:'2026-12-03'})),...Array.from({length:6},(_,i)=>task('planned-'+i,{startDate:'2026-12-07',dueDate:'2026-12-09'})),task('stopped',{dueDate:'2026-08-01'}),task('idle',{owner:'Synthetic B'})],files:[]});state.layoutOwner='Synthetic A';state.layoutWeek=0;render();});
+      const person=p.locator('.resource-person');await expect(person.locator('header')).toContainText('새 일 시작 가능: 12/4');await expect(person.locator('header')).toContainText('지연 1건');await expect(person.locator('header')).toContainText('일정 미정 5건');await expect(person.locator('header small').last()).toContainText(/11\/23\s*지연/);
+      for(const column of ['current','next','planned']){const list=p.locator('#resource-0-'+column);await expect(list.locator('.week-board-card')).toHaveCount(5);const more=p.locator('[data-action="layout-more"][data-value="Synthetic A/'+column+'"]');await expect(more).toHaveText('1개 더');await more.focus();await p.keyboard.press('Enter');await expect(list.locator('.week-board-card')).toHaveCount(6);await expect(more).toBeFocused();}
+      const stopped=p.locator('[data-action="layout-stalled"][data-value="Synthetic A"]');await expect(stopped).toContainText('멈춘 일 1');await stopped.click();await expect(p.locator('#stalled-0')).toBeVisible();await p.locator('#stalled-0 .week-board-card').click();await expect(p.locator('.task-drawer')).toBeVisible();await p.keyboard.press('Escape');await expect(p.locator('.task-drawer')).toHaveCount(0);
+      const size=await p.locator('#resource-0-current .week-board-card').first().evaluate(e=>({pad:getComputedStyle(e).padding,font:getComputedStyle(e.querySelector('strong')).fontSize,margin:getComputedStyle(e).marginBottom}));expect(size).toEqual({pad:'8px',font:'13px',margin:'6px'});
+      await p.evaluate(()=>{state.theme='layout-2';state.layoutOwner='전체';render();});await expect(p.locator('.project-participants')).not.toContainText('Synthetic B');await expect(p.locator('.layout-todo [data-task="current-1"]')).toHaveCount(1);await expect(p.locator('#week-stalled')).toBeHidden();await p.locator('[data-action="layout-stalled"][data-value="week"]').click();await expect(p.locator('#week-stalled [data-task="stopped"]')).toBeVisible();
+    });
     await check('readable project hierarchy and centered Gantt survive wrapped rows',async()=>{
       await load(p,url);await p.evaluate(()=>{const p=projects[0],base=p.tasks[0];p.name='긴 프로젝트 이름 '.repeat(8);p.tasks=[{...base,id:'long',title:'여러 줄로 펼쳐지는 긴 태스크 이름 '.repeat(8),stage:'기획',owner:'Long English Name '.repeat(4),status:'in_progress',startDate:'2026-11-01',dueDate:'2026-11-10'},{...base,id:'done',stage:'리서치',status:'completed',startDate:'2026-11-01',dueDate:'2026-11-10'}];state.pins.clear();state.pins.add(p.id);state.project=p.id;state.summaryOpen=true;render();});
       const project=p.locator('.wbs-project-row').first();await expect(project.locator('.progress-percent')).toHaveText('50%');await expect(project.locator('.progress-detail')).toHaveText('1/2 완료');await expect(project.locator('.wbs-progress .tag')).toHaveCount(0);await expect(p.locator('.behind-chip,.results-count')).toHaveCount(0);expect(await project.locator('.wbs-project-name .stage-chip').count()).toBe(2);
@@ -237,7 +265,7 @@ async function nav() {
       await expect(p.locator('.weekly-owner-table tbody tr')).toHaveCount(4);
       for(const width of [1440,834,390]){await p.setViewportSize({width,height:1000});await checkWeeklyLayout(p);const info=await p.evaluate(()=>{const owner=document.querySelector('.weekly-owner-table tbody th[title="Heechang Lee"]'),range=document.createRange();range.setStart(owner.firstChild,0);range.setEnd(owner.firstChild,8);const last=document.querySelector('.weekly-owner-table tbody tr:last-child'),visual=document.querySelector('.weekly-visual');return {rects:range.getClientRects().length,last:last.getBoundingClientRect().bottom,frame:visual.getBoundingClientRect().bottom,layout:visual.closest('.weekly-layout').getBoundingClientRect().bottom};});expect(info.rects).toBe(1);expect(info.last).toBeLessThanOrEqual(info.frame);}
       await p.setViewportSize({width:1440,height:900});await expect(p.locator('[data-gantt-task] .task-status').first()).toBeVisible();const metrics=await p.evaluate(()=>{const row=document.querySelector('[data-gantt-task]'),dot=row.querySelector('.status-dot'),status=row.querySelector('.task-status'),title=row.querySelector('.gantt-task-copy strong'),owner=row.querySelector('.wbs-owner');return {dot:dot.getBoundingClientRect().width,title:getComputedStyle(title).fontSize,weight:getComputedStyle(title).fontWeight,owner:getComputedStyle(owner).whiteSpace,status:getComputedStyle(status).backgroundColor};});expect(metrics).toEqual({dot:8,title:'13px',weight:'400',owner:'nowrap',status:'rgba(0, 0, 0, 0)'});
-      for(const theme of ['linear-notion','linear','notion','attio','airtable','clickup']){await p.evaluate(theme=>{state.theme=theme;render();},theme);const style=await p.locator('.weekly-person-tabs button[aria-pressed="true"]').evaluate(e=>{const c=getComputedStyle(e);return [c.height,c.fontSize,c.fontWeight,c.backgroundColor,c.color];});expect(style).toEqual(['32px','14px','500','rgb(65, 70, 75)','rgb(255, 255, 255)']);}
+      for(const theme of ['linear-notion','linear','layout-2','layout-3']){await p.evaluate(theme=>{state.theme=theme;render();},theme);const style=await p.locator('.weekly-person-tabs button[aria-pressed="true"]').first().evaluate(e=>{const c=getComputedStyle(e);return [c.height,c.fontSize,c.fontWeight,c.backgroundColor,c.color];});expect(style).toEqual(['32px','14px','500','rgb(65, 70, 75)','rgb(255, 255, 255)']);}
     });
     await check('open-ended WBS and description remain clear',async()=>{
       await load(p,url);
@@ -367,29 +395,18 @@ async function nav() {
         await p.keyboard.press('Shift+Tab'); await expect(buttons.last()).toBeFocused();
       });
     }
-    await check('topic arrows both directions', async () => {
-      await load(p,url,'notion'); await opened(p); await p.locator('[role="tab"][data-value="topic"]').focus();
-      await p.keyboard.press('ArrowRight'); await expect(p.locator('[role="tab"][data-value="episode"]')).toBeFocused();
-      await expect(p.locator('.execution-episodes')).toBeVisible();
-      await p.keyboard.press('ArrowLeft'); await expect(p.locator('[role="tab"][data-value="topic"]')).toBeFocused();
-    });
+
     await check('browser back', async () => {
       await load(p,url); await opened(p); await expect(p.locator('.project-detail')).toBeVisible(); await p.goBack(); await expect(p.locator('.project-detail')).toHaveCount(0);
     });
-    await check('source scroll persists both views', async () => {
-      await load(p,url,'notion'); await opened(p);
-      const sources = p.locator('.source-scroll'); await sources.evaluate(e => { e.scrollTop = e.scrollHeight; });
-      const top = await sources.evaluate(e => e.scrollTop); expect(top).toBeGreaterThan(0);
-      for (const tab of ['episode','topic']) { await p.locator(`[data-action="tab"][data-value="${tab}"]`).click(); expect(await sources.evaluate(e => e.scrollTop)).toBe(top); }
-      return `scrollTop=${top}`;
-    });
+
     await check('theme survives reload', async () => {
-      await load(p,url,'notion'); await expect(p.locator('body')).toHaveAttribute('data-theme','notion');
-      expect(await p.evaluate(() => localStorage.getItem('ax_theme'))).toBe('notion');
-      await p.reload(); await expect(p.locator('body')).toHaveAttribute('data-theme','notion', { timeout: 1000 });
+      await load(p,url,'linear'); await expect(p.locator('body')).toHaveAttribute('data-theme','linear');
+      expect(await p.evaluate(() => localStorage.getItem('ax_theme'))).toBe('linear');
+      await p.reload(); await expect(p.locator('body')).toHaveAttribute('data-theme','linear', { timeout: 1000 });
     });
     await check('invalid / absent / inaccessible storage uses initial theme', async () => {
-      for (const value of [null, 'invalid-theme']) {
+      for (const value of [null, 'invalid-theme','notion','attio','airtable','clickup']) {
         await p.evaluate(value => value === null ? localStorage.removeItem('ax_theme') : localStorage.setItem('ax_theme', value), value);
         await p.reload();
         await expect(p.locator('body')).toHaveAttribute('data-theme', 'linear');
@@ -430,31 +447,23 @@ async function nav() {
       const owner = p.locator('[data-action="owner"]').first(); await owner.focus(); await p.keyboard.press('Space');
       await expect(owner).toBeFocused();
     });
-    await check('Airtable view / fields / grouping keyboard continuity', async () => {
-      await load(p, url, 'airtable');
-      for (const action of ['fields', 'group']) {
-        const control = p.locator(`[data-action="${action}"]`); await control.focus(); await p.keyboard.press('Space');
-        await expect(control).toHaveAttribute('aria-pressed', 'true'); await expect(control).toBeFocused();
-      }
-      for (const view of ['gallery', 'timeline', 'grid']) {
-        const control = p.locator(`[data-action="airview"][data-value="${view}"]`); await control.focus(); await p.keyboard.press('Enter');
-        await expect(control).toHaveClass(/active/); await expect(control).toBeFocused();
-      }
-    });
+
     for (const [width, height] of [[1440,900], [834,1112], [390,844]]) {
       await p.setViewportSize({ width, height });
-      for (const theme of ['linear-notion','linear','notion','attio','airtable','clickup']) {
+      for (const theme of ['linear-notion','linear','layout-2','layout-3']) {
         await check(`full Tab order / keyboard focus ${theme} ${width}x${height}`, async () => {
           // Reset storage explicitly: load() otherwise correctly preserves the last chosen theme.
           await p.evaluate(() => localStorage.removeItem('ax_theme'));
           await load(p, url, theme); await opened(p);
+          if(theme==='layout-2'||theme==='layout-3')await p.locator('#layout-schedule').scrollIntoViewIfNeeded();
           await p.locator('[data-action="task"]').first().focus(); await p.keyboard.press('Enter');
-          if (theme === 'linear' || theme === 'linear-notion') {
+          if (true) {
             await expect(p.locator('.task-drawer')).toBeVisible();
             await expect(p.locator('#task-drawer-title')).toBeFocused();
             await p.keyboard.press('Escape');await expect(p.locator('.task-drawer')).toHaveCount(0);
             await expect(p.locator('[data-action="task"]').first()).toBeFocused();
           } else await expect(p.locator('.task-expanded')).toBeVisible();
+          if(theme==='layout-2'||theme==='layout-3')await click(p,'layout-history');
           await p.locator('summary').first().focus(); await p.keyboard.press('Space');
           const candidates = p.locator('a[href],button,input,select,summary,[tabindex="0"]');
           const indices = await candidates.evaluateAll(els => els.flatMap((e, i) =>

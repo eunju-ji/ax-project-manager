@@ -11,7 +11,7 @@
 :root{--ink:#1f2328;--muted:#6b7280;--line:#e5e7eb;--soft:#f6f7f9;--accent:#3567b5;--accent-soft:#eaf1fb;--green:#2f7d55;--green-soft:#e6f2e9;--red:#b24943;--red-soft:#fbecea;--amber:#9a6a0a;--amber-soft:#fdf3dc}
 *{box-sizing:border-box}
 body{margin:0;font-family:'Noto Sans KR',sans-serif;color:var(--ink);line-height:1.7;word-break:keep-all;overflow-wrap:break-word}
-.layout{display:grid;grid-template-columns:240px minmax(0,1fr);max-width:1240px;margin:0 auto}
+.layout{display:grid;grid-template-columns:250px minmax(0,1fr);max-width:1260px;margin:0 auto}
 nav{position:sticky;top:0;height:100vh;overflow:auto;padding:32px 20px;border-right:1px solid var(--line);font-size:13px}
 nav a{display:block;color:var(--muted);text-decoration:none;padding:4px 0}
 nav a:hover{color:var(--accent)}
@@ -27,7 +27,6 @@ p,li{font-size:15px}
 table{width:100%;border-collapse:collapse;margin:12px 0 20px;font-size:14px}
 th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
 th{background:var(--soft);font-weight:500;color:var(--muted);font-size:13px}
-td small{color:var(--muted)}
 .callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:4px;margin:16px 0;font-size:14px}
 .callout.warn{border-color:var(--amber);background:var(--amber-soft)}
 .callout.ok{border-color:var(--green);background:var(--green-soft)}
@@ -37,6 +36,11 @@ td small{color:var(--muted)}
 .stat{border:1px solid var(--line);border-radius:8px;padding:12px 14px}
 .stat b{display:block;font-size:22px}.stat span{font-size:13px;color:var(--muted)}
 code{font-size:13px;background:var(--soft);padding:1px 5px;border-radius:3px}
+pre{background:#f6f8fa;border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-size:13px;overflow:auto;line-height:1.5}
+.axes{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.axis{border:1px solid var(--line);border-radius:8px;padding:14px}
+.axis h4{margin:0 0 6px;font-size:15px}
+.axis p{margin:0;font-size:13px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -47,25 +51,34 @@ code{font-size:13px;background:var(--soft);padding:1px 5px;border-radius:3px}
 <a class="sub" href="#flow">전체 흐름</a>
 <a class="sub" href="#table">데이터별 표</a>
 <a class="sub" href="#gaps">지금의 빈틈</a>
-<a href="#two">2. 두 명일 때의 전제</a>
-<a href="#p1">3. 방안 1 · ChatGPT 사이트</a>
-<a href="#p2">4. 방안 2 · 무료 사이트(Workers)</a>
-<a href="#p3">5. 방안 3 · 공유 위임 수집</a>
-<a href="#cmp">6. 비교와 권고</a>
+<a href="#frame">2. 두 명일 때: 두 가지 결정</a>
+<a href="#collect">3. 팀원 데이터 수집 방법</a>
+<a class="sub" href="#c1">A. AI 예약 + 공유 드라이브(권고)</a>
+<a class="sub" href="#c2">B. 수집 도우미 + 팀 수집함</a>
+<a class="sub" href="#c3">C. 공유 위임</a>
+<a class="sub" href="#ccmp">수집 방법 비교</a>
+<a href="#depth">4. 얼마나 자세히 가져올까</a>
+<a href="#host">5. 화면을 올릴 곳</a>
+<a class="sub" href="#h1">ChatGPT 사이트</a>
+<a class="sub" href="#h2">Workers + D1</a>
+<a class="sub" href="#h3">정적 사이트</a>
+<a href="#rec">6. 권고 조합</a>
 <a href="#verify">7. 확인 절차와 일정</a>
+<a href="#faq">8. 자주 묻는 것</a>
 </nav>
 <main>
 <h1>데이터 수집 방식과 2인 수집 계획</h1>
-<div class="meta"><span>작성 AX-Lead</span><span>2026-11-26</span><span>v1.0</span><span class="badge a">제안</span><span>근거: real-collect 절차서, ADR-017·019·020·021·025·026</span></div>
+<div class="meta"><span>작성 AX-Lead</span><span>2026-11-26</span><span>v2.0</span><span class="badge a">제안 · 승인 대기</span><span>근거: real-collect 절차서, ADR-017·019·020·021·025·026</span></div>
 
-<div class="callout">조건: 우리 GCP OAuth를 쓸 수 없고 <b>gws-work MCP</b>만 쓸 수 있다. 사이트는 <b>ChatGPT 사이트 또는 무료 사이트</b>여야 하고 주소가 바뀌면 안 된다. 여러 사람의 데이터를 <b>하루 1번 이상</b> 가져와야 한다.</div>
+<div class="callout">조건: 우리 GCP OAuth를 쓸 수 없고 <b>gws-work MCP</b>만 쓸 수 있다. 화면은 <b>ChatGPT 사이트 또는 무료 사이트</b>에 올리고 주소가 바뀌면 안 된다. 여러 사람의 데이터를 <b>하루 1번 이상</b> 가져와야 한다.<br>
+v2.0 변경: 팀원 데이터를 <b>각자의 Claude·Codex가 정리해 공유 드라이브에 올리고, 사용자 쪽이 그것을 읽어 판별</b>하는 방법(A)을 기본안으로 추가했습니다. 160자 요약 대신 <b>항목당 최대 2,000자 상세 요약</b>을 제안합니다.</div>
 
 <h2 id="now">1. 지금 데이터를 가져오는 방식</h2>
 <div class="stats">
 <div class="stat"><b>하루 4번</b><span>09·12·15·18시 정기 수집</span></div>
 <div class="stat"><b>1명</b><span>지금은 사용자 계정만 연결</span></div>
 <div class="stat"><b>220건</b><span>연결된 자료(파일·메일·메시지·커밋·AI 대화)</span></div>
-<div class="stat"><b>0건</b><span>원문 저장(이름과 160자 요약만)</span></div>
+<div class="stat"><b>160자</b><span>항목당 저장하는 요약 길이(원문 저장 없음)</span></div>
 </div>
 
 <h3 id="flow">전체 흐름</h3>
@@ -88,156 +101,195 @@ flowchart LR
 
 <h3 id="table">데이터별 표</h3>
 <table>
-<tr><th style="width:120px">데이터</th><th>가져오는 방법</th><th style="width:110px">계정</th><th style="width:90px">주기</th><th>저장하는 것</th><th style="width:70px">현재</th><th>한계·비고</th></tr>
-<tr><td><b>Drive 파일 활동</b></td><td>gws-work <code>drive.activity.query</code>(팀 공유 드라이브), 새 파일은 <code>drive.get_metadata</code>로 폴더 경로</td><td>사용자</td><td>하루 4번</td><td>파일 이름·종류·폴더·작업자·시각</td><td>116개 파일</td><td>공유 드라이브 안의 것만. 개인 내 드라이브 파일은 안 보임</td></tr>
+<tr><th style="width:120px">데이터</th><th>가져오는 방법</th><th style="width:100px">계정</th><th style="width:80px">주기</th><th>저장하는 것</th><th style="width:80px">현재</th><th>한계·비고</th></tr>
+<tr><td><b>Drive 파일 활동</b></td><td>gws-work <code>drive.activity.query</code>(팀 공유 드라이브), 새 파일은 <code>drive.get_metadata</code>로 폴더 경로</td><td>사용자</td><td>하루 4번</td><td>파일 이름·종류·폴더·작업자·시각</td><td>116개 파일</td><td>공유 드라이브 안의 것만. 개인 내 드라이브는 안 보임</td></tr>
 <tr><td><b>WBS·계획 일정</b></td><td>WBS 파일이 바뀌면 <code>drive.read_text</code>로 다시 읽어 계획 태스크·시작일·마감일 갱신</td><td>사용자</td><td>바뀔 때</td><td>태스크 제목·계획 기간·근거 파일</td><td>계획 태스크 33개</td><td>계획 날짜 출처는 WBS와 회의록뿐(없으면 비워 둠)</td></tr>
-<tr><td><b>회의록</b></td><td>Drive 문서·Gemini 회의록을 읽어 결정·마감·새 태스크 판별</td><td>사용자</td><td>하루 4번</td><td>태스크·마감(<code>due_basis</code>)·160자 요약</td><td>—</td><td>예정 업무의 주된 출처. 회의록에 없는 일은 빠짐</td></tr>
-<tr><td><b>Chat</b></td><td>gws-work <code>chat.spaces.list</code> → <code>chat.messages.list</code>(스페이스·그룹 대화, 1:1 제외)</td><td>사용자</td><td>하루 4번</td><td>스레드 이름·보낸 사람·시각·160자 요약, 첨부는 파일 자료</td><td>메시지 7·첨부 2</td><td>사용자가 들어가 있는 방만</td></tr>
-<tr><td><b>Gmail</b></td><td>gws-work <code>gmail.search_threads</code>(업무 메일 조건), 필요할 때만 본문·첨부</td><td>사용자</td><td>하루 4번</td><td>제목·보낸 사람·시각·160자 요약, 첨부는 파일 자료</td><td>메일 13·첨부 2</td><td><span class="badge a">확인 필요</span> 체크포인트가 11/24에 멈춰 있음(다른 소스는 11/25)</td></tr>
+<tr><td><b>회의록</b></td><td>Drive 문서·Gemini 회의록을 읽어 결정·마감·새 태스크 판별</td><td>사용자</td><td>하루 4번</td><td>태스크·마감(<code>due_basis</code>)·요약</td><td>—</td><td>예정 업무의 주된 출처. 회의록에 없는 일은 빠짐</td></tr>
+<tr><td><b>Chat</b></td><td>gws-work <code>chat.spaces.list</code> → <code>chat.messages.list</code>(스페이스·그룹 대화, 1:1 제외)</td><td>사용자</td><td>하루 4번</td><td>스레드 이름·보낸 사람·시각·요약, 첨부는 파일 자료</td><td>메시지 7·첨부 2</td><td>사용자가 들어가 있는 방만</td></tr>
+<tr><td><b>Gmail</b></td><td>gws-work <code>gmail.search_threads</code>(업무 메일 조건), 필요할 때만 본문·첨부</td><td>사용자</td><td>하루 4번</td><td>제목·보낸 사람·시각·요약, 첨부는 파일 자료</td><td>메일 13·첨부 2</td><td><span class="badge a">확인 필요</span> 체크포인트가 11/24에 멈춰 있음(다른 소스는 11/25)</td></tr>
 <tr><td><b>GitHub</b></td><td>공개 API로 사용자명의 커밋·PR(<code>collect-github.cjs</code>)</td><td>사용자명</td><td>하루 4번</td><td>커밋·PR 제목·시각·저장소</td><td>커밋 21·PR 1</td><td>비공개 저장소는 읽기 토큰 필요</td></tr>
 <tr><td><b>로컬 Git</b></td><td>승인된 폴더의 커밋(<code>collect-local-git.cjs</code>)</td><td>PC</td><td>하루 4번</td><td>SHA·제목·시각·변경 파일 수</td><td>커밋 21</td><td>그 PC에서 한 작업만</td></tr>
-<tr><td><b>AI 대화</b></td><td>Claude Code·Codex 세션 색인, claude.ai·ChatGPT 내보내기 파일(<code>collect-ai-chats.cjs</code>)</td><td>PC</td><td>하루 4번</td><td>대화 제목·작업 폴더·수정 파일·160자 요약(본문 없음)</td><td>대화 36</td><td>웹 ChatGPT·claude.ai는 내보내기 파일을 넣어야 반영</td></tr>
+<tr><td><b>AI 대화</b></td><td>Claude Code·Codex 세션 색인, claude.ai·ChatGPT 내보내기 파일(<code>collect-ai-chats.cjs</code>)</td><td>PC</td><td>하루 4번</td><td>대화 제목·작업 폴더·수정 파일·요약</td><td>대화 36</td><td>웹 ChatGPT·claude.ai는 내보내기 파일을 넣어야 반영</td></tr>
 <tr><td><b>사람 수정</b></td><td>화면에서 태스크·작업 내역 수정·추가·삭제, 확인 필요 다시 판단(ADR-026)</td><td>로그인한 사람</td><td>수시</td><td>수정 이력(누가·전후 값)</td><td>—</td><td>이후 자동 수집이 덮어쓰지 못함</td></tr>
 </table>
 
 <h3 id="gaps">지금의 빈틈</h3>
 <ul>
 <li><b>팀원 데이터</b>: 공유 드라이브·공유 Chat 방은 사용자 계정으로도 보이지만, 팀원의 <b>개인 메일·개인 드라이브·개인 GitHub·AI 대화</b>는 보이지 않는다.</li>
-<li><b>예정 업무·지원 요청</b>: 회의록과 WBS에만 의존한다. 지원 요청 데이터는 없다.</li>
+<li><b>요약 길이</b>: 160자로는 무엇을 했고 무엇이 결정됐는지 담기 어려워 판별·태스크 설명이 얕다.</li>
 <li><b>Gmail</b>: 체크포인트가 하루 늦어 있어 원인 확인이 필요하다.</li>
 </ul>
 
-<h2 id="two">2. 두 명일 때의 전제</h2>
+<h2 id="frame">2. 두 명일 때: 두 가지를 따로 정한다</h2>
+<p>"팀원 데이터를 어떻게 가져오나"와 "화면을 어디에 올리나"는 서로 독립입니다. 어느 수집 방법이든 어느 사이트와도 조합할 수 있습니다.</p>
+<div class="axes">
+<div class="axis"><h4>① 팀원 데이터 수집 (3장)</h4><p>A. AI 예약 + 공유 드라이브 / B. 수집 도우미 + 팀 수집함 / C. 공유 위임</p></div>
+<div class="axis"><h4>② 화면 호스팅 (5장)</h4><p>ChatGPT 사이트 / Cloudflare Workers + D1 / 정적 사이트(GitHub Pages)</p></div>
+</div>
 <table>
-<tr><th>항목</th><th>내용</th></tr>
+<tr><th>공통 전제</th><th>내용</th></tr>
 <tr><td>사람</td><td>사용자(관리자) + 팀원 1명</td></tr>
-<tr><td>gws-work</td><td>사람마다 자기 Google 계정을 gws-work에 한 번 연결한다. gws-work 서버가 그 사람의 읽기 권한으로 읽는다. 내 세션에서는 내 데이터만 보인다(남의 계정을 대신 읽지 않음).</td></tr>
-<tr><td>판별</td><td>판별은 한 곳(사용자 PC)에서만 한다. 같은 메일·파일·메시지는 고유 ID로 한 건으로 합치고, 수행자는 실제 한 사람(ADR-019).</td></tr>
-<tr><td>하루 1번 이상</td><td>팀원 쪽 수집이 하루 1번 이상 돌고, 사용자 쪽 판별은 하루 4번. 체크포인트 방식이라 하루 빠져도 다음에 이어 받는다.</td></tr>
-<tr><td>지금 준비된 것</td><td>서버 핵심/연결부 분리, Workers 연결부, Access 로그인, 팀 수집함 <code>/api/inbox</code>(사람별 토큰·원문 거부·160자), delta 200건 분할. 남은 것: D1 저장소 연결과 데이터 이전(3단계)</td></tr>
+<tr><td>동의</td><td>팀원 본인이 동의하고 본인 계정으로 연결·설정한 범위만 쓴다. 남의 계정을 대신 읽지 않는다.</td></tr>
+<tr><td>판별</td><td>판별은 한 곳(사용자 PC)에서만. 같은 메일·파일·메시지는 고유 ID로 한 건, 수행자는 실제 한 사람(ADR-019).</td></tr>
+<tr><td>하루 1번 이상</td><td>팀원 쪽 정리가 하루 1번 이상, 사용자 쪽 판별은 하루 4번. 체크포인트 방식이라 하루 빠져도 다음에 이어 받는다.</td></tr>
 </table>
 
-<h2 id="p1">3. 방안 1 · ChatGPT 사이트를 쓸 때</h2>
+<h2 id="collect">3. 팀원 데이터 수집 방법</h2>
+
+<h3 id="c1">A. AI 예약 + 공유 드라이브 전달 <span class="badge g">권고</span></h3>
+<p>팀원이 자기 Claude에 Google·GitHub를 연결해 두고, 예약 실행이 매일 업무 기록을 정리해 <b>공유 드라이브의 수집 폴더에 파일로 올립니다</b>. Codex·Claude Code 세션은 팀원 PC에서 정리해 같은 폴더에 올립니다. 사용자 쪽 정기 수집은 gws-work로 이 폴더를 <b>읽기만</b> 하면 됩니다. 사이트 쪽 수집함·토큰이 필요 없고, Google 연결은 Claude 앱이 맡으므로 우리 GCP OAuth도 필요 없습니다.</p>
 <div class="mermaid">
 flowchart LR
-  subgraph T["팀원 PC"]
-    TG["gws-work<br/>(팀원 계정)"] --> TH["수집 도우미<br/>하루 1~2번"]
-    TL["AI 대화·로컬 Git"] --> TH
+  subgraph T["팀원 (동의 후 1회 설정)"]
+    CL["Claude 클라우드 예약<br/>매일 · PC 꺼져도 동작"]
+    CLc["연결: Gmail·Drive·Calendar·GitHub"] --> CL
+    CX["Codex 예약 실행(팀원 PC)<br/>Codex·Claude Code 세션 정리"]
+    GP["ChatGPT 웹 대화<br/>주 1회 내보내기(수동)"]
   end
-  subgraph SITE["ChatGPT 사이트 (*.chatgpt.site)"]
-    IN["/api/inbox<br/>사람별 토큰"]
-    DB[("사이트 DB")]
-    VIEW["화면<br/>Sign in with ChatGPT + 초대 목록"]
+  subgraph SD["공유 드라이브 · 관리장-수집/팀원"]
+    F1["2026-11-27-claude.json"]
+    F2["2026-11-27-codex.json"]
+    F3["chatgpt-export.zip"]
   end
-  subgraph U["사용자 PC"]
-    UG["gws-work<br/>(사용자 계정)"] --> JU["판별 에이전트<br/>하루 4번"]
+  CL -->|Drive 연결로 파일 생성| F1
+  CX -->|Drive 동기화 폴더| F2
+  GP --> F3
+  subgraph U["사용자 PC (하루 4번)"]
+    G["gws-work<br/>읽기만"] --> J["판별"] --> DS[("데이터셋")]
   end
-  TH -->|색인만| IN
-  IN --> JU
-  JU -->|delta| DB
-  DB --> VIEW
+  F1 --> G
+  F2 --> G
+  F3 --> G
 </div>
-<ol>
-<li><b>로그인</b>: 화면은 "Sign in with ChatGPT"로 들어오고, 관리장 초대 목록에 있는 이메일만 입장한다. 회사 워크스페이스 없이 개인 ChatGPT 계정으로 가능하다.</li>
-<li><b>팀원 수집</b>: 팀원 PC의 수집 도우미가 정해진 시각에 gws-work를 팀원 계정으로 불러 체크포인트 이후 색인을 모은다(파일 이름·작업자·시각, 메시지·메일 제목·보낸 사람·시각). 그리고 사이트 <code>/api/inbox</code>로 보낸다. 판별은 하지 않는다.
-  <ul><li>실행 수단: gws-work에 예약 호출(CLI·API 토큰)이 있으면 그것을 쓴다. 없으면 팀원 PC의 Claude Code·Codex(또는 Paseo) 예약 실행을 쓴다.</li></ul></li>
-<li><b>판별</b>: 사용자 PC의 판별 에이전트가 하루 4번 팀 수집함을 가져와 자기 수집분과 합쳐 판별하고, delta를 사이트에 올린다(<code>/api/ingest/delta</code>).</li>
-<li><b>GitHub</b>: 공개 저장소는 팀원 사용자명만으로 가져온다. 비공개는 팀원의 읽기 토큰이 필요하다.</li>
-</ol>
-<div class="callout warn"><b>먼저 확인할 것</b>: ChatGPT 사이트가 ① 사용자 요금제 안에서 무료인지, ② 서버 API(POST)·비밀값·DB를 지원하는지, ③ 다시 배포해도 주소가 그대로인지, ④ Sign in with ChatGPT로 초대한 사람만 들어오게 할 수 있는지. 지금 코드는 Workers 방식이라 그대로 옮길 수 있다. ②가 안 되면 아래 대체안을 쓴다.</div>
-<p><b>②가 안 될 때의 대체안</b>: 사이트를 화면 전용으로 쓴다. 사용자 PC가 판별 결과를 화면용 데이터 파일로 만들어 하루 4번 사이트에 다시 올린다. 팀원 색인은 방안 3의 "공유 폴더 수집함"으로 받는다. 이때 화면에서 바로 수정하는 기능은 쓸 수 없다.</p>
-
-<h2 id="p2">4. 방안 2 · ChatGPT 사이트가 아닌 무료 사이트(Cloudflare Workers + D1)</h2>
-<div class="mermaid">
-flowchart LR
-  subgraph T["팀원 PC"]
-    TG["gws-work<br/>(팀원 계정)"] --> TH["수집 도우미<br/>하루 1~2번"]
-  end
-  subgraph CF["Cloudflare (무료)"]
-    AC["Access<br/>이메일 인증 코드"] --> VIEW["화면<br/>이름.workers.dev"]
-    IN["/api/inbox<br/>사람별 토큰"]
-    D1[("D1 DB")]
-  end
-  subgraph U["사용자 PC"]
-    UG["gws-work<br/>(사용자 계정)"] --> JU["판별 에이전트<br/>하루 4번"]
-  end
-  TH -->|색인만| IN
-  IN --> JU
-  JU -->|delta 200건씩| D1
-  D1 --> VIEW
-</div>
-<ol>
-<li><b>주소</b>: <code>이름.workers.dev</code> 고정. 도메인 구입이 필요 없다.</li>
-<li><b>로그인</b>: Cloudflare Access 이메일 인증 코드(무료 50명까지). 초대한 이메일로 받은 코드를 넣으면 입장하므로 Google OAuth가 필요 없다.</li>
-<li><b>수집 흐름</b>: 방안 1과 같다. 팀원 수집 도우미 → <code>/api/inbox</code> → 사용자 PC 판별 → delta → D1.</li>
-<li><b>준비 상태</b>: 1·2단계(핵심/연결부 분리, Workers 연결부, Access 로그인 검증, 수집함, 분할 업로드)는 끝났다. 남은 것은 D1 저장소 연결, 실데이터 이전, 배포(약 1~2일)다.</li>
-<li><b>무료 한도</b>: 요청 10만/일, 요청당 CPU 10ms(그래서 delta를 200건씩 나눠 보냄), D1 5GB. 2~10명 규모로 충분하다.</li>
-</ol>
-<div class="callout ok">ChatGPT 사이트와 같은 실행 방식(Workers)이라, 방안 1을 시험하다 안 되면 코드를 버리지 않고 이쪽으로 바로 옮길 수 있다.</div>
-
-<h2 id="p3">5. 방안 3 · 공유 위임 수집(팀원 설치 없음) + 무료 정적 사이트</h2>
-<p>팀원 PC에 아무것도 깔지 않고, <b>팀원이 업무 자료를 사용자와 공유</b>하는 것만으로 수집한다. 수집은 지금처럼 사용자의 gws-work 한 곳에서만 돈다.</p>
-<div class="mermaid">
-flowchart LR
-  subgraph T["팀원 (설치 없음)"]
-    T1["업무 폴더를 공유 드라이브에 두거나<br/>사용자에게 보기 공유"]
-    T2["업무 Chat 방에 사용자 초대"]
-    T3["업무 메일은 사용자 참조(CC)<br/>또는 공유 메일함"]
-    T4["GitHub 사용자명 등록"]
-  end
-  subgraph U["사용자 PC"]
-    UG["gws-work<br/>(사용자 계정)"] --> JU["판별 에이전트<br/>하루 4번"]
-    JU --> EN["화면 데이터 암호화"]
-  end
-  T1 --> UG
-  T2 --> UG
-  T3 --> UG
-  T4 --> JU
-  EN -->|하루 4번 배포| GP["GitHub Pages<br/>아이디.github.io/관리장"]
-  GP --> V["팀원 브라우저<br/>암호로 열기"]
-</div>
-<ol>
-<li><b>수집</b>: 팀원 자료가 공유 드라이브·공유 Chat 방·참조 메일로 들어오면 사용자의 gws-work가 이미 읽는다. 팀원별 연결·토큰·예약 실행이 필요 없다.</li>
-<li><b>화면</b>: GitHub Pages(무료, 주소 고정)에 화면을 올리고, 데이터는 브라우저에서 암호를 넣어야 풀리게 암호화해 둔다. 사용자 PC가 판별 후 하루 4번 다시 올린다.
-  <ul><li>호스팅은 방안 2(Workers + Access)를 그대로 써도 된다. 이 방안의 핵심은 "팀원 쪽 수집을 없애는 것"이다.</li></ul></li>
-<li><b>못 가져오는 것</b>: 팀원의 개인 메일(참조하지 않은 것)·개인 드라이브·로컬 AI 대화. 필요하면 팀원이 주 1회 AI 대화 내보내기 파일을 공유 폴더에 넣는다.</li>
-</ol>
-<div class="callout warn"><b>주의</b>: GitHub Pages는 공개 주소라 데이터 보호를 암호화에만 기댄다. 사람별 로그인·권한·접근 기록이 없고, 화면 수정도 쓸 수 없다(정적 사이트). 회사 데이터를 공개 주소에 두어도 되는지 내부 확인이 먼저다. 이 점이 걸리면 호스팅만 방안 2로 바꾼다.</div>
-<p><b>검토했지만 뺀 우회안</b>: 사용자 PC + Cloudflare 임시 터널은 주소가 매번 바뀐다. 고정 터널은 도메인 구입(연 1~2만 원)이 필요하고, PC가 꺼지면 화면도 꺼진다.</p>
-
-<h2 id="cmp">6. 비교와 권고</h2>
 <table>
-<tr><th>기준</th><th>방안 1 · ChatGPT 사이트</th><th>방안 2 · Workers + D1</th><th>방안 3 · 공유 위임 + 정적 사이트</th></tr>
-<tr><td>비용</td><td class="part">요금제 안(확인 필요)</td><td class="ok">무료</td><td class="ok">무료</td></tr>
-<tr><td>주소 고정</td><td class="part">확인 필요</td><td class="ok">workers.dev 고정</td><td class="ok">github.io 고정</td></tr>
-<tr><td>사람별 로그인·권한</td><td class="ok">ChatGPT 로그인 + 초대</td><td class="ok">Access 이메일 코드</td><td class="no">공용 암호</td></tr>
-<tr><td>팀원 개인 데이터(메일·드라이브·AI 대화)</td><td class="ok">가능(팀원 gws-work 연결)</td><td class="ok">가능(팀원 gws-work 연결)</td><td class="part">공유한 것만</td></tr>
-<tr><td>팀원 쪽 준비</td><td>gws-work 연결 + 수집 도우미 예약</td><td>gws-work 연결 + 수집 도우미 예약</td><td class="ok">공유 설정만</td></tr>
-<tr><td>화면에서 수정</td><td class="part">API 지원 시</td><td class="ok">가능</td><td class="no">불가</td></tr>
-<tr><td>하루 1번 이상 보장</td><td>팀원 PC가 켜져 있어야(빠지면 다음에 이어 받음)</td><td>같음</td><td class="ok">사용자 PC만 켜져 있으면 됨</td></tr>
-<tr><td>남은 작업</td><td>시험 사이트로 검증 + 이식</td><td>D1 연결·이전·배포 1~2일</td><td>암호화 배포 스크립트 1일 + 공유 설정 안내</td></tr>
-<tr><td>위험</td><td>기능 지원 여부 불확실</td><td>낮음</td><td>공개 주소 데이터 보관</td></tr>
+<tr><th style="width:130px">수단</th><th>가져올 것</th><th>올리는 방법</th><th>확인할 것</th></tr>
+<tr><td><b>Claude 클라우드 예약</b></td><td>팀원 Gmail·Drive·Calendar·GitHub</td><td>Drive 연결로 공유 드라이브에 파일 생성(이 작업 환경의 Drive 연결에도 파일 생성 기능이 있음). 메일 전송은 초안까지만 되는 경우가 많아 드라이브를 기본으로 한다</td><td>예약 실행 중 연결 기능 사용 가능 여부, 회사 Google이 외부 앱 연결을 막는지, 요금제 조건</td></tr>
+<tr><td><b>Codex(팀원 PC)</b></td><td>PC 안의 Codex·Claude Code 세션, 로컬 Git</td><td>Windows 작업 스케줄러가 <code>codex exec</code>로 정리 → Google Drive 데스크톱 동기화 폴더에 저장하면 자동 업로드</td><td>Google Drive 데스크톱 설치. PC가 꺼진 날은 다음 실행에서 이어 올림</td></tr>
+<tr><td><b>ChatGPT 웹 대화</b></td><td>ChatGPT에서 한 업무 대화</td><td><span class="badge a">자동화 어려움</span> 예약 작업 결과는 본인 대화로만 오고, 드라이브 쓰기는 확인되지 않음 → 주 1회 데이터 내보내기 파일을 폴더에 넣음</td><td>ChatGPT 예약 작업이 지난 대화 요약을 만들 수 있는지 시험(되면 사람이 복사해 넣는 정도로 단순화)</td></tr>
 </table>
-<div class="callout"><b>권고: 방안 2로 바로 시작하고, 방안 3의 "공유 위임"을 함께 쓴다.</b>
+<p><b>파일 형식</b>(팀원 쪽 예약이 매일 만드는 파일, 사람마다 폴더 하나):</p>
+<pre>{
+  "person": "팀원 이메일",
+  "source": "claude",                     // claude | codex | chatgpt
+  "period": {"from": "2026-11-26T09:00+09:00", "to": "2026-11-27T09:00+09:00"},
+  "items": [
+    {
+      "kind": "gmail",                     // gmail | drive | calendar | github | ai_session
+      "id": "gmail:&lt;threadId&gt;",            // 원본 고유 ID(같은 기록은 한 건으로 합치는 기준)
+      "title": "메일 제목 / 파일 이름 / 커밋 제목",
+      "time": "2026-11-26T14:10+09:00",
+      "people": ["보낸 사람", "받는 사람"],
+      "link": "원본 주소",
+      "summary": "무엇을 했고 무엇이 결정됐는지(최대 2,000자, 4장 기준)",
+      "project_hint": "관련 프로젝트 이름(추정)"
+    }
+  ]
+}</pre>
+<ul>
+<li>사용자 쪽 정기 수집 절차에 "관리장-수집 폴더의 새 파일 읽기"를 추가하고, 이 폴더 자체의 파일 활동은 업무 근거에서 제외한다.</li>
+<li>팀원 쪽 설정은 1장짜리 안내서로 제공한다: Claude 연결·예약 문구, Codex 예약 등록 스크립트, Drive 동기화 폴더 지정.</li>
+</ul>
+
+<h3 id="c2">B. 수집 도우미 + 팀 수집함</h3>
+<p>팀원 PC에 수집 도우미(Claude Code·Codex 예약 실행 + gws-work 연결)를 두고, 결과를 관리장 사이트의 팀 수집함 <code>/api/inbox</code>로 보낸다. 사람마다 다른 비밀 열쇠(<b>사람별 토큰</b>)로 "누구의 수집분인지"를 증명한다. 이 열쇠로는 넣기만 할 수 있고, 꺼내기는 사용자 PC의 관리자 열쇠만 가능하다. 코드는 준비되어 있다(Workers 1·2단계).</p>
+<ul>
+<li>A와 차이: 받는 곳이 공유 드라이브가 아니라 사이트이고, 팀원 PC에 gws-work 연결이 필요하다(팀원 계정 연결 가능 여부 미확인). 사이트에 서버 API가 있어야 하므로 정적 사이트와는 조합할 수 없다.</li>
+</ul>
+
+<h3 id="c3">C. 공유 위임(팀원 설치 없음)</h3>
+<p>팀원은 업무 폴더를 공유 드라이브에 두거나 사용자에게 보기 공유, 업무 Chat 방에 사용자 초대, 업무 메일은 사용자 참조. 수집은 지금처럼 사용자의 gws-work 한 곳에서만 돈다.</p>
+<ul>
+<li>팀원 쪽 준비가 공유 설정뿐이라 바로 시작할 수 있다. 개인 메일(참조 안 한 것)·개인 드라이브·AI 대화는 빠진다.</li>
+<li>A·B와 함께 쓰는 기본층이다. A가 자리 잡기 전에도 팀 공용 기록은 이것으로 들어온다.</li>
+</ul>
+
+<h3 id="ccmp">수집 방법 비교</h3>
+<table>
+<tr><th>기준</th><th>A. AI 예약 + 공유 드라이브</th><th>B. 수집 도우미 + 팀 수집함</th><th>C. 공유 위임</th></tr>
+<tr><td>팀원 개인 메일·드라이브·GitHub</td><td class="ok">가능</td><td class="ok">가능</td><td class="part">공유한 것만</td></tr>
+<tr><td>팀원 AI 대화</td><td class="part">Codex·Claude Code 자동, ChatGPT 웹은 수동</td><td class="part">같음</td><td class="no">빠짐</td></tr>
+<tr><td>팀원 PC가 꺼져 있을 때</td><td class="ok">Claude 예약은 동작(Codex 분만 다음에)</td><td class="no">멈춤(다음에 이어 받음)</td><td class="ok">영향 없음</td></tr>
+<tr><td>팀원 쪽 준비</td><td>Claude 연결·예약 + Codex 예약</td><td>gws-work 연결 + 도우미 설치</td><td class="ok">공유 설정만</td></tr>
+<tr><td>사용자 쪽 추가 작업</td><td class="ok">수집 폴더 읽기만 추가</td><td>사이트 수집함 운영</td><td class="ok">없음</td></tr>
+<tr><td>사이트 조건</td><td class="ok">어느 사이트든</td><td>서버 API 필요</td><td class="ok">어느 사이트든</td></tr>
+<tr><td>미확인 위험</td><td>Claude 예약의 연결 사용, 회사 Google 정책</td><td>팀원 gws-work 연결, 예약 호출</td><td>낮음</td></tr>
+</table>
+
+<h2 id="depth">4. 얼마나 자세히 가져올까</h2>
+<p>사용자 지시(2026-11-26): 160자 요약보다 더 많이, 저장할 수 있는 만큼. 아래를 제안합니다(ADR-017 개정, ADR-027로 기록 예정).</p>
+<table>
+<tr><th>단계</th><th>내용</th><th>판별 정확도</th><th>위험</th></tr>
+<tr><td>색인만</td><td>이름·제목·사람·시각</td><td class="no">낮음</td><td>낮음</td></tr>
+<tr><td>지금: 160자 요약</td><td>한 줄 요약</td><td class="part">보통</td><td>낮음</td></tr>
+<tr><td><b>제안: 2,000자 상세 요약</b></td><td>무엇을 했나 · 결정된 것 · 다음에 할 것 · 산출물 · 관련 사람을 나눠 정리</td><td class="ok">높음</td><td>보통(비밀값 가림 필수)</td></tr>
+<tr><td>원문 전체</td><td>메일·문서·대화 원문 그대로</td><td class="ok">높음</td><td class="no">높음(비밀값 섞임, 용량)</td></tr>
+</table>
+<ul>
+<li><b>지키는 것</b>: 비밀번호·키·토큰처럼 보이는 내용 가림, 1:1 대화와 업무 아닌 개인 메일 제외, 저장은 <code>.real</code>(Git 제외)과 사이트 DB에만.</li>
+<li><b>바꿀 곳</b>: 반영 규칙의 요약 길이(작업 내역 요약 2,000자, 제목은 160자 유지), 수집 절차서, 화면 드로어의 작업 내역 상세 표시.</li>
+<li>용량: 하루 100건 × 2,000자 ≈ 하루 0.6MB, 1년 ≈ 200MB. D1 무료 5GB 안.</li>
+</ul>
+
+<h2 id="host">5. 화면을 올릴 곳</h2>
+<h3 id="h1">ChatGPT 사이트 (*.chatgpt.site)</h3>
+<ul>
+<li>로그인: Sign in with ChatGPT + 관리장 초대 목록(회사 워크스페이스 없이 개인 계정 가능).</li>
+<li>코드는 Workers 방식이라 그대로 옮길 수 있다.</li>
+<li><span class="badge a">확인 필요</span> 요금제 안 무료 여부, 서버 API(POST)·비밀값·DB 지원, 재배포 후 주소 유지, 초대한 사람만 입장. 서버 API가 안 되면 화면 전용으로 쓰고 사용자 PC가 하루 4번 화면 데이터를 다시 올린다(이때 화면 수정 불가, 수집 B 불가).</li>
+</ul>
+<h3 id="h2">Cloudflare Workers + D1 (무료)</h3>
+<ul>
+<li>주소 <code>이름.workers.dev</code> 고정, 로그인은 Cloudflare Access 이메일 인증 코드(무료 50명).</li>
+<li>무료 한도: 요청 10만/일, 요청당 CPU 10ms(delta 200건씩 분할 업로드로 대응), D1 5GB.</li>
+<li>준비 상태: 1·2단계 완료. 남은 것은 D1 저장소 연결·실데이터 이전·배포(1~2일).</li>
+</ul>
+<h3 id="h3">정적 사이트 (GitHub Pages)</h3>
+<ul>
+<li>무료·주소 고정. 데이터는 브라우저에서 암호로 푸는 방식으로 암호화해 올린다.</li>
+<li>공개 주소라 보호를 암호화에만 기대고, 사람별 로그인·권한·화면 수정이 없다. 회사 데이터를 둬도 되는지 내부 확인이 먼저다.</li>
+</ul>
+<table>
+<tr><th>기준</th><th>ChatGPT 사이트</th><th>Workers + D1</th><th>정적 사이트</th></tr>
+<tr><td>비용</td><td class="part">요금제 안(확인 필요)</td><td class="ok">무료</td><td class="ok">무료</td></tr>
+<tr><td>주소 고정</td><td class="part">확인 필요</td><td class="ok">고정</td><td class="ok">고정</td></tr>
+<tr><td>사람별 로그인</td><td class="ok">ChatGPT 로그인</td><td class="ok">이메일 인증 코드</td><td class="no">공용 암호</td></tr>
+<tr><td>화면에서 수정</td><td class="part">API 지원 시</td><td class="ok">가능</td><td class="no">불가</td></tr>
+<tr><td>남은 작업</td><td>시험 사이트 검증</td><td>1~2일</td><td>1일</td></tr>
+</table>
+
+<h2 id="rec">6. 권고 조합</h2>
+<div class="callout ok"><b>수집은 A(AI 예약 + 공유 드라이브) + C(공유 위임), 화면은 Workers + D1.</b>
 <ul style="margin:6px 0 0">
-<li>12/4까지는 팀원 수집 도우미 없이 <b>공유 위임</b>(공유 드라이브·공유 방·참조 메일)으로 팀원 데이터를 채운다. 팀원 쪽 준비가 공유 설정뿐이라 바로 된다.</li>
-<li>화면은 <b>Workers + D1 + Access</b>에 올린다(무료·고정 주소·사람별 로그인·화면 수정 가능, 코드 준비됨).</li>
-<li>ChatGPT 사이트는 시험 사이트로 확인만 하고, 조건이 맞으면 같은 코드로 옮긴다.</li>
-<li>팀원 개인 메일·AI 대화까지 필요해지면 팀원 gws-work 연결과 수집 도우미를 붙인다(수집함은 이미 있음).</li>
+<li>12/4까지: C로 팀 공용 기록을 채우고, 사용자 계정으로 A를 먼저 시험한다.</li>
+<li>A가 확인되면 팀원 1명이 같은 설정을 따라 한다(안내서 1장).</li>
+<li>화면은 Workers + D1 + Access로 올린다. ChatGPT 사이트는 시험만 하고 조건이 맞으면 같은 코드로 옮긴다.</li>
+<li>요약은 2,000자 상세 요약으로 올린다(ADR-027).</li>
+<li>B(팀 수집함)는 이미 만들어 둔 예비안으로 남긴다.</li>
 </ul></div>
 
 <h2 id="verify">7. 확인 절차와 일정</h2>
 <table>
 <tr><th>날짜</th><th>할 일</th><th>담당</th><th>안 되면</th></tr>
 <tr><td>11/27</td><td>Gmail 체크포인트 정지 원인 확인</td><td>Lead</td><td>수집 절차 수정</td></tr>
-<tr><td>11/27</td><td>팀원 1명: 업무 폴더를 공유 드라이브로 옮기거나 보기 공유, 업무 Chat 방에 사용자 초대</td><td>팀원</td><td>—</td></tr>
-<tr><td>11/28</td><td>D1 저장소 연결과 합성 데이터 시험(Builder), 독립 검토(Reviewer)</td><td>Lead·Builder</td><td>—</td></tr>
-<tr><td>11/28</td><td>ChatGPT 사이트 시험: 무료 여부·POST API·비밀값·주소 고정·초대 로그인</td><td>사용자·Lead</td><td>방안 2 유지</td></tr>
-<tr><td>12/2</td><td>workers.dev 배포, Access에 두 사람 이메일 등록, 실데이터 이전</td><td>Lead(배포는 승인 후)</td><td>—</td></tr>
-<tr><td>12/3</td><td>팀원 데이터가 다음 수집에서 들어오는지 확인(공유 위임)</td><td>Lead</td><td>수집 범위 조정</td></tr>
-<tr><td>12/4</td><td>두 사람 접속·확인. 필요하면 팀원 gws-work 연결 시험(수집 도우미)</td><td>사용자·팀원</td><td>12/4 이후로</td></tr>
+<tr><td>11/27</td><td>ADR-027 기록, 요약 2,000자 규칙·수집 폴더 읽기 절차 반영(Builder)</td><td>Lead</td><td>—</td></tr>
+<tr><td>11/27~28</td><td><span class="badge a">승인 필요</span> 사용자 Claude 계정에 예약 생성 → 공유 드라이브 "관리장-수집/사용자"에 하루 1번 파일 → 정기 수집이 읽어 판별되는지 이틀 확인</td><td>사용자·Lead</td><td>C + B로</td></tr>
+<tr><td>11/28</td><td>팀원: 업무 폴더 공유 드라이브로 이동 또는 보기 공유, 업무 Chat 방에 사용자 초대(C)</td><td>팀원</td><td>—</td></tr>
+<tr><td>11/28</td><td>D1 저장소 연결과 합성 데이터 시험, 독립 검토</td><td>Lead·Builder·Reviewer</td><td>—</td></tr>
+<tr><td>12/1</td><td>A 시험 결과로 팀원용 안내서 작성, 팀원 1명 설정</td><td>Lead·팀원</td><td>C 유지</td></tr>
+<tr><td>12/2</td><td><span class="badge a">승인 필요</span> workers.dev 배포, Access에 두 사람 이메일 등록, 실데이터 이전</td><td>Lead</td><td>—</td></tr>
+<tr><td>12/3~4</td><td>팀원 데이터 반영 확인, 두 사람 접속</td><td>사용자·팀원</td><td>12/4 이후로</td></tr>
 </table>
-<div class="callout warn">배포와 실데이터 이전은 운영 반영이라 사용자 승인 후에만 진행한다(AGENTS.md). 팀원 계정 데이터는 팀원 본인이 연결·공유한 범위만 쓰며, 다른 사람 계정을 대신 읽지 않는다.</div>
+<div class="callout warn">사용자 계정에 예약 작업을 만들거나 공유 드라이브에 파일을 쓰는 것은 지금까지의 "읽기만" 원칙 밖의 일이고, 배포·실데이터 이전은 운영 반영이라 모두 사용자 승인 후에만 진행한다.</div>
+
+<h2 id="faq">8. 자주 묻는 것</h2>
+<table>
+<tr><th style="width:240px">질문</th><th>답</th></tr>
+<tr><td>gws-work로 다 수집할 수 있나?</td><td>Google 데이터(Drive·Chat·Gmail)는 사용자 계정으로 확인됨. 팀원 계정 연결은 미확인. GitHub·AI 대화·로컬 Git은 gws-work 대상이 아니라 별도 수집기로 가져온다.</td></tr>
+<tr><td><code>/api/inbox</code>와 사람별 토큰은?</td><td>수집 방법 B에서 쓰는 사이트의 팀 수집함과, 사람마다 다른 비밀 열쇠. 넣기 전용이고 언제든 폐기할 수 있다. 수집 방법 A로 가면 필요 없다.</td></tr>
+<tr><td>"색인만"은 내용을 안 본다는 뜻인가?</td><td>사이트로 보내는 것에 본문이 없다는 뜻이었다. A에서는 팀원 쪽 Claude·Codex가 본문을 읽고 2,000자 상세 요약을 만들어 올리므로 내용 기반 판별이 된다.</td></tr>
+<tr><td>Google Chat은?</td><td>Claude·ChatGPT에 Chat 연결이 없다. 팀 공용 방은 사용자 쪽 gws-work로 들어온다(C).</td></tr>
+<tr><td>회사 데이터를 Claude·OpenAI가 읽어도 되나?</td><td>팀원 동의와 회사 정책 확인이 필요하다. 지금 사용자 데이터를 gws-work와 Claude로 읽는 것과 같은 수준이다.</td></tr>
+</table>
 </main>
 </div>
 <script>mermaid.initialize({startOnLoad:true,theme:'neutral',securityLevel:'strict',flowchart:{htmlLabels:true}});</script>
